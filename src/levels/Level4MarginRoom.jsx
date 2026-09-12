@@ -3,7 +3,7 @@ import { useGame } from '../engine/GameContext.jsx';
 import { QUERY_TYPES, MODEL_TIERS, PRICING_MODELS, PASS_CONDITION, VENDOR_EVENT, computePnL, effectiveQuality, effectivePricePer1k } from '../content/index.js';
 import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice, Gauge, inputClass, wordCount, StatRow } from '../components/ui.jsx';
-import { LevelHeader, LevelResult, TeamInputs, EventCard } from '../components/Shell.jsx';
+import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
 export function scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, judgeResult, fineTuneTrap }) {
@@ -88,10 +88,8 @@ export default function Level4MarginRoom() {
     });
     const r = scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, judgeResult, fineTuneTrap });
     if (judgeResult.fallback) r.feedback.push('Judge unavailable for the vendor reasoning. A neutral score was applied and the call was logged.');
-    if (state.learner.mode === 'team') {
-      const ignored = state.teamLog.filter((t) => t.level === 4 && !t.considered && !t.reason).length;
-      if (ignored) r.meterDeltas.stakeholder = -3 * ignored;
-    }
+    const penalty = teamPenalty(state, 4);
+    if (penalty) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - penalty;
     setResult(r);
     log({ type: 'level-submit', summary: `Margin Room: ${pnl.grossMargin}% margin, ${pnl.adoption}% adoption, ${pm.label} at ${pricePoint}, vendor: ${vendorChoice}`, score: r.score, judge: judgeResult, text: vendorReason });
     complete(4, r);

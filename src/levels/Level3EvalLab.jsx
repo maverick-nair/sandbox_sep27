@@ -3,7 +3,7 @@ import { useGame } from '../engine/GameContext.jsx';
 import { TRACES, ERROR_BUCKETS, GOLDEN_SET_SIZE, GOLDEN_COVERAGE_TARGET, CURRENT_PASS_RATE, THRESHOLD_MIN, THRESHOLD_MAX, thresholdTradeoff, CEO_MESSAGES } from '../content/index.js';
 import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice, Gauge, inputClass, wordCount } from '../components/ui.jsx';
-import { LevelHeader, LevelResult, TeamInputs, EventCard } from '../components/Shell.jsx';
+import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
 export function scoreEvalLab({ classifications, golden, threshold, decision, judgeResult, seconds }) {
@@ -113,10 +113,8 @@ export default function Level3EvalLab() {
     });
     const r = scoreEvalLab({ classifications, golden, threshold, decision, judgeResult, seconds });
     if (judgeResult.fallback) r.feedback.push('Judge unavailable for the justification. A neutral score was applied and the call was logged.');
-    if (state.learner.mode === 'team') {
-      const ignored = state.teamLog.filter((t) => t.level === 3 && !t.considered && !t.reason).length;
-      if (ignored) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - 3 * ignored;
-    }
+    const penalty = teamPenalty(state, 3);
+    if (penalty) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - penalty;
     setResult(r);
     log({ type: 'level-submit', summary: `Eval Lab: ${r.detail.accuracy}% classification, threshold ${threshold}%, ${decision.toUpperCase()}`, score: r.score, judge: judgeResult, text: justification });
     complete(3, r);

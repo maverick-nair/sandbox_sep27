@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { PERSONAS, PERSONA_ORDER, SIGNATURE_MARKER, MAX_TURNS, FREE_TURNS, CAPITAL_PER_EXTRA_TURN, scriptedPersonaReply } from '../content/index.js';
 import { Panel, Button, Tag, Notice, inputClass } from '../components/ui.jsx';
-import { LevelHeader, LevelResult, TeamInputs, EventCard } from '../components/Shell.jsx';
+import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { chat, judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
 const DOCS = [
@@ -70,10 +70,8 @@ export default function Level5Gauntlet() {
 
   const submit = () => {
     const r = scoreGauntlet({ conversations });
-    if (state.learner.mode === 'team') {
-      const ignored = state.teamLog.filter((t) => t.level === 5 && !t.considered && !t.reason).length;
-      if (ignored) r.meterDeltas.stakeholder -= 3 * ignored;
-    }
+    const penalty = teamPenalty(state, 5);
+    if (penalty) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - penalty;
     setResult(r);
     log({ type: 'level-submit', summary: `Gauntlet: ${r.flags.signatures}/3 signatures`, score: r.score });
     complete(5, r);
@@ -189,7 +187,14 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
       commitments: [...c.commitments, ...(learnerText.match(/(we will|I will|I commit|we commit)[^.]*\./gi) || [])].slice(0, 6),
     };
     onLog({ type: 'persona-turn', summary: `${persona.name} turn ${nextTurn}: ${learnerText.slice(0, 90)}`, attached: attachedDocs, cost: extraCost ? `${extraCost} capital` : undefined });
-    if (next.closed) {
+    if (next.closed) await judgeAndRemember(next, nextTurn);
+    onUpdate(next);
+    setInput(''); setAttach([]);
+    setWaiting(false); setBusy(false);
+  };
+
+  const judgeAndRemember = async (next, turnCount) => {
+    {
       setBusy(true);
       const judgeResult = await judge({
         task: `The learner (an AI PM) tried to win a sign-off from ${persona.name}, ${persona.role}. Score the learner's side of the conversation.`,
@@ -203,12 +208,17 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
         context: `Persona concerns: ${persona.concerns.map((k) => k.label).join(', ')}. Documents attached: ${next.attached.join(', ') || 'none'}. Outcome: ${next.granted ? 'signature granted' : 'no signature'}.`,
       });
       next.judge = judgeResult;
-      const summary = `${next.granted ? 'Signed off' : 'Declined'} after ${nextTurn} turns. PM committed to: ${next.commitments.slice(0, 3).join(' ') || 'nothing specific'}${next.overPromised ? '. PM over-promised (zero risk or guarantee language).' : ''}`;
+      const summary = `${next.granted ? 'Signed off' : 'Declined'} after ${turnCount} turns. PM committed to: ${next.commitments.slice(0, 3).join(' ') || 'nothing specific'}${next.overPromised ? '. PM over-promised (zero risk or guarantee language).' : ''}`;
       onRemember(summary);
       onLog({ type: 'persona-judge', summary: `${persona.name}: ${next.granted ? 'signature' : 'declined'}`, judge: judgeResult, score: Math.round(judgeAverage(judgeResult.scores) * 10) });
     }
+  };
+
+  const endWithoutSignature = async () => {
+    setWaiting(true);
+    const next = { ...c, closed: true };
+    await judgeAndRemember(next, c.turns);
     onUpdate(next);
-    setInput(''); setAttach([]);
     setWaiting(false); setBusy(false);
   };
 
@@ -244,7 +254,7 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
             </div>
           </div>
           {capital < extraCost && <p className="mt-1 text-xs text-sky-300">Not enough Political Capital for another turn. Close the conversation or move on.</p>}
-          <div className="mt-2 flex justify-end"><Button size="sm" variant="ghost" onClick={() => onUpdate({ ...c, closed: true })}>End conversation without signature</Button></div>
+          <div className="mt-2 flex justify-end"><Button size="sm" variant="ghost" disabled={waiting} onClick={endWithoutSignature}>End conversation without signature</Button></div>
         </div>
       )}
       {c.judge && <p className="mt-3 text-xs text-zinc-400">Judge: {c.judge.rationale} {c.judge.fallback && '(neutral fallback applied)'}</p>}

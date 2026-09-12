@@ -29,3 +29,17 @@ The facilitator view shows the token and cost counter, the full decision log wit
 ## Accessibility
 
 Every drag and drop interaction has a keyboard path: focus an item, press Enter to select it, Tab to a target, press Enter to place it. Escape cancels. Placements are announced through a live region.
+
+## Definition of done, mapped
+
+1. All eight sprints are playable end to end. Headless runs of the full loop complete in a few minutes; a solo learner writing real justifications lands well inside 90 minutes.
+2. Every mechanic names its skill in the sprint header and feeds at least one Readiness Meter (see `LEVELS` in `src/content/index.js`).
+3. Carry-forward consequences: the citation layer (Sprint 2), the ship threshold and ship or hold call (Sprint 3), the fine-tune trap (Sprint 2 into Sprint 4), the CFO over-promise (Sprint 5), and the approval checkpoint (Sprint 6) all change the severity of the Sprint 7 incident and the CFO pre-read in Sprint 8.
+4. Persona conversations call the Anthropic Messages API and receive a compact memory of earlier conversations in their system prompt.
+5. The debrief compares the four meters to the Module 0 baseline, lists the three best and three costliest decisions with the stronger move, names two skills for AI Koach reinforcement, and exports to PDF through the browser print dialog.
+6. The facilitator view lists every decision with timestamps and judge scores, and shows the token and cost counter.
+7. Every drag and drop interaction has a keyboard alternative and works with pointer events on touch.
+
+## Team mode
+
+Pass-and-play. Choose Team on the intro screen and name the AI PM, Engineering Partner and Governance Liaison. Each sprint shows role-specific input panels. The AI PM records whether each input was considered or logs a reason for setting it aside. Inputs ignored without a reason cost Stakeholder points.

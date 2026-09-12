@@ -101,6 +101,7 @@ export function LevelHeader({ level }) {
         <span>Meters: {meta.meters.map((m) => METER_LABELS[m]).join(', ')}</span>
       </div>
       <h1 className="mt-1 text-2xl font-semibold text-zinc-50">{meta.title}</h1>
+      {level !== 5 && <p className="mt-2 rounded border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 xl:hidden">This sprint uses a canvas designed for a 1280 pixel wide screen. Keyboard placement works at any width; the chat sprints have a simplified narrow view.</p>}
     </div>
   );
 }
@@ -197,7 +198,7 @@ export function TeamInputs({ level, inputs, onReady }) {
   if (state.learner.mode !== 'team') return null;
   const roles = state.learner.roles;
   const relevant = inputs.filter((i) => i.roles.includes('eng') || i.roles.includes('gov'));
-  const allHandled = relevant.every((i) => acks[i.id] || (reasons[i.id] || '').trim().length > 10);
+  const recorded = state.teamLog.some((t) => t.level === level);
   return (
     <Panel title="Team inputs" subtitle="Pass-and-play. Each role reads its panel, then the AI PM submits." className="mb-4">
       <div className="space-y-3">
@@ -214,20 +215,28 @@ export function TeamInputs({ level, inputs, onReady }) {
       </div>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-zinc-500">Ignoring a role without a logged reason costs 3 Stakeholder.</span>
-        <Button size="sm" variant="secondary" disabled={!allHandled} onClick={() => {
+        <Button size="sm" variant="secondary" disabled={recorded} onClick={() => {
           relevant.forEach((i) => dispatch({ type: 'TEAM_LOG', entry: { input: i.id, considered: Boolean(acks[i.id]), reason: reasons[i.id] || '' } }));
           onReady?.();
-        }}>Record team inputs</Button>
+        }}>{recorded ? 'Team inputs recorded' : 'Record team inputs'}</Button>
       </div>
     </Panel>
   );
 }
 
+// Team mode: Stakeholder penalty for role inputs ignored without a logged reason (or never recorded).
+export function teamPenalty(state, level, inputCount = 2) {
+  if (state.learner.mode !== 'team') return 0;
+  const entries = state.teamLog.filter((t) => t.level === level);
+  if (entries.length === 0) return 3 * inputCount;
+  return 3 * entries.filter((t) => !t.considered && !(t.reason || '').trim()).length;
+}
+
 export function SkillsRadar({ meters, consistency, size = 220 }) {
   const axes = [...Object.keys(meters), 'judgment'];
   const values = [...Object.values(meters), consistency];
-  const labels = { ...METER_LABELS, judgment: 'Judgment consistency' };
-  const cx = size / 2, cy = size / 2, r = size / 2 - 28;
+  const labels = { ...METER_LABELS, judgment: 'Judgment' };
+  const cx = size / 2, cy = size / 2, r = size / 2 - 34;
   const pt = (i, v) => { const a = (Math.PI * 2 * i) / axes.length - Math.PI / 2; return [cx + Math.cos(a) * r * (v / 100), cy + Math.sin(a) * r * (v / 100)]; };
   const poly = values.map((v, i) => pt(i, v).join(',')).join(' ');
   return (
@@ -235,7 +244,7 @@ export function SkillsRadar({ meters, consistency, size = 220 }) {
       {[25, 50, 75, 100].map((g) => <polygon key={g} points={axes.map((_, i) => pt(i, g).join(',')).join(' ')} fill="none" stroke="#3f3f46" strokeWidth="1" />)}
       {axes.map((_, i) => { const [x, y] = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#3f3f46" />; })}
       <polygon points={poly} fill="rgba(245,158,11,0.25)" stroke="#f59e0b" strokeWidth="2" />
-      {axes.map((a, i) => { const [x, y] = pt(i, 122); return <text key={a} x={x} y={y} fontSize="10" fill="#a1a1aa" textAnchor="middle" dominantBaseline="middle">{labels[a]}</text>; })}
+      {axes.map((a, i) => { const [x, y] = pt(i, 124); return <text key={a} x={x} y={y} fontSize="10" fill="#a1a1aa" textAnchor="middle" dominantBaseline="middle">{labels[a]}</text>; })}
     </svg>
   );
 }

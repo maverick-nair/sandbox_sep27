@@ -3,7 +3,7 @@ import { useGame } from '../engine/GameContext.jsx';
 import { FEATURE_CARDS, BOARD_ZONES, FLIP_COST_HOURS, DISCOVERY_BUDGET_FLIPS } from '../content/index.js';
 import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice } from '../components/ui.jsx';
-import { LevelHeader, LevelResult, TeamInputs } from '../components/Shell.jsx';
+import { LevelHeader, LevelResult, TeamInputs, teamPenalty } from '../components/Shell.jsx';
 
 export function scoreTriage({ placements, flipped }) {
   let accuracy = 0;
@@ -58,7 +58,6 @@ export default function Level1Triage() {
   const [placements, setPlacements] = useState(draft.placements || {});
   const [flipped, setFlipped] = useState(draft.flipped || []);
   const [result, setResult] = useState(null);
-  const [teamReady, setTeamReady] = useState(state.learner.mode !== 'team');
   const done = state.levelStatus[1] === 'complete';
 
   const unplaced = useMemo(() => FEATURE_CARDS.filter((c) => !placements[c.id]), [placements]);
@@ -83,10 +82,8 @@ export default function Level1Triage() {
 
   const submit = () => {
     const r = scoreTriage({ placements, flipped });
-    if (state.learner.mode === 'team') {
-      const ignored = state.teamLog.filter((t) => t.level === 1 && !t.considered && !t.reason).length;
-      if (ignored) r.meterDeltas.stakeholder = -3 * ignored;
-    }
+    const penalty = teamPenalty(state, 1);
+    if (penalty) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - penalty;
     setResult(r);
     log({ type: 'level-submit', summary: `Triage submitted: ${r.detail.accuracyPct}% placement accuracy, ${flipped.length} flips, scope of ${r.flags.scopeCount}`, score: r.score });
     complete(1, r);
@@ -104,7 +101,7 @@ export default function Level1Triage() {
         <TeamInputs level={1} inputs={[
           { id: 'eng-1', roles: ['eng'], text: 'Engineering Partner note: retrieval over documentation is a two sprint build. Anything needing a trained model on our own labels is a two quarter build.' },
           { id: 'gov-1', roles: ['gov'], text: 'Governance Liaison note: any request that makes a decision about an individual (refunds, HR, pricing) carries a higher regulatory tier. Flag it before it enters scope.' },
-        ]} onReady={() => setTeamReady(true)} />
+        ]} />
       </div>
       <DnDProvider onDrop={onDrop}>
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -140,7 +137,7 @@ export default function Level1Triage() {
       {!finalResult && (
         <div className="mt-4 flex items-center justify-end gap-3">
           <span className="text-xs text-zinc-500">{Object.keys(placements).length} of {FEATURE_CARDS.length} placed. {flipped.length} flips funded.</span>
-          <Button disabled={Object.keys(placements).length < FEATURE_CARDS.length || !teamReady} onClick={submit}>Submit triage</Button>
+          <Button disabled={Object.keys(placements).length < FEATURE_CARDS.length} onClick={submit}>Submit triage</Button>
         </div>
       )}
       {finalResult && <LevelResult level={1} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
