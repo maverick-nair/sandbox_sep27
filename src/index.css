@@ -14,7 +14,7 @@ input[type=range] { accent-color: #f59e0b; }
   :root { color-scheme: light; }
   @page { margin: 14mm; }
   html, body { background: #ffffff !important; color: #111111 !important; }
-  .no-print, header, nav, footer { display: none !important; }
+  .no-print, body > div > header, body > div > nav, body > div > footer { display: none !important; }
   .print-only { display: block !important; }
   .print-page { break-inside: auto; }
   .print-page section { break-inside: avoid; }
@@ -23,9 +23,10 @@ input[type=range] { accent-color: #f59e0b; }
   .print-page [class*="text-amber"] { color: #8a5a00 !important; }
   .print-page [class*="text-sky"] { color: #0b5394 !important; }
   .print-page [class*="text-zinc-4"], .print-page [class*="text-zinc-5"] { color: #444444 !important; }
-  .print-page [class*="bg-amber-4"], .print-page [class*="bg-amber-5"] { background-color: #e0a100 !important; }
-  .print-page [class*="bg-sky-5"] { background-color: #2b7bb9 !important; }
-  .print-page [class*="bg-zinc-8"], .print-page [class*="bg-zinc-6"], .print-page [class*="bg-zinc-4"] { background-color: #d6d6d6 !important; }
+  .print-page [class~="bg-amber-400/80"], .print-page [class~="bg-amber-400"] { background-color: #e0a100 !important; }
+  .print-page [class~="bg-sky-500"] { background-color: #2b7bb9 !important; }
+  .print-page [class~="bg-zinc-800"], .print-page [class~="bg-zinc-600"], .print-page [class~="bg-zinc-400"] { background-color: #d6d6d6 !important; }
+  .print-page section { border: 1px solid #b8b8b8 !important; margin-bottom: 8px; }
   .print-page svg polygon[fill^="rgba(245"] { fill: rgba(224, 161, 0, 0.35) !important; }
   .print-page svg polygon[stroke="#f59e0b"] { stroke: #b07800 !important; }
   .print-page svg line, .print-page svg polygon[fill="none"] { stroke: #999999 !important; }
