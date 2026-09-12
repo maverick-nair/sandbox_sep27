@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { INCIDENT_SECONDS, ALERT, WAVES, computeSeverity, METER_LABELS } from '../content/index.js';
 import { Panel, Button, Tag, Notice, inputClass } from '../components/ui.jsx';
+import { Requirements } from '../components/dnd.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
@@ -58,16 +59,19 @@ export function scoreIncident({ taken, comms, judgeResult, severity, liabilities
 
 export default function Level7Incident() {
   const { state, log, complete, saveDraft } = useGame();
+  const done = state.levelStatus[7] === 'complete';
+  const stored = done ? state.levelResults[7]?.detail : null;
   const draft = state.levelDraft[7] || {};
-  const [started, setStarted] = useState(draft.started || false);
-  const [deadline, setDeadline] = useState(draft.deadline || null);
+  // Resume grace: if the clock ran out while the tab was closed, give 60 seconds to finish rather than auto-closing.
+  const resumedLate = !done && draft.started && draft.deadline && draft.deadline < Date.now();
+  const [started, setStarted] = useState(Boolean(stored) || draft.started || false);
+  const [deadline, setDeadline] = useState(resumedLate ? Date.now() + 60000 : draft.deadline || null);
   const [now, setNow] = useState(Date.now());
-  const [taken, setTaken] = useState(draft.taken || []);
-  const [comms, setComms] = useState(draft.comms || '');
+  const [taken, setTaken] = useState(stored?.taken || draft.taken || []);
+  const [comms, setComms] = useState(stored?.comms || draft.comms || '');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const submittedRef = useRef(false);
-  const done = state.levelStatus[7] === 'complete';
   const finalResult = result || (done ? state.levelResults[7] : null);
   const { severity, reasons } = computeSeverity(state.flags);
   const effectiveSeverity = Math.min(5, severity + (state.liabilities.length ? 1 : 0));
@@ -149,11 +153,12 @@ export default function Level7Incident() {
               <ul className="mt-1 text-xs text-zinc-400">{reasons.map((r, i) => <li key={i}>{r}</li>)}{reasons.length === 0 && <li>No earlier shortcuts detected. Base severity.</li>}</ul>
             </div>
           </div>
+          {resumedLate && !finalResult && <Notice tone="amber">The clock ran out while you were away. You have 60 seconds to finish your decisions and the customer communication.</Notice>}
           <Notice tone="sky">{ALERT}</Notice>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
             {WAVES.map((w) => (
               <Panel key={w.id} title={`Wave ${w.id}: ${w.title}`} className={waveVisible(w.id) ? '' : 'opacity-40'}>
-                {!waveVisible(w.id) && <p className="text-xs text-zinc-500">Unlocks after a decision in the previous wave.</p>}
+                {!waveVisible(w.id) && <p className="text-xs text-zinc-400">Unlocks after a decision in the previous wave.</p>}
                 {waveVisible(w.id) && (
                   <div className="space-y-2">
                     {w.cards.map((c) => {
@@ -173,17 +178,17 @@ export default function Level7Incident() {
           </div>
           <Panel title="Customer communication" subtitle="Four sentences to the affected customer. Judged for honesty, specificity, absence of blame-shifting and a concrete remediation." className="mt-4">
             <textarea className={`${inputClass} min-h-[110px]`} disabled={Boolean(finalResult)} value={comms} onChange={(e) => setComms(e.target.value)} placeholder="Sentence 1: what happened. Sentence 2: what is true. Sentence 3: what we are doing. Sentence 4: when you will hear from us." />
-            <div className="mt-1 flex justify-between text-xs text-zinc-500"><span>{sentences} sentences (4 required)</span><span>{llmAvailable() ? 'LLM judge active' : 'No API key: neutral judge score will be applied'}</span></div>
+            <div className="mt-1 flex justify-between text-xs text-zinc-400"><span>{sentences} sentences (4 required)</span><span>{llmAvailable() ? 'LLM judge active' : 'No API key: neutral judge score will be applied'}</span></div>
           </Panel>
-          {!finalResult && <div className="mt-4 flex justify-end"><Button disabled={busy || taken.length === 0 || sentences < 4} onClick={submit}>{busy ? 'Scoring...' : 'Close the incident'}</Button></div>}
+          {!finalResult && <div className="mt-4 flex flex-wrap items-center justify-end gap-4"><Requirements items={[{ label: `${taken.length} decision${taken.length === 1 ? '' : 's'} taken`, done: taken.length > 0 }, { label: `${sentences}/4 sentences in the customer communication`, done: sentences >= 4 }]} /><Button disabled={busy || taken.length === 0 || sentences < 4} onClick={submit}>{busy ? 'Scoring...' : 'Close the incident'}</Button></div>}
         </>
       )}
       {finalResult && (
         <>
           <Panel title="Meters recalculated" className="mt-4">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(finalResult.meterDeltas).map(([k, v]) => <div key={k} className="rounded border border-zinc-800 p-2"><div className="text-[10px] uppercase tracking-wider text-zinc-500">{METER_LABELS[k]}</div><div className={`font-mono text-xl ${v >= 0 ? 'text-amber-300' : 'text-sky-300'}`}>{v > 0 ? '+' : ''}{v}</div></div>)}</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(finalResult.meterDeltas).map(([k, v]) => <div key={k} className="rounded border border-zinc-800 p-2"><div className="text-[10px] uppercase tracking-wider text-zinc-400">{METER_LABELS[k]}</div><div className={`font-mono text-xl ${v >= 0 ? 'text-amber-300' : 'text-sky-300'}`}>{v > 0 ? '+' : ''}{v}</div></div>)}</div>
           </Panel>
-          <LevelResult level={7} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />
+          <LevelResult level={7} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />
         </>
       )}
     </div>

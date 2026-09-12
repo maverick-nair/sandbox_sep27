@@ -13,7 +13,8 @@ export default function Debrief() {
   const reinforce = reinforcementSkills(state);
   const outcome = state.levelResults[8]?.detail?.outcome ? OUTCOMES.find((o) => o.id === state.levelResults[8].detail.outcome) : null;
   const avg = Math.round(Object.values(state.meters).reduce((a, b) => a + b, 0) / 4);
-  const minutes = state.startedAt ? Math.round((Date.now() - state.startedAt) / 60000) : 0;
+  const minutes = state.activeMinutes ?? (state.startedAt ? Math.round((Date.now() - state.startedAt) / 60000) : 0);
+  const [confirmNew, setConfirmNew] = React.useState(false);
 
   return (
     <div className="print-page">
@@ -21,11 +22,13 @@ export default function Debrief() {
         <div>
           <div className="font-mono text-xs tracking-[0.3em] text-amber-400">READINESS REPORT</div>
           <h1 className="mt-1 text-3xl font-semibold text-zinc-50">{state.learner.name || 'Learner'}</h1>
-          <p className="text-sm text-zinc-400">{state.learner.cohort || 'KNOLSKAPE AI PM program'}. Completed {new Date().toLocaleDateString()}. Play time {minutes} minutes. Mode: {state.learner.mode}.</p>
+          <p className="text-sm text-zinc-400">{state.learner.cohort || 'KNOLSKAPE AI PM program'}. Completed {new Date(state.levelResults[8]?.completedAt || Date.now()).toLocaleDateString()}. Active play time about {minutes} minutes. Mode: {state.learner.mode}.</p>
         </div>
-        <div className="no-print flex gap-2">
-          <Button variant="secondary" onClick={() => window.print()}>Export as PDF</Button>
+        <div className="no-print flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={() => { try { window.print(); } catch (e) { console.warn('Print blocked in this embed', e); } }}>Export as PDF</Button>
           <Button variant="ghost" onClick={() => dispatch({ type: 'GOTO_LEVEL', level: 8 })}>Back to Sprint 8</Button>
+          {!confirmNew && <Button variant="ghost" onClick={() => setConfirmNew(true)}>Start a new quarter</Button>}
+          {confirmNew && <><span className="text-xs text-zinc-300">This erases the saved game. Export it from the Facilitator view first if you need it.</span><Button size="sm" variant="danger" onClick={() => dispatch({ type: 'RESET' })}>Erase and start over</Button><Button size="sm" variant="ghost" onClick={() => setConfirmNew(false)}>Keep it</Button></>}
         </div>
       </div>
 
@@ -64,13 +67,13 @@ export default function Debrief() {
         <Panel title="Three best decisions">
           <ol className="space-y-3">
             {best.map((d, i) => <li key={i} className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-sm"><div className="font-mono text-[11px] text-amber-300">SPRINT {d.level}</div><div className="text-zinc-100">{d.text}</div>{d.stronger && <div className="mt-1 text-xs text-zinc-400">Why it mattered: {d.stronger}</div>}</li>)}
-            {best.length === 0 && <li className="text-sm text-zinc-500">No decisions crossed the bar for a highlight. The costliest list is where the learning is.</li>}
+            {best.length === 0 && <li className="text-sm text-zinc-400">No decisions crossed the bar for a highlight. The costliest list is where the learning is.</li>}
           </ol>
         </Panel>
         <Panel title="Three costliest decisions" subtitle="Each with what a stronger move would have been.">
           <ol className="space-y-3">
             {costliest.map((d, i) => <li key={i} className="rounded border border-sky-500/30 bg-sky-500/5 p-3 text-sm"><div className="font-mono text-[11px] text-sky-300">SPRINT {d.level}</div><div className="text-zinc-100">{d.text}</div><div className="mt-1 text-xs text-zinc-300">Stronger move: {d.stronger}</div></li>)}
-            {costliest.length === 0 && <li className="text-sm text-zinc-500">No costly decisions recorded. Consistency across all eight sprints is rare; the radar shows where the remaining headroom is.</li>}
+            {costliest.length === 0 && <li className="text-sm text-zinc-400">No costly decisions recorded. Consistency across all eight sprints is rare; the radar shows where the remaining headroom is.</li>}
           </ol>
         </Panel>
       </div>
@@ -84,18 +87,19 @@ export default function Debrief() {
         <Panel title="Badges earned" subtitle="Each names the skill it certifies.">
           <ul className="space-y-2">
             {state.badges.map((b) => <li key={b} className="flex items-baseline justify-between gap-3 text-sm"><span className="text-amber-200">{BADGES[b]?.label || b}</span><span className="text-right text-xs text-zinc-400">{BADGES[b]?.skill}</span></li>)}
-            {state.badges.length === 0 && <li className="text-sm text-zinc-500">No badges earned.</li>}
+            {state.badges.length === 0 && <li className="text-sm text-zinc-400">No badges earned.</li>}
           </ul>
-          {state.liabilities.length > 0 && <div className="mt-3"><div className="text-[11px] uppercase tracking-wider text-zinc-500">Liability cards drawn</div><ul className="mt-1 space-y-1 text-xs text-zinc-300">{state.liabilities.map((l) => <li key={l.id}>{l.source}: {l.text}</li>)}</ul></div>}
+          {state.liabilities.length > 0 && <div className="mt-3"><div className="text-[11px] uppercase tracking-wider text-zinc-400">Liability cards drawn</div><ul className="mt-1 space-y-1 text-xs text-zinc-300">{state.liabilities.map((l) => <li key={l.id}>{l.source}: {l.text}</li>)}</ul></div>}
         </Panel>
       </div>
 
       <Panel title="Sprint scores" className="mt-4">
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <div key={n} className="rounded border border-zinc-800 bg-zinc-950/60 p-2 text-center"><div className="font-mono text-[10px] text-zinc-500">S{n}</div><div className="font-mono text-lg text-zinc-100">{state.levelResults[n]?.score ?? '-'}</div></div>)}
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <div key={n} className="rounded border border-zinc-800 bg-zinc-950/60 p-2 text-center"><div className="font-mono text-[10px] text-zinc-400">S{n}</div><div className="font-mono text-lg text-zinc-100">{state.levelResults[n]?.score ?? '-'}</div></div>)}
         </div>
       </Panel>
-      <p className="mt-4 text-[11px] text-zinc-600">KNOLSKAPE AI PM Sandbox readiness report. Judge scores that used a neutral fallback are marked in the facilitator decision log.</p>
+      <p className="no-print mt-2 text-xs text-zinc-400">If Export as PDF does nothing, this page is running inside an embed that blocks printing. Open the sandbox in its own browser tab, or use the browser's own Print command.</p>
+      <p className="mt-4 text-[11px] text-zinc-500">KNOLSKAPE AI PM Sandbox readiness report. Judge scores that used a neutral fallback are marked in the facilitator decision log.</p>
     </div>
   );
 }

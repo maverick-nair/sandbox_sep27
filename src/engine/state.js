@@ -1,5 +1,5 @@
 // Single serializable game state with an explicit level state machine.
-import { INITIAL_CURRENCIES, INITIAL_METERS, LEVELS, shuffleDeck } from '../content/index.js';
+import { INITIAL_CURRENCIES, INITIAL_METERS, LEVELS, shuffleDeck, CONTENT_VERSION } from '../content/index.js';
 
 export const STORAGE_KEY = 'launch-window-save-v1';
 export const SETTINGS_KEY = 'launch-window-settings-v1';
@@ -9,6 +9,7 @@ export function initialState(seed = Date.now()) {
   LEVELS.forEach((l) => (levelStatus[l.id] = l.id === 1 ? 'unlocked' : 'locked'));
   return {
     version: 1,
+    contentVersion: CONTENT_VERSION,
     seed,
     startedAt: null,
     phase: 'intro', // intro | playing | debrief
@@ -34,12 +35,35 @@ export function initialState(seed = Date.now()) {
   };
 }
 
+const REQUIRED_KEYS = ['phase', 'currentLevel', 'levelStatus', 'currencies', 'meters', 'levelResults', 'prd', 'decisionLog', 'events', 'flags', 'llm', 'learner'];
+
+// Validate a saved state's shape. Fills gaps from a fresh state; returns null if unusable.
+export function validateState(parsed) {
+  if (!parsed || typeof parsed !== 'object' || parsed.version !== 1) return null;
+  const fresh = initialState(parsed.seed || Date.now());
+  const merged = { ...fresh, ...parsed };
+  for (const k of REQUIRED_KEYS) if (merged[k] === null || typeof merged[k] !== 'object' && k !== 'phase' && k !== 'currentLevel') return null;
+  if (!['intro', 'playing', 'debrief'].includes(merged.phase)) return null;
+  if (typeof merged.currentLevel !== 'number' || merged.currentLevel < 1 || merged.currentLevel > 8) return null;
+  LEVELS.forEach((l) => { if (!merged.levelStatus[l.id]) merged.levelStatus[l.id] = l.id === 1 ? 'unlocked' : 'locked'; });
+  merged.currencies = { ...fresh.currencies, ...merged.currencies };
+  merged.meters = { ...fresh.meters, ...merged.meters };
+  merged.llm = { ...fresh.llm, ...merged.llm };
+  merged.events = { ...fresh.events, ...merged.events };
+  merged.personaMemory = { ...fresh.personaMemory, ...(merged.personaMemory || {}) };
+  merged.learner = { ...fresh.learner, ...merged.learner, roles: { ...fresh.learner.roles, ...(merged.learner?.roles || {}) } };
+  // Content edits can orphan in-progress drafts. Drop drafts (not results) when the content version changes.
+  if (merged.contentVersion !== CONTENT_VERSION) { merged.levelDraft = {}; merged.contentVersion = CONTENT_VERSION; merged.contentMigrated = true; }
+  return merged;
+}
+
 export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 1) return parsed;
+    const valid = validateState(JSON.parse(raw));
+    if (!valid) { console.warn('Saved game failed validation and was set aside.'); localStorage.setItem(STORAGE_KEY + '-broken', raw); return null; }
+    return valid;
   } catch (e) {
     console.warn('Could not load save', e);
   }
@@ -62,7 +86,13 @@ export function loadSettings() {
   }
 }
 export function saveSettings(s) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    return true;
+  } catch (e) {
+    console.warn('Could not save settings', e);
+    return false;
+  }
 }
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -78,14 +108,14 @@ function applyDeltas(state, { meters = {}, currencies = {} }) {
 export function reducer(state, action) {
   switch (action.type) {
     case 'START': {
-      return { ...state, phase: 'playing', startedAt: Date.now(), learner: { ...state.learner, ...action.learner }, baseline: action.baseline ?? state.baseline };
+      return { ...state, phase: 'playing', startedAt: Date.now(), levelEnteredAt: Date.now(), learner: { ...state.learner, ...action.learner }, baseline: action.baseline ?? state.baseline };
     }
     case 'SET_BASELINE':
       return { ...state, baseline: action.baseline };
     case 'GOTO_LEVEL': {
       const status = state.levelStatus[action.level];
       if (status === 'locked') return state;
-      return { ...state, currentLevel: action.level, phase: 'playing' };
+      return { ...state, currentLevel: action.level, phase: 'playing', levelEnteredAt: state.currentLevel === action.level && state.levelEnteredAt ? state.levelEnteredAt : Date.now() };
     }
     case 'SAVE_DRAFT':
       return { ...state, levelDraft: { ...state.levelDraft, [action.level]: action.draft } };
@@ -132,7 +162,7 @@ export function reducer(state, action) {
       if (level < 8 && levelStatus[level + 1] === 'locked') levelStatus[level + 1] = 'unlocked';
       const badges = [...new Set([...next.badges, ...(result.badges || [])])];
       const drewLiability = (result.liabilities || []).length > 0;
-      const streak = drewLiability ? 0 : next.streak + 1;
+      const streak = drewLiability || (result.score ?? 100) < 50 ? 0 : next.streak + 1;
       const streakBonus = streak >= 2 ? 25 * (streak - 1) : 0;
       const liabilities = [...next.liabilities];
       (result.liabilities || []).forEach((l) => { if (!liabilities.some((x) => x.id === l.id)) liabilities.push(l); });
@@ -147,16 +177,22 @@ export function reducer(state, action) {
         xp: next.xp + xpGain,
         flags: { ...next.flags, ...(result.flags || {}) },
         levelResults: { ...next.levelResults, [level]: { ...result, xpGain, streakBonus, completedAt: Date.now() } },
+        activeMinutes: (next.activeMinutes || 0) + Math.min(60, Math.round((Date.now() - (next.levelEnteredAt || Date.now())) / 60000)),
+        levelEnteredAt: Date.now(),
         prd: result.prdSection ? { ...next.prd, [result.prdSection.key]: result.prdSection.value } : next.prd,
         currentLevel: level,
         levelDraft: { ...next.levelDraft, [level]: undefined },
       };
       return next;
     }
+    case 'BACK_TO_INTRO':
+      return { ...state, phase: 'intro' };
     case 'OPEN_DEBRIEF':
       return { ...state, phase: 'debrief' };
-    case 'IMPORT_STATE':
-      return action.state;
+    case 'IMPORT_STATE': {
+      const valid = validateState(action.state);
+      return valid || state;
+    }
     case 'RESET':
       return initialState();
     default:

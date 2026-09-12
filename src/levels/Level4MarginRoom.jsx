@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { QUERY_TYPES, MODEL_TIERS, PRICING_MODELS, PASS_CONDITION, VENDOR_EVENT, computePnL, effectiveQuality, effectivePricePer1k } from '../content/index.js';
-import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
+import { DnDProvider, Draggable, DropZone, Requirements } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice, Gauge, inputClass, wordCount, StatRow } from '../components/ui.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
-export function scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, judgeResult, fineTuneTrap }) {
+export function scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, vendorReason = '', judgeResult, fineTuneTrap }) {
   const feedback = [];
   let score = 0;
   const marginPass = pnl.grossMargin >= PASS_CONDITION.grossMargin;
@@ -42,13 +42,14 @@ export function scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoi
     currencyDeltas: { compute: marginPass ? 0 : -10 },
     flags: { marginHawk: badges.includes('margin_hawk'), grossMargin: pnl.grossMargin, adoption: pnl.adoption, hrUnprotected: !(routing.hr === 'human' || routing.hr === 'frontier'), vendorChoice },
     prdSection: { key: 'margin', value: `Margin model: gross margin ${pnl.grossMargin}% at ${pnl.adoption}% adoption. Pricing: ${PRICING_MODELS.find((p) => p.id === pricingModel).label} at ${pricePoint} ${PRICING_MODELS.find((p) => p.id === pricingModel).unit}. Monthly revenue ${pnl.revenue.toLocaleString()} USD against inference cost ${pnl.cost.toLocaleString()} USD. Routing: ${QUERY_TYPES.map((q) => `${q.label} to ${MODEL_TIERS.find((t) => t.id === routing[q.id])?.label}`).join('; ')}. Vendor price cut response: ${vendorChoice}.` },
-    detail: { pnl, routing, pricingModel, pricePoint, vendorChoice, judgeResult },
+    detail: { pnl, routing, pricingModel, pricePoint, vendorChoice, vendorReason, judgeResult },
   };
 }
 
 export default function Level4MarginRoom() {
   const { state, log, complete, saveDraft } = useGame();
-  const draft = state.levelDraft[4] || {};
+  const done = state.levelStatus[4] === 'complete';
+  const draft = (done ? state.levelResults[4]?.detail : state.levelDraft[4]) || {};
   const [routing, setRouting] = useState(draft.routing || {});
   const [pricingModel, setPricingModel] = useState(draft.pricingModel || 'seat');
   const [pricePoint, setPricePoint] = useState(draft.pricePoint ?? 8);
@@ -56,7 +57,6 @@ export default function Level4MarginRoom() {
   const [vendorReason, setVendorReason] = useState(draft.vendorReason || '');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
-  const done = state.levelStatus[4] === 'complete';
   const finalResult = result || (done ? state.levelResults[4] : null);
   const fineTuneTrap = Boolean(state.flags.fineTuneTrap);
 
@@ -86,7 +86,7 @@ export default function Level4MarginRoom() {
       text: vendorReason,
       context: `Current gross margin ${pnl.grossMargin}%, adoption ${pnl.adoption}%, routing ${JSON.stringify(routing)}. Contract with current vendor runs to quarter end.`,
     });
-    const r = scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, judgeResult, fineTuneTrap });
+    const r = scoreMargin({ routing, pricingModel, pricePoint, pnl, vendorChoice, vendorReason, judgeResult, fineTuneTrap });
     if (judgeResult.fallback) r.feedback.push('Judge unavailable for the vendor reasoning. A neutral score was applied and the call was logged.');
     const penalty = teamPenalty(state, 4);
     if (penalty) r.meterDeltas.stakeholder = (r.meterDeltas.stakeholder || 0) - penalty;
@@ -113,7 +113,7 @@ export default function Level4MarginRoom() {
             <div className="mb-2 text-xs uppercase tracking-wider text-zinc-400">Query types (share of volume)</div>
             <div className="space-y-2">
               {QUERY_TYPES.filter((q) => !routing[q.id]).map((q) => <QueryChip key={q.id} q={q} disabled={Boolean(finalResult)} />)}
-              {QUERY_TYPES.every((q) => routing[q.id]) && <p className="text-sm text-zinc-500">All traffic routed.</p>}
+              {QUERY_TYPES.every((q) => routing[q.id]) && <p className="text-sm text-zinc-400">All traffic routed.</p>}
             </div>
           </DropZone>
           <div className="space-y-2">
@@ -121,7 +121,7 @@ export default function Level4MarginRoom() {
               <DropZone key={t.id} id={t.id} label={t.label} className={`rounded-lg border p-3 ${t.human ? 'border-sky-500/30 bg-sky-500/5' : 'border-zinc-800 bg-zinc-900/40'}`}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="text-sm font-medium text-zinc-100">{t.label}</span>
-                  <span className="font-mono text-[11px] text-zinc-400">{`${t.pricePer1k.toFixed(2)} per 1k`} | {t.human ? '~1h' : `${t.latencyMs} ms`} | quality {t.quality}</span>
+                  <span className="font-mono text-[11px] text-zinc-400">{`${t.pricePer1k.toFixed(2)} per 1k`} | {t.human ? 'about 1 hour' : `${t.latencyMs} ms`} | quality {t.quality}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {QUERY_TYPES.filter((q) => routing[q.id] === t.id).map((q) => <QueryChip key={q.id} q={q} tier={t} compact disabled={Boolean(finalResult)} />)}
@@ -131,7 +131,7 @@ export default function Level4MarginRoom() {
           </div>
         </div>
       </DnDProvider>
-      <p className="mt-2 text-xs text-zinc-500">Keyboard: Enter selects a query type, Tab to a tier, Enter routes it. Price shown is per 1,000 queries at complexity 1; it scales with complexity.</p>
+      <p className="mt-2 text-xs text-zinc-400">Drag a query type, or click or tap it and then click or tap a tier. Keyboard: Enter selects, Tab to a tier, Enter routes. Price shown is per 1,000 queries at complexity 1; it scales with complexity. The vendor event appears once three query types are routed.</p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <Panel title="Pricing model">
@@ -160,17 +160,17 @@ export default function Level4MarginRoom() {
             {VENDOR_EVENT.options.map((o) => <button key={o.id} disabled={Boolean(finalResult)} onClick={() => setVendorChoice(o.id)} title={o.note} className={`rounded border px-3 py-1.5 text-xs ${vendorChoice === o.id ? 'border-amber-400 text-amber-200' : 'border-zinc-700 text-zinc-400'}`}>{o.label}</button>)}
           </div>
           <textarea className={`${inputClass} mt-3 min-h-[90px]`} disabled={Boolean(finalResult)} value={vendorReason} onChange={(e) => setVendorReason(e.target.value)} placeholder="Why this option? Reference your margin, your routing and the contract timing. At least 40 words." />
-          <div className="mt-1 flex justify-between text-xs text-zinc-500"><span>{wordCount(vendorReason)} words (40 required)</span><span>{llmAvailable() ? 'LLM judge active' : 'No API key: neutral judge score will be applied'}</span></div>
+          <div className="mt-1 flex justify-between text-xs text-zinc-400"><span>{wordCount(vendorReason)} words (40 required)</span><span>{llmAvailable() ? 'LLM judge active' : 'No API key: neutral judge score will be applied'}</span></div>
         </Panel>
       )}
 
       {!finalResult && (
-        <div className="mt-4 flex items-center justify-end gap-3">
-          <span className="text-xs text-zinc-500">{routedCount}/{QUERY_TYPES.length} routed{!pnl.routedAll ? '' : pnl.grossMargin >= PASS_CONDITION.grossMargin && pnl.adoption >= PASS_CONDITION.adoption ? '. Pass condition met.' : '. Pass condition not met: you can still submit, and the score will reflect it.'}</span>
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-4">
+          <Requirements items={[{ label: `${routedCount}/${QUERY_TYPES.length} query types routed`, done: pnl.routedAll }, { label: 'Vendor price cut response chosen', done: Boolean(vendorChoice) }, { label: `Vendor reasoning ${wordCount(vendorReason)}/40 words`, done: wordCount(vendorReason) >= 40 }, { label: pnl.routedAll && pnl.grossMargin >= PASS_CONDITION.grossMargin && pnl.adoption >= PASS_CONDITION.adoption ? 'Pass condition met' : 'Pass condition met (optional, affects score)', done: pnl.routedAll && pnl.grossMargin >= PASS_CONDITION.grossMargin && pnl.adoption >= PASS_CONDITION.adoption }]} />
           <Button disabled={busy || !pnl.routedAll || !vendorChoice || wordCount(vendorReason) < 40} onClick={submit}>{busy ? 'Scoring...' : 'Lock the margin model'}</Button>
         </div>
       )}
-      {finalResult && <LevelResult level={4} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
+      {finalResult && <LevelResult level={4} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
     </div>
   );
 }
@@ -180,10 +180,10 @@ function QueryChip({ q, tier, compact, disabled }) {
     <Draggable id={q.id} label={q.label} disabled={disabled} className={`rounded border border-zinc-700 bg-zinc-950 ${compact ? 'px-2 py-1 text-[11px]' : 'p-2.5 text-xs'}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="font-medium text-zinc-100">{q.label}{q.sensitive && <span className="ml-1 text-sky-300">(sensitive)</span>}</span>
-        <span className="font-mono text-zinc-500">{Math.round(q.share * 100)}% | cx {q.complexity}</span>
+        <span className="font-mono text-zinc-400">{Math.round(q.share * 100)}% | cx {q.complexity}</span>
       </div>
       {!compact && <p className="mt-1 text-zinc-400">{q.note} Needs quality {q.minQuality}.</p>}
-      {tier && <div className="mt-0.5 font-mono text-[10px] text-zinc-500">quality {effectiveQuality(tier, q)}{effectiveQuality(tier, q) < q.minQuality ? ' (below need)' : ''} | {effectivePricePer1k(tier, q).toFixed(2)}/1k</div>}
+      {tier && <div className="mt-0.5 font-mono text-[10px] text-zinc-400">quality {effectiveQuality(tier, q)}{effectiveQuality(tier, q) < q.minQuality ? ' (below need)' : ''} | {effectivePricePer1k(tier, q).toFixed(2)}/1k</div>}
     </Draggable>
   );
 }

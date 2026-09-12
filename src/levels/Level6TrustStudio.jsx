@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { FLOW_STEPS, UX_TILES, REQUIRED, SYNTHETIC_USERS } from '../content/index.js';
-import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
+import { DnDProvider, Draggable, DropZone, Requirements } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice, Gauge } from '../components/ui.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { chat, stripFences, llmAvailable } from '../engine/llm.js';
@@ -67,12 +67,12 @@ function templatedReactions(placements) {
 
 export default function Level6TrustStudio() {
   const { state, log, complete, saveDraft } = useGame();
-  const draft = state.levelDraft[6] || {};
+  const done = state.levelStatus[6] === 'complete';
+  const draft = (done ? state.levelResults[6]?.detail : state.levelDraft[6]) || {};
   const [placements, setPlacements] = useState(draft.placements || {});
   const [reactions, setReactions] = useState(draft.reactions || null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
-  const done = state.levelStatus[6] === 'complete';
   const finalResult = result || (done ? state.levelResults[6] : null);
   useEffect(() => { saveDraft(6, { placements, reactions }); }, [placements, reactions]); // eslint-disable-line
   const ev = useMemo(() => evaluateDesign(placements), [placements]);
@@ -132,7 +132,7 @@ export default function Level6TrustStudio() {
             <div className="mb-2 text-xs uppercase tracking-wider text-zinc-400">Pattern tiles</div>
             <div className="space-y-1.5">
               {UX_TILES.filter((t) => !placements[t.id]).map((t) => <TileCard key={t.id} tile={t} disabled={Boolean(finalResult)} />)}
-              {UX_TILES.every((t) => placements[t.id]) && <p className="text-xs text-zinc-500">Every tile placed. Not every tile needs to be.</p>}
+              {UX_TILES.every((t) => placements[t.id]) && <p className="text-xs text-zinc-400">Every tile placed. Not every tile needs to be.</p>}
             </div>
           </DropZone>
           <div>
@@ -140,7 +140,7 @@ export default function Level6TrustStudio() {
               {FLOW_STEPS.map((s) => (
                 <DropZone key={s.id} id={s.id} label={`${s.label} step`} className={`min-h-[220px] rounded-lg border p-3 ${s.risk === 'high' ? 'border-sky-500/40 bg-sky-500/5' : s.risk === 'medium' ? 'border-zinc-600 bg-zinc-900/40' : 'border-zinc-800 bg-zinc-900/30'}`}>
                   <div className="flex items-center justify-between"><span className="text-sm font-medium text-zinc-100">{s.label}</span><Tag tone={s.risk === 'high' ? 'sky' : 'zinc'}>{s.risk} risk</Tag></div>
-                  <p className="mt-0.5 text-[11px] text-zinc-500">{s.desc}</p>
+                  <p className="mt-0.5 text-[11px] text-zinc-400">{s.desc}</p>
                   <div className="mt-2 space-y-1.5">{UX_TILES.filter((t) => placements[t.id] === s.id).map((t) => <TileCard key={t.id} tile={t} compact disabled={Boolean(finalResult)} />)}</div>
                 </DropZone>
               ))}
@@ -150,18 +150,18 @@ export default function Level6TrustStudio() {
               <Gauge label="Trust" value={ev.trust} max={40} good={ev.trust >= 20} />
               <Gauge label="Adoption forecast" value={Math.max(0, baseAdoption + ev.adoptionDelta)} unit="%" max={100} good={baseAdoption + ev.adoptionDelta >= 30} target={30} targetLabel="above 30%" />
             </div>
-            <p className="mt-1 text-xs text-zinc-500">Incident probability in Sprint 7 reduced by {ev.incidentReduction}%. Adoption forecast starts from your Sprint 4 figure ({baseAdoption}%).</p>
+            <p className="mt-1 text-xs text-zinc-400">Incident probability in Sprint 7 reduced by {ev.incidentReduction}%. Adoption forecast starts from your Sprint 4 figure ({baseAdoption}%).</p>
           </div>
         </div>
       </DnDProvider>
-      <p className="mt-2 text-xs text-zinc-500">Keyboard: Enter selects a tile, Tab to a step, Enter places it. Drop a tile on the palette to remove it.</p>
+      <p className="mt-2 text-xs text-zinc-400">Drag a tile, or click or tap it and then click or tap a step. Keyboard: Enter selects, Tab to a step, Enter places. Drop a tile on the palette to remove it.</p>
       <Panel title="Simulated user test" subtitle="Five synthetic users react to your actual design choices." className="mt-4" right={!finalResult && <Button size="sm" variant="secondary" disabled={busy || Object.keys(placements).length === 0} onClick={runUserTest}>{busy ? 'Running...' : reactions ? 'Run again' : 'Run user test'}</Button>}>
-        {!reactions && <p className="text-sm text-zinc-500">Run the test before submitting. {llmAvailable() ? 'Reactions are generated live and constrained to your design.' : 'No API key: templated reactions constrained to your design will be used.'}</p>}
+        {!reactions && <p className="text-sm text-zinc-400">Run the test before submitting. {llmAvailable() ? 'Reactions are generated live and constrained to your design.' : 'No API key: templated reactions constrained to your design will be used.'}</p>}
         {reactions && <ul className="grid gap-2 md:grid-cols-5">{reactions.map((r, i) => <li key={i} className="rounded border border-zinc-800 bg-zinc-950/60 p-2.5 text-xs"><div className="flex items-center justify-between"><span className="font-medium text-zinc-100">{r.name}</span><Tag tone={/satisf|positive|reliev|confident|happy/i.test(r.verdict) ? 'amber' : 'sky'}>{r.verdict}</Tag></div><p className="mt-1 text-zinc-300">{r.text}</p></li>)}</ul>}
-        {reactions?.[0]?.fallback && <p className="mt-2 text-xs text-zinc-500">Templated reactions were used because the live call was unavailable.</p>}
+        {reactions?.[0]?.fallback && <p className="mt-2 text-xs text-zinc-400">Templated reactions were used because the live call was unavailable.</p>}
       </Panel>
-      {!finalResult && <div className="mt-4 flex justify-end"><Button disabled={!reactions || busy} onClick={submit}>Commit the trust design</Button></div>}
-      {finalResult && <LevelResult level={6} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
+      {!finalResult && <div className="mt-4 flex flex-wrap items-center justify-end gap-4"><Requirements items={[{ label: `${Object.keys(placements).length} pattern tiles placed`, done: Object.keys(placements).length > 0 }, { label: 'Simulated user test run', done: Boolean(reactions) }]} /><Button disabled={!reactions || busy} onClick={submit}>Commit the trust design</Button></div>}
+      {finalResult && <LevelResult level={6} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
     </div>
   );
 }
@@ -169,7 +169,7 @@ export default function Level6TrustStudio() {
 function TileCard({ tile, compact, disabled }) {
   return (
     <Draggable id={tile.id} label={tile.label} disabled={disabled} className={`rounded border border-zinc-700 bg-zinc-950 ${compact ? 'p-1.5 text-[11px]' : 'p-2 text-xs'}`}>
-      <div className="flex items-center justify-between gap-2"><span className="font-medium text-zinc-100">{tile.label}</span><span className="font-mono text-[10px] text-zinc-500">f{tile.friction} t{tile.trust}</span></div>
+      <div className="flex items-center justify-between gap-2"><span className="font-medium text-zinc-100">{tile.label}</span><span className="font-mono text-[10px] text-zinc-400">f{tile.friction} t{tile.trust}</span></div>
       {!compact && <p className="mt-0.5 text-[11px] text-zinc-400">{tile.desc}</p>}
     </Draggable>
   );

@@ -11,6 +11,7 @@ export default function Intro({ onOpenFacilitator }) {
   const [roles, setRoles] = useState(state.learner.roles || { pm: '', eng: '', gov: '' });
   const [baselineText, setBaselineText] = useState(state.baseline ? JSON.stringify(state.baseline) : '');
   const [baselineError, setBaselineError] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
   const hasSave = Boolean(state.startedAt);
 
   const start = () => {
@@ -41,7 +42,7 @@ export default function Intro({ onOpenFacilitator }) {
                 <li key={l.id} className="rounded border border-zinc-800 bg-zinc-950/60 p-3">
                   <div className="font-mono text-[11px] text-amber-300">SPRINT {l.id}</div>
                   <div className="text-sm font-medium text-zinc-100">{l.title}</div>
-                  <div className="text-xs text-zinc-500">{l.skill}</div>
+                  <div className="text-xs text-zinc-400">{l.skill}</div>
                 </li>
               ))}
             </ol>
@@ -59,13 +60,17 @@ export default function Intro({ onOpenFacilitator }) {
           {hasSave && (
             <Notice tone="amber">
               A saved game exists for {state.learner.name || 'this learner'} (Sprint {state.currentLevel}).
-              <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => dispatch({ type: 'GOTO_LEVEL', level: state.currentLevel })}>Resume</Button><Button size="sm" variant="secondary" onClick={() => { if (confirm('Start over? The saved game will be erased.')) dispatch({ type: 'RESET' }); }}>Start over</Button></div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => dispatch({ type: state.phase === 'debrief' ? 'OPEN_DEBRIEF' : 'GOTO_LEVEL', level: state.currentLevel })}>Resume</Button>
+                {!confirmReset && <Button size="sm" variant="secondary" onClick={() => setConfirmReset(true)}>Start over</Button>}
+                {confirmReset && <><span className="self-center text-xs">Erase the saved game?</span><Button size="sm" variant="danger" onClick={() => dispatch({ type: 'RESET' })}>Yes, erase it</Button><Button size="sm" variant="ghost" onClick={() => setConfirmReset(false)}>Keep it</Button></>}
+              </div>
             </Notice>
           )}
           <Panel title="Learner setup">
             <div className="space-y-3">
-              <Field label="Name"><input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} /></Field>
-              <Field label="Cohort"><input className={inputClass} value={cohort} onChange={(e) => setCohort(e.target.value)} placeholder="e.g. AI PM Core, Sep 2026" /></Field>
+              <Field label="Name" hint={name.trim() ? undefined : 'Enter a name to begin. It appears on your readiness report.'}><input id="learner-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>
+              <Field label="Cohort"><input id="learner-cohort" className={inputClass} value={cohort} onChange={(e) => setCohort(e.target.value)} placeholder="e.g. AI PM Core, Sep 2026" /></Field>
               <Field label="Mode" hint="Team mode is pass-and-play. Roles see different information panels; the AI PM submits.">
                 <div className="flex gap-2">
                   {['solo', 'team'].map((m) => <button key={m} onClick={() => setMode(m)} className={`rounded border px-3 py-1.5 text-xs capitalize ${mode === m ? 'border-amber-400 text-amber-200' : 'border-zinc-700 text-zinc-400'}`}>{m}</button>)}
@@ -79,11 +84,11 @@ export default function Intro({ onOpenFacilitator }) {
                 </div>
               )}
               <Field label="Module 0 baseline (optional JSON)" hint='Example: {"commercial":42,"reliability":38,"governance":35,"stakeholder":50}'>
-                <textarea className={`${inputClass} min-h-[60px] font-mono text-xs`} value={baselineText} onChange={(e) => { setBaselineText(e.target.value); setBaselineError(''); }} />
+                <textarea id="baseline-json" className={`${inputClass} min-h-[60px] font-mono text-xs`} value={baselineText} onChange={(e) => { setBaselineText(e.target.value); setBaselineError(''); }} />
                 {baselineError && <span className="text-xs text-sky-300">{baselineError}</span>}
               </Field>
               <Button className="w-full" size="lg" disabled={!name.trim()} onClick={start}>{hasSave ? 'Start a new quarter' : 'Enter the launch window'}</Button>
-              <button onClick={onOpenFacilitator} className="w-full text-center text-xs text-zinc-500 hover:text-zinc-300">Facilitator settings (API key, model, cost counter)</button>
+              <button onClick={onOpenFacilitator} className="w-full text-center text-xs text-zinc-400 hover:text-zinc-300">Facilitator settings (API key, model, cost counter)</button>
             </div>
           </Panel>
         </div>

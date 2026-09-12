@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { COMPONENTS, TARGET_ENVELOPE, computeGauges } from '../content/index.js';
-import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
+import { DnDProvider, Draggable, DropZone, Requirements } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice, Gauge } from '../components/ui.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty } from '../components/Shell.jsx';
 
@@ -42,10 +42,10 @@ export function scoreArchitecture({ placed }) {
 
 export default function Level2Architecture() {
   const { state, log, complete, saveDraft } = useGame();
-  const draft = state.levelDraft[2] || {};
+  const done = state.levelStatus[2] === 'complete';
+  const draft = (done ? state.levelResults[2]?.detail : state.levelDraft[2]) || {};
   const [placed, setPlaced] = useState(draft.placed || ['user_prompt', ...Array(SLOT_COUNT - 1).fill(null)]);
   const [result, setResult] = useState(null);
-  const done = state.levelStatus[2] === 'complete';
   const finalResult = result || (done ? state.levelResults[2] : null);
   useEffect(() => { saveDraft(2, { placed }); }, [placed]); // eslint-disable-line
   const gauges = useMemo(() => computeGauges(placed), [placed]);
@@ -88,7 +88,7 @@ export default function Level2Architecture() {
               {palette.map((c) => (
                 <Draggable key={c.id} id={c.id} label={c.label} disabled={Boolean(finalResult)} className="rounded border border-zinc-700 bg-zinc-950 p-2 text-xs">
                   <div className="flex items-center justify-between"><span className="font-medium text-zinc-100">{c.label}</span><Tag>{c.kind}</Tag></div>
-                  <div className="mt-0.5 font-mono text-[10px] text-zinc-500">{c.cost.toFixed(2)}/1k | {c.latency}s | q{c.quality > 0 ? '+' : ''}{c.quality}{c.multiplier ? ' | x0.7 cost and latency' : ''}</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-zinc-400">{c.cost.toFixed(2)}/1k | {c.latency}s | q{c.quality > 0 ? '+' : ''}{c.quality}{c.multiplier ? ' | x0.7 cost and latency' : ''}</div>
                   <div className="text-[11px] text-zinc-400">{c.desc}</div>
                 </Draggable>
               ))}
@@ -103,9 +103,9 @@ export default function Level2Architecture() {
                   return (
                     <React.Fragment key={i}>
                       <DropZone id={`slot-${i}`} label={`Pipeline slot ${i + 1}${c ? `, holds ${c.label}` : ', empty'}`} className={`flex min-h-[84px] w-[132px] items-center justify-center rounded border p-2 text-center text-xs ${c ? 'border-amber-500/40 bg-amber-500/5' : 'border-dashed border-zinc-700'}`}>
-                        {c ? (i === 0 ? <span className="text-zinc-200">{c.label}</span> : <Draggable id={c.id} label={c.label} disabled={Boolean(finalResult)} className="w-full rounded bg-zinc-950 p-1.5 text-zinc-100">{c.label}</Draggable>) : <span className="text-zinc-600">Slot {i + 1}</span>}
+                        {c ? (i === 0 ? <span className="text-zinc-200">{c.label}</span> : <Draggable id={c.id} label={c.label} disabled={Boolean(finalResult)} className="w-full rounded bg-zinc-950 p-1.5 text-zinc-100">{c.label}</Draggable>) : <span className="text-zinc-500">Slot {i + 1}</span>}
                       </DropZone>
-                      {i < placed.length - 1 && <span className="self-center text-zinc-600" aria-hidden>&gt;</span>}
+                      {i < placed.length - 1 && <span className="self-center text-zinc-500" aria-hidden>&gt;</span>}
                     </React.Fragment>
                   );
                 })}
@@ -123,14 +123,14 @@ export default function Level2Architecture() {
           </div>
         </div>
       </DnDProvider>
-      <p className="mt-2 text-xs text-zinc-500">Keyboard: Enter selects a component, Tab to a slot, Enter places it. Placing a component in the palette removes it from the pipeline.</p>
+      <p className="mt-2 text-xs text-zinc-400">Drag a component, or click or tap it and then click or tap a slot. Keyboard: Enter selects, Tab to a slot, Enter places. Dropping a component on the palette removes it from the pipeline.</p>
       {!finalResult && (
-        <div className="mt-4 flex items-center justify-end gap-3">
-          <span className="text-xs text-zinc-500">{gauges.meets ? 'Envelope met.' : 'Envelope not met. You can still submit; the score and the PRD will say so.'}</span>
-          <Button disabled={gauges.models.length === 0} onClick={submit}>Commit the architecture</Button>
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-4">
+          <Requirements items={[{ label: 'Exactly one generation model in the pipeline', done: gauges.models.length === 1 }, { label: gauges.meets ? 'CTO envelope met' : 'CTO envelope met (optional, affects score)', done: gauges.meets }]} />
+          <Button disabled={gauges.models.length !== 1} onClick={submit}>Commit the architecture</Button>
         </div>
       )}
-      {finalResult && <LevelResult level={2} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
+      {finalResult && <LevelResult level={2} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
     </div>
   );
 }

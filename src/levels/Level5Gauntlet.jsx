@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { PERSONAS, PERSONA_ORDER, SIGNATURE_MARKER, MAX_TURNS, FREE_TURNS, CAPITAL_PER_EXTRA_TURN, scriptedPersonaReply } from '../content/index.js';
 import { Panel, Button, Tag, Notice, inputClass } from '../components/ui.jsx';
+import { Requirements } from '../components/dnd.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty, EventCard } from '../components/Shell.jsx';
 import { chat, judge, judgeAverage, llmAvailable } from '../engine/llm.js';
 
@@ -56,12 +57,12 @@ export function scoreGauntlet({ conversations }) {
 
 export default function Level5Gauntlet() {
   const { state, log, complete, saveDraft, spend, remember } = useGame();
-  const draft = state.levelDraft[5] || {};
+  const done = state.levelStatus[5] === 'complete';
+  const draft = (done ? state.levelResults[5]?.detail : state.levelDraft[5]) || {};
   const [active, setActive] = useState(draft.active || 'dana');
   const [conversations, setConversations] = useState(draft.conversations || {});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
-  const done = state.levelStatus[5] === 'complete';
   const finalResult = result || (done ? state.levelResults[5] : null);
 
   useEffect(() => { saveDraft(5, { active, conversations }); }, [active, conversations]); // eslint-disable-line
@@ -117,12 +118,12 @@ export default function Level5Gauntlet() {
         setBusy={setBusy}
       />
       {!finalResult && (
-        <div className="mt-4 flex items-center justify-end gap-3">
-          <span className="text-xs text-zinc-500">{PERSONA_ORDER.filter((p) => conversations[p]?.granted).length}/3 signatures. Close all three conversations to submit.</span>
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-4">
+          <Requirements items={PERSONA_ORDER.map((p) => ({ label: `${PERSONAS[p].name}: ${conversations[p]?.granted ? 'signed' : conversations[p]?.closed ? 'closed without signature' : 'conversation open'}`, done: Boolean(conversations[p]?.closed) }))} />
           <Button disabled={busy || !allClosed} onClick={submit}>Submit the gauntlet</Button>
         </div>
       )}
-      {finalResult && <LevelResult level={5} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
+      {finalResult && <LevelResult level={5} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
     </div>
   );
 }
@@ -142,7 +143,7 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
   const send = async () => {
     if (!canSend) return;
     setWaiting(true); setBusy(true);
-    if (extraCost) onSpend(extraCost);
+    let liveFailed = false;
     const attachedDocs = attach.filter((a) => prd[DOCS.find((d) => d.id === a).key]);
     const attachmentText = attachedDocs.map((a) => `[Attached ${DOCS.find((d) => d.id === a).label}]\n${prd[DOCS.find((d) => d.id === a).key]}`).join('\n\n');
     const learnerText = input.trim();
@@ -165,8 +166,9 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
         const scripted = scriptedPersonaReply(persona, learnerText, addressed);
         addressed = scripted.addressed;
       } else {
+        liveFailed = true;
         const scripted = scriptedPersonaReply(persona, learnerText, addressed);
-        replyText = scripted.reply.replace(SIGNATURE_MARKER, '').trim() + ' (Live persona unavailable, scripted response shown.)';
+        replyText = scripted.reply.replace(SIGNATURE_MARKER, '').trim() + ' (Live persona unavailable, scripted response shown. No Political Capital was charged for this turn.)';
         granted = scripted.granted; addressed = scripted.addressed;
       }
     } else {
@@ -174,6 +176,7 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
       replyText = scripted.reply.replace(SIGNATURE_MARKER, '').trim();
       granted = scripted.granted; addressed = scripted.addressed;
     }
+    if (extraCost && !liveFailed) onSpend(extraCost);
     const overPromised = /zero risk|never hallucinate|cannot hallucinate|100 percent|100%|guarantee/i.test(learnerText);
     const next = {
       ...c,
@@ -233,24 +236,25 @@ function Conversation({ persona, convo, disabled, prd, capital, memory, flags, o
             </div>
           </div>
         ))}
-        {waiting && <div className="text-xs text-zinc-500">{persona.name} is thinking...</div>}
+        {waiting && <div className="text-xs text-zinc-400">{persona.name} is thinking...</div>}
         <div ref={endRef} />
       </div>
       {!c.closed && !disabled && (
         <div className="mt-3 border-t border-zinc-800 pt-3">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-zinc-500">Bring a document:</span>
+            <span className="text-zinc-400">Bring a document:</span>
             {DOCS.map((d) => {
               const available = Boolean(prd[d.key]);
               const on = attach.includes(d.id);
               return <button key={d.id} disabled={!available} onClick={() => setAttach(on ? attach.filter((a) => a !== d.id) : [...attach, d.id])} aria-pressed={on} title={available ? 'Attach to your next message' : 'Not yet written in your PRD'} className={`rounded border px-2 py-0.5 ${on ? 'border-amber-400 text-amber-200' : 'border-zinc-700 text-zinc-400'} disabled:opacity-40`}>{d.label}</button>;
             })}
           </div>
+          {DOCS.some((d) => !prd[d.key]) && <p className="mb-2 text-[11px] text-zinc-400">Greyed documents are not yet written in your PRD ({DOCS.filter((d) => !prd[d.key]).map((d) => d.label).join(', ')}). They become available as you complete sprints.</p>}
           <div className="flex gap-2">
             <textarea className={`${inputClass} min-h-[70px]`} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); }} placeholder={`Reply to ${persona.name.split(' ')[0]}. Be specific.`} aria-label={`Message to ${persona.name}`} />
             <div className="flex flex-col justify-between">
               <Button disabled={!canSend} onClick={send}>Send</Button>
-              <span className="mt-1 text-[10px] text-zinc-500">{extraCost ? `Costs ${extraCost} capital` : 'Free turn'}</span>
+              <span className="mt-1 text-[10px] text-zinc-400">{extraCost ? `Costs ${extraCost} capital` : 'Free turn'}. Ctrl+Enter sends.</span>
             </div>
           </div>
           {capital < extraCost && <p className="mt-1 text-xs text-sky-300">Not enough Political Capital for another turn. Close the conversation or move on.</p>}

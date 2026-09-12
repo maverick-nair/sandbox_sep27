@@ -43,3 +43,9 @@ Every drag and drop interaction has a keyboard path: focus an item, press Enter 
 ## Team mode
 
 Pass-and-play. Choose Team on the intro screen and name the AI PM, Engineering Partner and Governance Liaison. Each sprint shows role-specific input panels. The AI PM records whether each input was considered or logs a reason for setting it aside. Inputs ignored without a reason cost Stakeholder points.
+
+## QA fixes applied (September 2026)
+
+Model calls now use low effort with a 2,000 token output budget and treat empty or truncated replies as failures. Completed sprints replay read-only from the stored result. A React error boundary offers export and reset without browser dialogs; saved games are validated and migrated when the content version changes. The debrief has a real print stylesheet. Drag and drop supports click or tap to select and then click or tap a target, alongside drag and keyboard. Every submit button shows a requirements checklist. Events are drawn automatically on sprint entry. Secondary text meets WCAG AA contrast. The facilitator view has a connection test, the last error reason, a facilitator guide (expert keys, rubrics, consequence map) and copyable export fallbacks for embeds that block downloads.
+
+Still open and needing a backend decision: server-side key custody and judging, learner identity and cohort records, and LMS integration. See the QA report for the full list.

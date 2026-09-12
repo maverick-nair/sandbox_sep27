@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useGame } from '../engine/GameContext.jsx';
 import { FEATURE_CARDS, BOARD_ZONES, FLIP_COST_HOURS, DISCOVERY_BUDGET_FLIPS } from '../content/index.js';
-import { DnDProvider, Draggable, DropZone } from '../components/dnd.jsx';
+import { DnDProvider, Draggable, DropZone, Requirements } from '../components/dnd.jsx';
 import { Panel, Button, Tag, Notice } from '../components/ui.jsx';
 import { LevelHeader, LevelResult, TeamInputs, teamPenalty } from '../components/Shell.jsx';
 
@@ -54,11 +54,12 @@ function describeKey(key) {
 
 export default function Level1Triage() {
   const { state, spend, log, complete, saveDraft } = useGame();
-  const draft = state.levelDraft[1] || {};
+  const done = state.levelStatus[1] === 'complete';
+  // Completed sprints replay from the stored result; in-progress ones from the draft.
+  const draft = (done ? state.levelResults[1]?.detail : state.levelDraft[1]) || {};
   const [placements, setPlacements] = useState(draft.placements || {});
   const [flipped, setFlipped] = useState(draft.flipped || []);
   const [result, setResult] = useState(null);
-  const done = state.levelStatus[1] === 'complete';
 
   const unplaced = useMemo(() => FEATURE_CARDS.filter((c) => !placements[c.id]), [placements]);
 
@@ -106,13 +107,15 @@ export default function Level1Triage() {
       <DnDProvider onDrop={onDrop}>
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <DropZone id="tray" label="Unplaced requests tray" className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
-            <div className="mb-2 flex items-center justify-between"><span className="text-xs uppercase tracking-wider text-zinc-400">Inbox</span><span className="font-mono text-xs text-zinc-500">{unplaced.length} left</span></div>
+            <div className="mb-2 flex items-center justify-between"><span className="text-xs uppercase tracking-wider text-zinc-400">Inbox</span><span className="font-mono text-xs text-zinc-400">{unplaced.length} left</span></div>
             <div className="space-y-2">
               {unplaced.map((c) => <Card key={c.id} card={c} flipped={flipped.includes(c.id)} onFlip={() => flip(c.id)} disabled={Boolean(finalResult)} canAfford={state.currencies.hours >= FLIP_COST_HOURS} />)}
-              {unplaced.length === 0 && <p className="text-sm text-zinc-500">All requests placed. Review, then submit.</p>}
+              {unplaced.length === 0 && <p className="text-sm text-zinc-400">All requests placed. Review, then submit.</p>}
             </div>
           </DropZone>
-          <div>
+          <div className="flex gap-2">
+            <div className="flex w-5 shrink-0 flex-col items-center justify-between py-6 text-[10px] uppercase tracking-wider text-zinc-400" aria-hidden><span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>High value</span><span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Low value</span></div>
+          <div className="flex-1">
             <div className="grid grid-cols-2 gap-3">
               {['hi-lo', 'hi-hi', 'lo-lo', 'lo-hi'].map((zid) => {
                 const z = BOARD_ZONES.find((b) => b.id === zid);
@@ -125,22 +128,23 @@ export default function Level1Triage() {
                 );
               })}
             </div>
-            <div className="mt-1 flex justify-between px-1 text-[10px] uppercase tracking-wider text-zinc-500"><span>Low AI suitability</span><span>High AI suitability</span></div>
+            <div className="mt-1 flex justify-between px-1 text-[10px] uppercase tracking-wider text-zinc-400"><span>Low AI suitability</span><span>High AI suitability</span></div>
             <DropZone id="not-ai" label="Not an AI problem" className="mt-3 min-h-[110px] rounded-lg border border-sky-500/40 bg-sky-500/5 p-3">
               <div className="mb-2 flex items-center justify-between"><span className="text-xs font-medium text-sky-200">Not an AI problem</span><Tag tone="sky">Solve with rules or workflow</Tag></div>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{FEATURE_CARDS.filter((c) => placements[c.id] === 'not-ai').map((c) => <Card key={c.id} card={c} compact flipped={flipped.includes(c.id)} onFlip={() => flip(c.id)} disabled={Boolean(finalResult)} canAfford={state.currencies.hours >= FLIP_COST_HOURS} />)}</div>
             </DropZone>
           </div>
+          </div>
         </div>
       </DnDProvider>
-      <p className="mt-2 text-xs text-zinc-500">Keyboard: focus a card, press Enter to select it, then Tab to a board zone and press Enter to place it. Escape cancels.</p>
+      <p className="mt-2 text-xs text-zinc-400">Drag a card, or click or tap it to select and then click or tap a zone. Keyboard: Enter selects, Tab to a zone, Enter places. Escape cancels.</p>
       {!finalResult && (
-        <div className="mt-4 flex items-center justify-end gap-3">
-          <span className="text-xs text-zinc-500">{Object.keys(placements).length} of {FEATURE_CARDS.length} placed. {flipped.length} flips funded.</span>
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-4">
+          <Requirements items={[{ label: `${Object.keys(placements).length} of ${FEATURE_CARDS.length} requests placed`, done: Object.keys(placements).length === FEATURE_CARDS.length }, { label: `${flipped.length} discovery flips funded (optional, ${DISCOVERY_BUDGET_FLIPS} before penalty)`, done: true }]} />
           <Button disabled={Object.keys(placements).length < FEATURE_CARDS.length} onClick={submit}>Submit triage</Button>
         </div>
       )}
-      {finalResult && <LevelResult level={1} result={finalResult} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
+      {finalResult && <LevelResult level={1} result={finalResult} replay={done && !result} onContinue={() => window.dispatchEvent(new CustomEvent('lw:next'))} />}
     </div>
   );
 }
@@ -151,16 +155,16 @@ function Card({ card, flipped, onFlip, compact, disabled, canAfford }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="font-medium text-zinc-100">{card.title}</div>
-          <div className="text-[11px] text-zinc-500">{card.source}</div>
+          <div className="text-[11px] text-zinc-400">{card.source}</div>
         </div>
         {!flipped && !disabled && <button type="button" onClick={(e) => { e.stopPropagation(); onFlip(); }} disabled={!canAfford} className="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-300 hover:border-amber-400 disabled:opacity-40" aria-label={`Flip ${card.title} for ${FLIP_COST_HOURS} hours`}>Flip {FLIP_COST_HOURS}h</button>}
       </div>
       {!compact && <p className="mt-1 text-xs text-zinc-400">{card.pitch}</p>}
       {flipped && (
         <dl className="mt-2 space-y-0.5 border-t border-zinc-800 pt-2 text-[11px] text-zinc-300">
-          <div><dt className="inline text-zinc-500">Data: </dt><dd className="inline">{card.hidden.data}</dd></div>
-          <div><dt className="inline text-zinc-500">Error tolerance: </dt><dd className="inline">{card.hidden.errorTolerance}</dd></div>
-          <div><dt className="inline text-zinc-500">Regulatory: </dt><dd className="inline">{card.hidden.regulatory}</dd></div>
+          <div><dt className="inline text-zinc-400">Data: </dt><dd className="inline">{card.hidden.data}</dd></div>
+          <div><dt className="inline text-zinc-400">Error tolerance: </dt><dd className="inline">{card.hidden.errorTolerance}</dd></div>
+          <div><dt className="inline text-zinc-400">Regulatory: </dt><dd className="inline">{card.hidden.regulatory}</dd></div>
         </dl>
       )}
     </Draggable>

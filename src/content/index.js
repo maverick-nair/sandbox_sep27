@@ -9,6 +9,9 @@ export * from './uxPatterns.js';
 export * from './incident.js';
 export * from './dossier.js';
 
+// Bump when card, trace, component or persona ids change so in-progress drafts are reset safely.
+export const CONTENT_VERSION = 2;
+
 export const LEVELS = [
   { id: 1, title: 'Opportunity Triage', module: 'AI foundations and when not to use AI', skill: 'Choosing where AI belongs', meters: ['commercial', 'governance'] },
   { id: 2, title: 'Architecture Bench', module: 'RAG, context engineering and the AI PRD', skill: 'Designing to a cost, latency and quality envelope', meters: ['reliability', 'commercial'] },

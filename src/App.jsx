@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GameProvider, useGame } from './engine/GameContext.jsx';
+import { GameProvider, useGame, ErrorBoundary } from './engine/GameContext.jsx';
 import { TopBar, LevelNav, PRDPanel } from './components/Shell.jsx';
 import Intro from './screens/Intro.jsx';
 import Facilitator from './screens/Facilitator.jsx';
@@ -60,8 +60,10 @@ function Game() {
 
 export default function App() {
   return (
-    <GameProvider>
-      <Game />
-    </GameProvider>
+    <ErrorBoundary>
+      <GameProvider>
+        <Game />
+      </GameProvider>
+    </ErrorBoundary>
   );
 }
