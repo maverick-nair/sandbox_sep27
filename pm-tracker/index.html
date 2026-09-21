@@ -1,4 +1,4 @@
-<title>PM Task Board</title>
+<title>KNOLSKAPE PM Desk</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,7 +49,7 @@ svg{display:block;flex:none}
 .side{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--surface)}
 .ws{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .ws .logo{width:40px;height:40px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none}
-.ws .name{font-weight:700;font-size:15px;line-height:1.2}
+.ws .name{font-weight:700;font-size:14px;line-height:1.2;white-space:nowrap}
 .ws .sub{font-size:12px;color:var(--muted)}
 .side-scroll{overflow:auto;padding:6px 10px 24px;flex:1;min-height:0}
 .sec{padding:14px 8px 4px;display:flex;justify-content:space-between;align-items:center}
@@ -341,7 +341,7 @@ fieldset.field legend{padding:0 6px}
   <aside class="side" id="side" aria-label="Navigation">
     <div class="ws">
       <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
-      <div><div class="name">PM Workspace</div><div class="sub">KNOLSKAPE Product</div></div>
+      <div><div class="name">KNOLSKAPE PM Desk</div><div class="sub">GENIE and 4E products</div></div>
     </div>
     <div class="side-scroll" id="sideScroll"></div>
   </aside>
@@ -366,7 +366,7 @@ fieldset.field legend{padding:0 6px}
         <div class="filter-wrap">
           <button type="button" class="btn" id="filterBtn" data-action="toggle-filter" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter</button>
           <div class="pop" id="filterPop" hidden>
-            <label>Work type<select id="f-groupFilter"><option value="all">All work</option><option value="Product">Product work</option><option value="Client">Client work</option></select></label>
+            <label>Work type<select id="f-groupFilter"><option value="all">All work</option><option value="Product">Product and platform</option><option value="Client">Client programs</option></select></label>
             <label>Status<select id="f-statusFilter"><option value="all">All statuses</option><option value="open">Open (not complete)</option><option value="backlog">Backlog</option><option value="todo">To Do</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Complete</option><option value="overdue">Overdue</option><option value="dueweek">Due in 7 days</option><option value="blocked">Blocked</option><option value="waiting">Waiting on dependencies</option></select></label>
             <button type="button" class="btn sm ghost" data-action="clear-filters">Clear all filters</button>
           </div>
@@ -388,12 +388,12 @@ fieldset.field legend{padding:0 6px}
     <div class="modal-body">
       <div class="field"><label for="f-title">Task</label><input id="f-title" placeholder="What needs to get done" autocomplete="off"></div>
       <div class="grid-2">
-        <div class="field"><label for="f-kind">Type</label><select id="f-kind"></select></div>
-        <div class="field"><label for="f-product">Product</label><select id="f-product"></select></div>
+        <div class="field"><label for="f-kind">Work type</label><select id="f-kind"></select></div>
+        <div class="field"><label for="f-product">4E product or GENIE pillar</label><select id="f-product"></select></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label for="f-client">Client</label><input id="f-client" placeholder="Leave blank for internal work" autocomplete="off"></div>
-        <div class="field"><label for="f-owner">Owner</label><select id="f-owner"></select><input id="f-ownerNew" placeholder="Name of the new team member" autocomplete="off" hidden></div>
+        <div class="field"><label for="f-client">Client account</label><input id="f-client" placeholder="Leave blank for internal product work" autocomplete="off"></div>
+        <div class="field"><label for="f-owner">Owner (PM)</label><select id="f-owner"></select><input id="f-ownerNew" placeholder="Name of the new team member" autocomplete="off" hidden></div>
       </div>
       <div class="grid-3">
         <div class="field"><label for="f-status">Status</label><select id="f-status"></select></div>
@@ -406,7 +406,7 @@ fieldset.field legend{padding:0 6px}
       </div>
       <fieldset class="field"><legend>Checklist</legend><div id="f-subtasks"></div><div><button type="button" class="btn ghost sm" data-action="add-subtask">Add item</button></div></fieldset>
       <fieldset class="field"><legend>Depends on</legend><input id="f-depfilter" placeholder="Filter tasks by name or owner" autocomplete="off" aria-label="Filter dependency list"><div id="f-deps" class="dep-list"></div></fieldset>
-      <div class="field"><label for="f-notes">Description</label><textarea id="f-notes" rows="3" placeholder="Context, links, decisions"></textarea></div>
+      <div class="field"><label for="f-notes">Description</label><textarea id="f-notes" rows="3" placeholder="Context, scope, cohort, links, decisions"></textarea></div>
       <p id="f-error" class="form-error" hidden></p>
     </div>
     <footer class="modal-foot"><button type="button" class="btn ghost" data-action="close-dialog">Cancel</button><button type="submit" class="btn primary" id="saveBtn">Save task</button></footer>
@@ -431,10 +431,29 @@ fieldset.field legend{padding:0 6px}
 
 /* ---------- Reference data ---------- */
 const KINDS = {
-  'product-dev':{label:'Product development',group:'Product'}, 'product-improve':{label:'Product improvement',group:'Product'}, 'product-other':{label:'Product task',group:'Product'},
-  'client-sim':{label:'Custom simulation',group:'Client'}, 'client-coaching':{label:'Coaching',group:'Client'}, 'client-roleplay':{label:'Role-play',group:'Client'}, 'client-other':{label:'Client task',group:'Client'},
+  '4e-dev':        {label:'4E product development',   group:'Product'},
+  '4e-enhance':    {label:'4E product enhancement',    group:'Product'},
+  'platform':      {label:'GENIE platform',            group:'Product'},
+  'catalogue':     {label:'Passport catalogue',        group:'Product'},
+  'custom-sim':    {label:'Custom Sim build',          group:'Client'},
+  'assessment':    {label:'Assessment deployment',     group:'Client'},
+  'roleplay-build':{label:'AI Roleplay build',         group:'Client'},
+  'koach-program': {label:'AI Koach program',          group:'Client'},
+  'journey':       {label:'Learning Journey design',   group:'Client'},
+  'vac':           {label:'VAC delivery',              group:'Client'},
+  'facilitation':  {label:'ILT / VILT / TTT delivery', group:'Client'},
+  'localisation':  {label:'Sim localisation',          group:'Client'},
+  'client-other':  {label:'Other client ask',          group:'Client'},
 };
-const PRODUCTS = { Evaluate:['Conversation AI','Nano AI','PitchPerfect AI'], Educate:['AI Microlearn','Interactive Learn'], Experience:['Simulations','AI RolePlay'], Enable:['AI Koach'] };
+const LEGACY_KIND = {'product-dev':'4e-dev','product-improve':'4e-enhance','product-other':'platform','client-sim':'custom-sim','client-coaching':'koach-program','client-roleplay':'roleplay-build'};
+const PRODUCTS = {
+  Evaluate:   ['Conversation AI','Nano AI','PitchPerfect AI'],
+  Educate:    ['AI Microlearn','Interactive Learn'],
+  Experience: ['Simulations','AI RolePlay'],
+  Enable:     ['AI Koach'],
+  GENIE:      ['GenieKreator','GenieOrchestrator','GenieTracker','AktivLearn+'],
+};
+const GROUP_LABEL = {Evaluate:'Evaluate', Educate:'Educate', Experience:'Experience', Enable:'Enable', GENIE:'GENIE platform'};
 const STATUS = { backlog:{label:'Backlog'}, todo:{label:'To Do'}, in_progress:{label:'In Progress'}, review:{label:'Review'}, done:{label:'Complete'} };
 const LEGACY = { not_started:'todo', blocked:'review' };
 const PRIO = {1:'P1',2:'P2',3:'P3'};
@@ -462,6 +481,7 @@ function initials(n){ const p=String(n||'?').trim().split(/\s+/); return ((p[0]|
 function avatar(name, cls){ const c=AV_COLORS[hash(name||'')%AV_COLORS.length]; return '<span class="av '+(cls||'')+'" style="background:'+c+'" title="'+esc(name||'Unassigned')+'">'+esc(initials(name))+'</span>'; }
 function norm(t){
   if (LEGACY[t.status]) t.status=LEGACY[t.status]; if (!STATUS[t.status]) t.status='todo';
+  if (LEGACY_KIND[t.kind]) t.kind=LEGACY_KIND[t.kind]; if (!KINDS[t.kind]) t.kind = t.client ? 'client-other' : '4e-dev';
   if (![1,2,3].includes(t.priority)) t.priority=2;
   if (!Array.isArray(t.activity)) t.activity=[]; if (!Array.isArray(t.updates)) t.updates=[]; if (!Array.isArray(t.subtasks)) t.subtasks=[]; if (!Array.isArray(t.dependsOn)) t.dependsOn=[];
   if (t.blocked && typeof t.blocked!=='object') t.blocked=null;
@@ -655,13 +675,13 @@ function renderSide(){
   const folder='<span class="muted">'+I.folder+'</span>';
   let html='<div class="sec"><h4>Work</h4></div><ul class="nav">';
   html+=item({action:'filter-product',data:'data-value="all"',label:'All work',n:open.length,on:f.product==='all'&&f.group==='all',icon:folder});
-  html+=item({action:'filter-group',data:'data-value="Product"',label:'Product work',n:cnt(t=>(KINDS[t.kind]||{}).group==='Product'),on:f.group==='Product',icon:folder});
-  html+=item({action:'filter-group',data:'data-value="Client"',label:'Client work',n:cnt(t=>(KINDS[t.kind]||{}).group==='Client'),on:f.group==='Client',icon:folder});
-  html+='</ul><div class="sec"><h4>Product lines</h4></div><ul class="nav">';
+  html+=item({action:'filter-group',data:'data-value="Product"',label:'Product and platform',n:cnt(t=>(KINDS[t.kind]||{}).group==='Product'),on:f.group==='Product',icon:folder});
+  html+=item({action:'filter-group',data:'data-value="Client"',label:'Client programs',n:cnt(t=>(KINDS[t.kind]||{}).group==='Client'),on:f.group==='Client',icon:folder});
+  html+='</ul><div class="sec"><h4>4E and GENIE</h4></div><ul class="nav">';
   Object.entries(PRODUCTS).forEach(([g,arr])=>{
     const isO=state.openGroups.has(g);
     const children=isO?'<ul class="sub">'+arr.map(p=>item({action:'filter-product',data:'data-value="'+esc(p)+'"',label:p,n:cnt(t=>t.product===p),on:f.product===p})).join('')+'</ul>':'';
-    html+=item({action:'toggle-group',data:'data-value="'+g+'"',label:g,n:cnt(t=>arr.includes(t.product)),on:f.product===g,exp:isO,icon:folder,children});
+    html+=item({action:'toggle-group',data:'data-value="'+g+'"',label:GROUP_LABEL[g]||g,n:cnt(t=>arr.includes(t.product)),on:f.product===g,exp:isO,icon:folder,children});
   });
   html+='</ul><div class="sec"><h4>Status</h4></div><ul class="nav">';
   Object.entries(STATUS).forEach(([k,v])=>{ html+=item({action:'filter-status',data:'data-value="'+k+'"',label:v.label,n:all.filter(t=>t.status===k).length,on:f.status===k,icon:'<span class="dot '+k+'"></span>'}); });
@@ -670,9 +690,9 @@ function renderSide(){
   html+=item({action:'filter-status',data:'data-value="dueweek"',label:'Due in 7 days',n:all.filter(isDueWeek).length,on:f.status==='dueweek',icon:'<span class="dot ring" style="color:var(--review)"></span>'});
   html+=item({action:'filter-status',data:'data-value="blocked"',label:'Blocked',n:cnt(t=>!!t.blocked),on:f.status==='blocked',icon:'<span class="dot ring" style="color:var(--todo)"></span>'});
   html+=item({action:'filter-status',data:'data-value="waiting"',label:'Waiting on others',n:cnt(t=>waitingOn(t).length>0),on:f.status==='waiting',icon:'<span class="dot ring" style="color:var(--prog)"></span>'});
-  html+='</ul><div class="sec"><h4>Team</h4>'+(state.readOnly?'':'<button type="button" data-action="team-open">'+I.edit+'Manage</button>')+'</div><ul class="nav team">';
+  html+='</ul><div class="sec"><h4>PM team</h4>'+(state.readOnly?'':'<button type="button" data-action="team-open">'+I.edit+'Manage</button>')+'</div><ul class="nav team">';
   const owners=ownerList();
-  html+= owners.length ? owners.map(o=>{ const n=cnt(t=>(t.owner||'').trim()===o), od=all.filter(t=>(t.owner||'').trim()===o&&isOverdue(t)).length; return '<li><button type="button" class="item" data-action="filter-owner" data-value="'+esc(o)+'" aria-pressed="'+(f.owner===o)+'">'+avatar(o)+'<div class="who"><b>'+esc(o)+'</b><span>'+n+' open'+(od?', '+od+' overdue':'')+'</span></div></button></li>'; }).join('') : '<li><p class="hint" style="padding:6px 10px;margin:0">Add your PMs under Manage so owners are picked from a list.</p></li>';
+  html+= owners.length ? owners.map(o=>{ const n=cnt(t=>(t.owner||'').trim()===o), od=all.filter(t=>(t.owner||'').trim()===o&&isOverdue(t)).length; return '<li><button type="button" class="item" data-action="filter-owner" data-value="'+esc(o)+'" aria-pressed="'+(f.owner===o)+'">'+avatar(o)+'<div class="who"><b>'+esc(o)+'</b><span>'+n+' open'+(od?', '+od+' overdue':'')+'</span></div></button></li>'; }).join('') : '<li><p class="hint" style="padding:6px 10px;margin:0">Add the PMs under Manage so owners are picked from a list.</p></li>';
   html+='</ul>';
   $('#sideScroll').innerHTML=html;
 }
@@ -681,16 +701,16 @@ function renderActiveFilters(){
   const chip=(k,l)=>'<span class="af">'+esc(l)+'<button type="button" data-action="drop-filter" data-key="'+k+'" aria-label="Remove filter">'+I.x+'</button></span>';
   if (f.owner!=='all') chips.push(chip('owner','Owner: '+f.owner));
   if (f.product!=='all') chips.push(chip('product','Product: '+f.product));
-  if (f.group!=='all') chips.push(chip('group',f.group+' work'));
+  if (f.group!=='all') chips.push(chip('group', f.group==='Product'?'Product and platform':'Client programs'));
   if (f.status!=='all') chips.push(chip('status','Status: '+({open:'Open',overdue:'Overdue',dueweek:'Due in 7 days',blocked:'Blocked',waiting:'Waiting on others'}[f.status]||(STATUS[f.status]||{}).label)));
   if (f.q) chips.push(chip('q','Search: '+f.q));
   const el=$('#activeFilters'); el.hidden=!chips.length; el.innerHTML=chips.length?'<span class="muted">Showing</span>'+chips.join('')+'<button type="button" class="clear" data-action="clear-filters">Clear all</button>':'';
 }
 function renderBanner(){
   const ex=[...state.tasks.values()].filter(t=>t.example);
-  $('#banner').innerHTML = ex.length ? '<div class="banner"><span>The dashed <b>Example</b> tasks show how the board works. Edit one to keep it, or remove them all when your real tasks are in.</span><button type="button" class="btn sm" data-action="remove-examples">Remove '+ex.length+' example tasks</button></div>' : '';
+  $('#banner').innerHTML = ex.length ? '<div class="banner"><span>The dashed <b>Example</b> tasks show how the desk works. Edit one to keep it, or remove them all when your real tasks are in.</span><button type="button" class="btn sm" data-action="remove-examples">Remove '+ex.length+' example tasks</button></div>' : '';
 }
-function emptyState(){ return '<div class="empty"><h3>No tasks yet</h3><p>Add your team under Manage, then create the first task. Or load a few example tasks to see how the board works.</p><div class="btns"><button type="button" class="btn primary" data-action="new">New Task</button><button type="button" class="btn" data-action="load-examples">Load example tasks</button></div></div>'; }
+function emptyState(){ return '<div class="empty"><h3>No tasks yet</h3><p>Add the PM team under Manage, then create the first task. Or load a few example tasks to see how the board works.</p><div class="btns"><button type="button" class="btn primary" data-action="new">New Task</button><button type="button" class="btn" data-action="load-examples">Load example tasks</button></div></div>'; }
 function segsHTML(t){
   const p=subProgress(t);
   if (!p.total) return '';
@@ -796,12 +816,12 @@ function renderReport(){
     else body=arr.map(line).join('');
     return '<section class="rsec"><h3><span class="dot '+cls+'"></span>'+title+'<span class="count '+cls+'">'+arr.length+'</span></h3>'+body+'</section>';
   };
-  const scope=[state.filters.owner!=='all'?state.filters.owner:'', state.filters.product!=='all'?state.filters.product:'', state.filters.group!=='all'?state.filters.group+' work':''].filter(Boolean).join(', ');
+  const scope=[state.filters.owner!=='all'?state.filters.owner:'', state.filters.product!=='all'?state.filters.product:'', state.filters.group!=='all'?(state.filters.group==='Product'?'Product and platform':'Client programs'):''].filter(Boolean).join(', ');
   return '<div class="report" id="report">'+
     '<div class="rep-bar"><span class="week"><button type="button" class="icon-btn" data-action="week" data-dir="-1" aria-label="Previous week">'+I.left+'</button><b>'+label+(isCur?' (this week)':'')+'</b><button type="button" class="icon-btn" data-action="week" data-dir="1" aria-label="Next week">'+I.right+'</button></span>'+(isCur?'':'<button type="button" class="btn sm ghost" data-action="week" data-dir="0">This week</button>')+
       '<span class="seg"><button type="button" data-action="report-by" data-value="all" aria-pressed="'+(state.reportBy==='all')+'">All tasks</button><button type="button" data-action="report-by" data-value="pm" aria-pressed="'+(state.reportBy==='pm')+'">By PM</button></span><span class="spacer"></span>'+
       '<button type="button" class="btn sm" data-action="copy-report">'+I.copy+'Copy as text</button><button type="button" class="btn sm" data-action="print-report">'+I.print+'Print</button><button type="button" class="btn sm" data-action="export-csv">'+I.dl+'Export CSV</button></div>'+
-    '<p class="rep-meta">'+(scope?'Scope: '+esc(scope)+'. ':'Scope: all PMs. ')+'Generated '+esc(fmtTs(new Date().toISOString()))+'. Completed counts use the date a task was moved to Complete.</p>'+
+    '<p class="rep-meta">'+(scope?'Scope: '+esc(scope)+'. ':'Scope: all PMs, product and client programs. ')+'Generated '+esc(fmtTs(new Date().toISOString()))+'. Completed counts use the date a task was moved to Complete.</p>'+
     '<div class="stats">'+stat('Completed',R.completed.length,'good')+stat('In progress',R.inprog.length,'prog')+stat('Slipped or late',R.late.length,'crit')+stat('Blocked',R.blocked.length,'crit')+stat('New this week',R.fresh.length,'prog')+stat('Backlog',R.backlog.length,'')+'</div>'+
     section('Completed this week',R.completed,'done','Nothing was moved to Complete this week.')+
     section('In progress',R.inprog,'in_progress','No tasks in progress or review.')+
@@ -815,7 +835,7 @@ function renderReport(){
 function reportText(){
   const R=reportData(); const L=[];
   const wk=R.ws.getDate()+' '+MON[R.ws.getMonth()]+' to '+R.we.getDate()+' '+MON[R.we.getMonth()]+' '+R.we.getFullYear();
-  L.push('PM WEEKLY REPORT, week of '+wk); L.push('');
+  L.push('KNOLSKAPE PM WEEKLY REPORT, week of '+wk); L.push('');
   L.push('Completed: '+R.completed.length+' | In progress: '+R.inprog.length+' | Slipped or late: '+R.late.length+' | Blocked: '+R.blocked.length+' | New: '+R.fresh.length+' | Backlog: '+R.backlog.length); L.push('');
   const line=t=>{ const p=subProgress(t), slip=slipDays(t), ups=R.updatesFor(t); let s='- '+t.title+' ('+(t.owner||'Unassigned')+', '+STATUS[t.status].label+(t.priority===1?', P1':'')+', '+fmtRange(t.start,t.end)+(p.total?', '+p.done+'/'+p.total+' items':'')+(slip?', slipped +'+slip+'d from '+fmtD(t.endOriginal):'')+(isOverdue(t)?', overdue':'')+(t.blocked&&t.status!=='done'?', blocked: '+(t.blocked.reason||''):'')+')'; ups.forEach(u=>{ s+='\n    Update ('+fmtTs(u.at)+'): '+u.text; }); return s; };
   const sec=(title,arr,none)=>{ L.push(title.toUpperCase()+' ('+arr.length+')'); if(!arr.length) L.push('  '+none); else if (state.reportBy==='pm') { const by={}; arr.forEach(t=>{ const o=t.owner||'Unassigned'; (by[o]=by[o]||[]).push(t); }); Object.keys(by).sort().forEach(o=>{ L.push('  '+o+':'); by[o].forEach(t=>L.push('  '+line(t))); }); } else arr.forEach(t=>L.push(line(t))); L.push(''); };
@@ -824,7 +844,7 @@ function reportText(){
 }
 function csvText(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=[['Title','Status','Priority','Owner','Type','Product','Client','Start','End','Original end','Slip days','Checklist done','Checklist total','Blocked reason','Depends on','Latest update','Completed at','Created at']];
+  const rows=[['Task','Status','Priority','Owner (PM)','Work type','4E product / GENIE pillar','Client account','Start','End','Original end','Slip days','Checklist done','Checklist total','Blocked reason','Depends on','Latest update','Completed at','Created at']];
   filtered(true).forEach(t=>{ const p=subProgress(t); const u=t.updates[t.updates.length-1]; rows.push([t.title,STATUS[t.status].label,PRIO[t.priority],t.owner,(KINDS[t.kind]||{}).label,t.product,t.client,t.start,t.end,t.endOriginal,slipDays(t),p.done,p.total,t.blocked?t.blocked.reason:'',depsOf(t).map(d=>d.title).join('; '),u?u.text:'',t.completedAt||'',t.createdAt||'']); });
   return rows.map(r=>r.map(q).join(',')).join('\r\n');
 }
@@ -851,16 +871,16 @@ function renderDrawer(){
     '<div class="dr-head"><div class="chips">'+tagChips(t,true)+'</div><button type="button" class="x-btn" data-action="close-drawer" aria-label="Close">'+I.x+'</button></div>'+
     '<div class="dr-body"><h2>'+esc(t.title)+'</h2>'+
       (t.blocked&&t.status!=='done'?'<div class="blk-box"><b>Blocked since '+esc(fmtTs(t.blocked.since))+'</b><span>'+esc(t.blocked.reason||'No reason given')+'</span>'+(ro?'':'<div><button type="button" class="btn sm" data-action="unblock" data-id="'+esc(t.id)+'">Unblock</button></div>')+'</div>':'')+
-      (state.blockForm&&!ro?'<form class="blk-form" data-action="block-submit" data-id="'+esc(t.id)+'"><input id="blk-reason" placeholder="Why is it blocked? e.g. waiting on client sign-off" autocomplete="off"><button type="submit" class="btn sm danger">Mark blocked</button></form>':'')+
+      (state.blockForm&&!ro?'<form class="blk-form" data-action="block-submit" data-id="'+esc(t.id)+'"><input id="blk-reason" placeholder="Why is it blocked? e.g. waiting on client sign-off on the storyline" autocomplete="off"><button type="submit" class="btn sm danger">Mark blocked</button></form>':'')+
       '<dl class="dl"><dt>Status</dt><dd><span class="chip '+t.status+'">'+STATUS[t.status].label+'</span>'+(due?'<span class="badge '+due.cls+'">'+esc(due.text)+'</span>':'')+'</dd>'+
       '<dt>Owner</dt><dd>'+avatar(t.owner,'sm')+'<span>'+esc(t.owner||'Unassigned')+'</span></dd>'+
       '<dt>Priority</dt><dd><span class="chip p'+t.priority+'">'+PRIO[t.priority]+'</span><span class="muted">'+({1:'urgent',2:'normal',3:'low'}[t.priority])+'</span></dd>'+
       '<dt>Dates</dt><dd>'+I.cal+'<span>'+esc(fmtRange(t.start,t.end))+'</span>'+(dur?'<span class="muted">'+dur+' days</span>':'')+(slip?'<span class="badge warn">Slipped +'+slip+'d, originally '+esc(fmtD(t.endOriginal))+'</span>':'')+'</dd>'+
-      '<dt>Type</dt><dd>'+esc(k.label)+(t.product?', '+esc(t.product):'')+(t.client?', '+esc(t.client):'')+'</dd>'+
+      '<dt>Work type</dt><dd>'+esc(k.label)+(t.product?', '+esc(t.product):'')+(t.client?', '+esc(t.client):'')+'</dd>'+
       (t.completedAt?'<dt>Completed</dt><dd>'+esc(fmtTs(t.completedAt))+'</dd>':'')+'</dl>'+
       (t.notes?'<section><h4>Description</h4><p class="notes">'+esc(t.notes)+'</p></section>':'')+
       '<section class="upd"><h4>Weekly update <span class="count">'+(t.updates.length?t.updates.length+' so far':'')+'</span></h4>'+
-        (ro?'':'<form data-action="update-submit" data-id="'+esc(t.id)+'"><textarea id="upd-text" placeholder="Two lines on what moved this week and what is next"></textarea><div class="row"><span class="hint">Pulled into the Weekly Report for the week it is written.</span><button type="submit" class="btn sm primary">Save update</button></div></form>')+
+        (ro?'':'<form data-action="update-submit" data-id="'+esc(t.id)+'"><textarea id="upd-text" placeholder="Two lines for the weekly report: what moved, what is next"></textarea><div class="row"><span class="hint">Pulled into the Weekly Report for the week it is written.</span><button type="submit" class="btn sm primary">Save update</button></div></form>')+
         (t.updates.length?'<ul class="upd-list">'+t.updates.slice().reverse().slice(0,6).map(u=>'<li><b>'+who(u.by)+', '+esc(fmtTs(u.at))+'</b>'+esc(u.text)+'</li>').join('')+'</ul>':'')+'</section>'+
       '<section class="check"><h4>Checklist <span class="count">'+(p.total?p.done+' of '+p.total+' done':'No items')+'</span></h4>'+(p.total?segsHTML(t)+'<div style="height:10px"></div><ul>'+t.subtasks.map(s=>'<li class="'+(s.done?'on':'')+'"><label><input type="checkbox" data-action="toggle-sub" data-id="'+esc(t.id)+'" data-sub="'+esc(s.id)+'" '+(s.done?'checked':'')+' '+(ro?'disabled':'')+'><span>'+esc(s.text)+'</span></label></li>').join('')+'</ul>':'<p class="hint">Edit the task to add checklist items.</p>')+'</section>'+
       '<section class="deps"><h4>Depends on'+(wait.length?' <span class="count">'+wait.length+' unfinished</span>':'')+'</h4>'+(deps.length?'<ul>'+deps.map(d=>li(d,STATUS[d.status].label+', ends '+fmtD(d.end))).join('')+'</ul>':'<p class="hint">Nothing. This task can start any time.</p>')+
@@ -876,8 +896,8 @@ function renderDrawer(){
 /* ---------- Task dialog ---------- */
 const dlg=$('#taskDialog'), form=$('#taskForm');
 function fillSelects(){
-  $('#f-kind').innerHTML=['Product','Client'].map(g=>'<optgroup label="'+g+' work">'+Object.entries(KINDS).filter(([,v])=>v.group===g).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join('')+'</optgroup>').join('');
-  $('#f-product').innerHTML='<option value="">Not product specific</option>'+Object.entries(PRODUCTS).map(([g,arr])=>'<optgroup label="'+g+'">'+arr.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('')+'</optgroup>').join('');
+  $('#f-kind').innerHTML=['Product','Client'].map(g=>'<optgroup label="'+(g==='Product'?'Product and platform':'Client programs')+'">'+Object.entries(KINDS).filter(([,v])=>v.group===g).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join('')+'</optgroup>').join('');
+  $('#f-product').innerHTML='<option value="">Not product specific</option>'+Object.entries(PRODUCTS).map(([g,arr])=>'<optgroup label="'+(GROUP_LABEL[g]||g)+'">'+arr.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('')+'</optgroup>').join('');
   $('#f-status').innerHTML=Object.entries(STATUS).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join('');
 }
 function fillOwnerSelect(current){
@@ -892,7 +912,7 @@ function openDialog(task, presetStatus){
   $('#dialogTitle').textContent=task?'Edit task':'New task'; $('#saveBtn').textContent=task?'Save changes':'Create task'; $('#f-error').hidden=true;
   const t=task||{}, f=state.filters;
   $('#f-title').value=t.title||'';
-  $('#f-kind').value=t.kind||(f.group==='Client'?'client-sim':'product-dev');
+  $('#f-kind').value=t.kind||(f.group==='Client'?'custom-sim':'4e-dev');
   $('#f-product').value=t.product||(f.product!=='all'&&!PRODUCTS[f.product]?f.product:'');
   $('#f-client').value=t.client||'';
   fillOwnerSelect(t.owner||(f.owner!=='all'?f.owner:(state.team.length===1?state.team[0]:'')));
@@ -925,7 +945,7 @@ function readForm(){
   return { title:$('#f-title').value.trim(), kind:$('#f-kind').value, product:$('#f-product').value, client:$('#f-client').value.trim(), owner, newOwner: ownerSel==='__new', status:$('#f-status').value, priority:Number($('#f-priority').value)||2, start:$('#f-start').value, end:$('#f-end').value, notes:$('#f-notes').value.trim(), subtasks:subs, dependsOn:deps };
 }
 function validate(v){
-  if(!v.title) return 'Give the task a name.'; if(!v.owner) return 'Every task needs an owner.';
+  if(!v.title) return 'Give the task a name.'; if(!v.owner) return 'Every task needs a PM as owner.';
   if (v.status!=='backlog') { if(!parseD(v.start)) return 'Pick a start date, or put the task in Backlog.'; if(!parseD(v.end)) return 'Pick an end date, or put the task in Backlog.'; }
   if(parseD(v.start)&&parseD(v.end)&&parseD(v.end)<parseD(v.start)) return 'The end date is before the start date.'; return null;
 }
@@ -965,13 +985,13 @@ function sampleTasks(){
   const a=uid('t_'),b=uid('t_'),c=uid('t_'),e=uid('t_'),f=uid('t_'),g=uid('t_'),h=uid('t_');
   const base={example:true,createdAt:now,updatedAt:now,activity:[],updates:[],blocked:null};
   return [
-    Object.assign({},base,{id:a,title:'Nano AI: adaptive question bank v2',kind:'product-dev',product:'Nano AI',client:'',owner:'Asha Menon',status:'in_progress',priority:1,start:d(-10),end:d(18),endOriginal:d(18),notes:'Scope agreed with engineering. Item difficulty model needs a review before the beta cohort.',subtasks:[S('Write PRD and acceptance criteria',1),S('Review item difficulty model with data team',1),S('Build beta question bank (120 items)'),S('Run beta with two client cohorts'),S('Publish release notes')],dependsOn:[]}),
-    Object.assign({},base,{id:b,title:'AI RolePlay: feedback report redesign',kind:'product-improve',product:'AI RolePlay',client:'',owner:'Rohan Iyer',status:'review',priority:2,start:d(-20),end:d(5),endOriginal:d(-2),notes:'Learners find the current report too long. Target: one page, three strengths, three gaps.',subtasks:[S('Collect feedback from 5 facilitators',1),S('Wireframe the one-page report',1),S('Usability test with 3 learners',1),S('Handover to design system team')],dependsOn:[]}),
-    Object.assign({},base,{id:c,title:'Custom simulation for a banking client: leading through change',kind:'client-sim',product:'Simulations',client:'Banking client',owner:'Meera Shah',status:'todo',priority:1,start:d(-5),end:d(30),endOriginal:d(30),notes:'Needs the redesigned feedback report so the debrief format matches.',subtasks:[S('Discovery workshop with L&D head'),S('Draft scenario storyline'),S('Client sign-off on scenario'),S('Configure simulation in GenieKreator'),S('Pilot with 12 managers')],dependsOn:[b]}),
-    Object.assign({},base,{id:e,title:'AI Koach cohort setup for a pharma client',kind:'client-coaching',product:'AI Koach',client:'Pharma client',owner:'Asha Menon',status:'todo',priority:2,start:d(3),end:d(25),endOriginal:d(25),notes:'',subtasks:[S('Map 6 coaching themes to competency framework'),S('Load 40 learner profiles'),S('Kick-off call with client sponsor')],dependsOn:[a]}),
-    Object.assign({},base,{id:f,title:'PitchPerfect AI: scoring rubric review',kind:'product-other',product:'PitchPerfect AI',client:'',owner:'Rohan Iyer',status:'done',priority:2,start:d(-30),end:d(-3),endOriginal:d(-3),completedAt:new Date(Date.now()-2*DAY).toISOString(),notes:'Rubric v3 approved.',subtasks:[S('Benchmark against 20 recorded pitches',1),S('Calibrate with two sales trainers',1),S('Update rubric in product',1)],dependsOn:[]}),
-    Object.assign({},base,{id:g,title:'Role-play scripts for a retail client onboarding',kind:'client-roleplay',product:'AI RolePlay',client:'Retail client',owner:'Meera Shah',status:'in_progress',priority:2,start:d(-12),end:d(-1),endOriginal:d(-1),notes:'Client asked for two extra scripts on returns handling.',blocked:{reason:'Waiting on client to confirm the returns policy wording',since:new Date(Date.now()-3*DAY).toISOString()},subtasks:[S('Write 4 store-floor scripts',1),S('Add 2 returns-handling scripts'),S('Client review')],dependsOn:[]}),
-    Object.assign({},base,{id:h,title:'Conversation AI: Hindi language support',kind:'product-dev',product:'Conversation AI',client:'',owner:'Asha Menon',status:'backlog',priority:3,start:'',end:'',endOriginal:null,notes:'Requested by two enterprise accounts. Needs sizing.',subtasks:[],dependsOn:[]}),
+    Object.assign({},base,{id:a,title:'Nano AI: adaptive question bank v2',kind:'4e-dev',product:'Nano AI',client:'',owner:'Asha Menon',status:'in_progress',priority:1,start:d(-10),end:d(18),endOriginal:d(18),notes:'Scope agreed with engineering. Item difficulty model needs a review before the beta cohort.',subtasks:[S('Write PRD and acceptance criteria',1),S('Review item difficulty model with data team',1),S('Build beta question bank (120 items)'),S('Run beta with two client cohorts'),S('Publish release notes')],dependsOn:[]}),
+    Object.assign({},base,{id:b,title:'AI RolePlay: learner feedback report redesign',kind:'4e-enhance',product:'AI RolePlay',client:'',owner:'Rohan Iyer',status:'review',priority:2,start:d(-20),end:d(5),endOriginal:d(-2),notes:'Facilitators find the current report too long for debriefs. Target: one page, three strengths, three gaps.',subtasks:[S('Collect feedback from 5 facilitators',1),S('Wireframe the one-page report',1),S('Usability test with 3 learners',1),S('Handover to design system team')],dependsOn:[]}),
+    Object.assign({},base,{id:c,title:'Custom Sim for a banking client: leading through change (MM cohort)',kind:'custom-sim',product:'Simulations',client:'Banking client',owner:'Meera Shah',status:'todo',priority:1,start:d(-5),end:d(30),endOriginal:d(30),notes:'Needs the redesigned AI RolePlay feedback report so the debrief format matches across the journey.',subtasks:[S('Discovery workshop with L&D head'),S('Draft scenario storyline'),S('Client sign-off on storyline'),S('Configure the sim in GenieKreator'),S('Pilot with a cohort of 12 middle managers')],dependsOn:[b]}),
+    Object.assign({},base,{id:e,title:'AI Koach program setup for a pharma client (FTM cohort)',kind:'koach-program',product:'AI Koach',client:'Pharma client',owner:'Asha Menon',status:'todo',priority:2,start:d(3),end:d(25),endOriginal:d(25),notes:'',subtasks:[S('Map 6 coaching themes to the client competency framework'),S('Load 40 participant profiles'),S('Kick-off call with client sponsor')],dependsOn:[a]}),
+    Object.assign({},base,{id:f,title:'PitchPerfect AI: scoring rubric calibration',kind:'4e-dev',product:'PitchPerfect AI',client:'',owner:'Rohan Iyer',status:'done',priority:2,start:d(-30),end:d(-3),endOriginal:d(-3),completedAt:new Date(Date.now()-2*DAY).toISOString(),notes:'Rubric v3 approved.',subtasks:[S('Benchmark against 20 recorded pitches',1),S('Calibrate with two sales trainers',1),S('Update rubric in product',1)],dependsOn:[]}),
+    Object.assign({},base,{id:g,title:'AI Roleplay build for a retail client: store onboarding scenarios',kind:'roleplay-build',product:'AI RolePlay',client:'Retail client',owner:'Meera Shah',status:'in_progress',priority:2,start:d(-12),end:d(-1),endOriginal:d(-1),notes:'Client asked for two extra scenarios on returns handling.',blocked:{reason:'Waiting on client to confirm the returns policy wording',since:new Date(Date.now()-3*DAY).toISOString()},subtasks:[S('Write 4 store-floor scenarios',1),S('Add 2 returns-handling scenarios'),S('Client review')],dependsOn:[]}),
+    Object.assign({},base,{id:h,title:'Conversation AI: Hindi language support',kind:'4e-dev',product:'Conversation AI',client:'',owner:'Asha Menon',status:'backlog',priority:3,start:'',end:'',endOriginal:null,notes:'Requested by two enterprise accounts. Needs sizing with engineering.',subtasks:[],dependsOn:[]}),
   ];
 }
 

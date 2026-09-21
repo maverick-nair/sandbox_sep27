@@ -1,4 +1,4 @@
-# PM Task Tracker
+# KNOLSKAPE PM Desk
 
 A single-file web app for tracking the work assigned to product managers: product development, product improvements, and client work such as custom simulations, coaching programs and role-plays.
 
@@ -22,10 +22,10 @@ The first time the board is empty it offers to load example tasks. They are mark
 | Field | Notes |
 | --- | --- |
 | Task | Short name of the work |
-| Type | Product development, Product improvement, Product task, Custom simulation, Coaching, Role-play, Client task |
-| Product | Optional. One of the 4E product lines: Evaluate (Conversation AI, Nano AI, PitchPerfect AI), Educate (AI Microlearn, Interactive Learn), Experience (Simulations, AI RolePlay), Enable (AI Koach) |
-| Client | Optional. Blank for internal work |
-| Owner | The PM responsible |
+| Work type | Product and platform: 4E product development, 4E product enhancement, GENIE platform, Passport catalogue. Client programs: Custom Sim build, Assessment deployment, AI Roleplay build, AI Koach program, Learning Journey design, VAC delivery, ILT / VILT / TTT delivery, Sim localisation, Other client ask |
+| 4E product or GENIE pillar | Optional. Evaluate: Conversation AI, Nano AI, PitchPerfect AI. Educate: AI Microlearn, Interactive Learn. Experience: Simulations, AI RolePlay. Enable: AI Koach. GENIE platform: GenieKreator, GenieOrchestrator, GenieTracker, AktivLearn+ |
+| Client account | Optional. Blank for internal product work |
+| Owner (PM) | Picked from the PM team roster |
 | Status | Backlog, To Do, In Progress, Review, Complete. Drag a card between columns to change it |
 | Priority | P1 urgent, P2 normal, P3 low |
 | Blocked | Optional flag with a reason and the date it was set, independent of status |
@@ -43,7 +43,7 @@ One document per task in the `tasks` collection, plus `settings/team` holding `{
 ```json
 {
   "title": "Nano AI: adaptive question bank v2",
-  "kind": "product-dev",
+  "kind": "4e-dev",
   "product": "Nano AI",
   "client": "",
   "owner": "Asha",
