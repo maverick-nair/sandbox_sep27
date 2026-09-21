@@ -2,7 +2,9 @@
 
 A single-file web app for tracking the work assigned to product managers: product development, product improvements, and client work such as custom simulations, coaching programs and role-plays.
 
-Every task records a **start date and an end date**, an **owner**, a **checklist of subtasks**, and **dependencies** on other tasks. The board shows what is overdue, what is due this week, and what is waiting on an unfinished dependency. A timeline view plots every task as a bar between its start and end dates, with today marked.
+Every task records a **start date and an end date**, an **owner**, a **checklist of subtasks**, and **dependencies** on other tasks.
+
+The main view is a **Kanban board** with To Do, In Progress, Review and Complete columns. Cards show tags, a description, a segmented checklist progress bar, the date range with a due badge, the owner avatar and dependency counts. Drag a card to another column to change its status, or use the card menu. Clicking a card opens a detail drawer with the checklist, dependencies and what the task blocks. The sidebar filters by work type, 4E product line, status, attention (overdue, due in 7 days, waiting on others) and team member. **List** and **Timeline** views show the same tasks as a table and as bars between start and end dates.
 
 ## Using it
 
@@ -20,7 +22,7 @@ The first time the board is empty it offers to load example tasks. They are mark
 | Product | Optional. One of the 4E product lines: Evaluate (Conversation AI, Nano AI, PitchPerfect AI), Educate (AI Microlearn, Interactive Learn), Experience (Simulations, AI RolePlay), Enable (AI Koach) |
 | Client | Optional. Blank for internal work |
 | Owner | The PM responsible |
-| Status | Not started, In progress, Blocked, Done |
+| Status | To Do, In Progress, Review, Complete. Drag a card between Kanban columns to change it |
 | Start and end date | Required |
 | Checklist | Subtasks, each with a done checkbox |
 | Depends on | Other tasks that must finish first. Circular dependencies are prevented |
