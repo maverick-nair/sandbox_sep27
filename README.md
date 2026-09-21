@@ -1,3 +1,10 @@
+# KNOLSKAPE product sandbox
+
+Two browser based products live in this repository:
+
+- **LAUNCH WINDOW** (this directory): the KNOLSKAPE AI Product Management sandbox described below.
+- **NanoAI Authoring** (`nanoai-authoring/`): the authoring platform for NanoAI, the scenario based micro assessment in the Evaluate portfolio. Built from the NanoAI Product Requirements Document; authoring scope only. See `nanoai-authoring/README.md` to run it.
+
 # LAUNCH WINDOW
 
 The KNOLSKAPE AI Product Management sandbox. A browser-based, gamified capstone in which the learner joins Helios Works as its first AI Product Manager and has one quarter (eight sprints) to take "Helios Assist" from idea to a governed, profitable launch.
