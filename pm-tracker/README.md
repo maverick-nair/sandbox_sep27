@@ -4,7 +4,11 @@ A single-file web app for tracking the work assigned to product managers: produc
 
 Every task records a **start date and an end date**, an **owner**, a **checklist of subtasks**, and **dependencies** on other tasks.
 
-The main view is a **Kanban board** with To Do, In Progress, Review and Complete columns. Cards show tags, a description, a segmented checklist progress bar, the date range with a due badge, the owner avatar and dependency counts. Drag a card to another column to change its status, or use the card menu. Clicking a card opens a detail drawer with the checklist, dependencies and what the task blocks. The sidebar filters by work type, 4E product line, status, attention (overdue, due in 7 days, waiting on others) and team member. **List** and **Timeline** views show the same tasks as a table and as bars between start and end dates.
+The main view is a **Board** with Backlog, To Do, In Progress, Review and Complete columns. Cards show the product or type, client, priority (P1 highlighted), a segmented checklist bar, the date range with due, late-start or blocked badges, and the owner. Drag a card to another column to change status, or use the card menu. Clicking a card opens a detail drawer with a weekly update box, checklist, dependencies, blocked reason and the full activity log.
+
+The **Weekly Report** tab builds the report for any week: completed, in progress, slipped or late, blocked, due next week, new this week and backlog, with the weekly updates written that week. It can be grouped by PM, copied as text, printed or exported as CSV.
+
+**List** and **Timeline** show the same tasks as a table and as bars between start and end dates. The sidebar filters by work type, 4E product line, status, attention (overdue, due in 7 days, blocked, waiting on others) and team member. Owners are picked from a team roster managed in the sidebar.
 
 ## Using it
 
@@ -22,15 +26,19 @@ The first time the board is empty it offers to load example tasks. They are mark
 | Product | Optional. One of the 4E product lines: Evaluate (Conversation AI, Nano AI, PitchPerfect AI), Educate (AI Microlearn, Interactive Learn), Experience (Simulations, AI RolePlay), Enable (AI Koach) |
 | Client | Optional. Blank for internal work |
 | Owner | The PM responsible |
-| Status | To Do, In Progress, Review, Complete. Drag a card between Kanban columns to change it |
-| Start and end date | Required |
+| Status | Backlog, To Do, In Progress, Review, Complete. Drag a card between columns to change it |
+| Priority | P1 urgent, P2 normal, P3 low |
+| Blocked | Optional flag with a reason and the date it was set, independent of status |
+| Weekly updates | Short notes per task, pulled into the Weekly Report for the week they were written |
+| Activity | Automatic log of status, date, owner, checklist and blocked changes with time and actor |
+| Start and end date | Required unless the task is in Backlog. The first scheduled end date is kept so slippage can be reported |
 | Checklist | Subtasks, each with a done checkbox |
 | Depends on | Other tasks that must finish first. Circular dependencies are prevented |
 | Notes | Free text |
 
 ## Data model
 
-One document per task in the `tasks` collection:
+One document per task in the `tasks` collection, plus `settings/team` holding `{ "members": ["Asha Menon", ...] }`:
 
 ```json
 {
@@ -40,6 +48,12 @@ One document per task in the `tasks` collection:
   "client": "",
   "owner": "Asha",
   "status": "in_progress",
+  "priority": 2,
+  "endOriginal": "2026-10-09",
+  "blocked": null,
+  "updates": [{ "at": "2026-09-21T10:00:00.000Z", "by": "<viewer id>", "text": "Beta bank half built." }],
+  "activity": [{ "at": "2026-09-21T10:00:00.000Z", "by": "<viewer id>", "type": "status", "text": "Moved from To Do to In Progress" }],
+  "completedAt": null,
   "start": "2026-09-11",
   "end": "2026-10-09",
   "notes": "",
