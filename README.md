@@ -2,6 +2,10 @@
 
 The KNOLSKAPE AI Product Management sandbox. A browser-based, gamified capstone in which the learner joins Helios Works as its first AI Product Manager and has one quarter (eight sprints) to take "Helios Assist" from idea to a governed, profitable launch.
 
+## PM Task Tracker
+
+`pm-tracker/index.html` is a separate single-file app for tracking tasks assigned to product managers (dates, owner, checklist, dependencies). See `pm-tracker/README.md`.
+
 ## Run
 
 ```
