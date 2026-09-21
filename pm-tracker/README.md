@@ -64,4 +64,10 @@ One document per task in the `tasks` collection, plus `settings/team` holding `{
 }
 ```
 
+## Accessibility and quality
+
+Audited with axe-core against WCAG 2.2 AA on phone, tablet, laptop and desktop widths in light and dark themes. Colour tokens meet 4.5:1 for text and 3:1 for the progress track. The task drawer is a modal dialog with focus trapping and focus return, the card menu is keyboard navigable, tabs use proper tab roles, form errors are announced, and every card, list row, report line and timeline bar is a real button. Drag and drop always has a menu or dropdown alternative.
+
+Writes to the shared database send only changed fields, so two PMs editing different parts of one task no longer overwrite each other. Deleting a task is a soft delete with Undo. Deleted tasks sit under Recently deleted for 30 days and can be restored or removed permanently. Text being typed in the drawer survives live updates from other viewers.
+
 No build step and no dependencies. Fonts load from Google Fonts with a system fallback.
