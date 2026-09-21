@@ -8,7 +8,7 @@ The main view is a **Board** with Backlog, To Do, In Progress, Review and Comple
 
 The **Weekly Report** tab builds the report for any week: completed, in progress, slipped or late, blocked, due next week, new this week and backlog, with the weekly updates written that week. It can be grouped by PM, copied as text, printed or exported as CSV.
 
-**List** and **Timeline** show the same tasks as a table and as bars between start and end dates. The sidebar filters by work type, 4E product line, status, attention (overdue, due in 7 days, blocked, waiting on others) and team member. Owners are picked from a team roster managed in the sidebar.
+**List** and **Timeline** show the same tasks as a table and as bars between start and end dates. The sidebar holds only the work streams (all, product and platform, client programs) and the PM team. A status card above the task list shows counts for each status and for attention items (overdue, due in 7 days, blocked, waiting on others, recently deleted), and each count is a one-click filter. The 4E product or GENIE pillar filter lives in the Filter popover. Owners are picked from a team roster managed in the sidebar.
 
 ## Using it
 

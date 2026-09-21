@@ -45,7 +45,7 @@ svg{display:block;flex:none}
 [hidden]{display:none!important}
 
 /* Shell */
-.app{display:grid;grid-template-columns:264px minmax(0,1fr);height:100%;background:var(--surface)}
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);height:100%;background:var(--surface)}
 .side{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--surface)}
 .ws{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .ws .logo{width:40px;height:40px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none}
@@ -112,6 +112,19 @@ svg{display:block;flex:none}
 .active-filters .af{display:inline-flex;align-items:center;gap:6px;background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:3px 6px 3px 10px;font-weight:500}
 .active-filters .af button{border:0;background:transparent;color:inherit;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;padding:0}
 .active-filters .clear{border:0;background:none;color:var(--muted);text-decoration:underline;padding:0 4px}
+/* Status card */
+.status-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:6px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px}
+.st-btn{border:0;background:transparent;border-radius:8px;padding:7px 10px;display:inline-flex;align-items:center;gap:8px;color:var(--ink-2);font-weight:500;font-size:13px;min-height:36px}
+.st-btn .n{font-weight:700;color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums}
+.st-btn:hover{background:var(--surface-2)}
+.st-btn[aria-pressed="true"]{background:var(--primary-soft);color:var(--primary)}
+.st-btn[aria-pressed="true"] .n{color:var(--primary)}
+.st-btn.att{font-size:12.5px;padding:6px 10px}
+.st-btn.att .n{font-size:13px}
+.st-btn.att.zero{color:var(--muted)} .st-btn.att.zero .n{color:var(--muted);font-weight:500}
+.st-sep{width:1px;height:22px;background:var(--line);margin:0 6px}
+.st-sep.brk{display:none}
+@media (max-width: 900px){ .st-sep.brk{display:block;flex-basis:100%;height:1px;width:100%;margin:4px 0} .st-sep.mid{display:none} }
 .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--primary-soft);color:var(--ink);border-radius:var(--r);padding:10px 14px;font-size:13px}
 
 /* Kanban */
@@ -375,12 +388,14 @@ fieldset.field legend{padding:0 6px}
           <button type="button" class="btn" id="filterBtn" data-action="toggle-filter" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter</button>
           <div class="pop" id="filterPop" hidden>
             <label>Work type<select id="f-groupFilter"><option value="all">All work</option><option value="Product">Product and platform</option><option value="Client">Client programs</option></select></label>
+            <label>4E product or GENIE pillar<select id="f-productFilter"><option value="all">All products</option></select></label>
             <label>Status<select id="f-statusFilter"><option value="all">All statuses</option><option value="open">Open (not complete)</option><option value="backlog">Backlog</option><option value="todo">To Do</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Complete</option><option value="overdue">Overdue</option><option value="dueweek">Due in 7 days</option><option value="blocked">Blocked</option><option value="waiting">Waiting on dependencies</option></select></label>
             <button type="button" class="btn sm ghost" data-action="clear-filters">Clear all filters</button>
           </div>
         </div>
       </div>
       <div class="active-filters" id="activeFilters" hidden></div>
+      <div class="status-card" id="statusCard" aria-label="Status summary"></div>
       <div id="banner"></div>
       <div id="main" role="tabpanel" aria-label="Tasks"></div>
     </div>
@@ -520,7 +535,6 @@ const state = {
   tasks:new Map(), team:[], mode:'connecting', readOnly:false, uid:null, user:null, downloads:null, names:{},
   view: lsGet('pmt.view','kanban'),
   filters:{owner:'all', product:'all', group:'all', status:'all', q:''},
-  openGroups:new Set(lsGet('pmt.groups', [])),
   drawerId:null, menuId:null, confirmDelete:false, editingId:null, dragId:null, sideOpen:false, filterOpen:false, showArchived:false, blockForm:false,
   reportWeek: weekStart(today()), reportBy:'all',
 };
@@ -679,7 +693,7 @@ function filtered(ignoreStatus){
 
 /* ---------- Render ---------- */
 function render(){
-  renderSide(); renderTop(); renderActiveFilters(); renderBanner();
+  renderSide(); renderTop(); renderActiveFilters(); renderStatusCard(); renderBanner();
   document.querySelectorAll('[data-action="view"]').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.view===state.view)));
   const main=$('#main');
   if (live().length===0 && state.filters.status!=='deleted') main.innerHTML=emptyState();
@@ -702,43 +716,43 @@ function renderTop(){
   s.lastElementChild.textContent = state.mode==='shared' ? (state.readOnly?'Shared, view only':'Shared, live') : state.mode==='local' ? 'This browser only' : 'Connecting';
   const owners=ownerList();
   $('#headAvs').innerHTML = owners.slice(0,4).map(o=>avatar(o)).join('') + (owners.length>4?'<span class="av more">+'+(owners.length-4)+'</span>':'');
-  $('#f-groupFilter').value=state.filters.group; $('#f-statusFilter').value=state.filters.status;
+  const ps=$('#f-productFilter'); if (ps.options.length<=1) ps.innerHTML='<option value="all">All products</option>'+Object.entries(PRODUCTS).map(([g,arr])=>'<optgroup label="'+(GROUP_LABEL[g]||g)+'"><option value="'+g+'">All '+(GROUP_LABEL[g]||g)+'</option>'+arr.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('')+'</optgroup>').join('');
+  ps.value=state.filters.product; $('#f-groupFilter').value=state.filters.group; $('#f-statusFilter').value=state.filters.status;
   if ($('#f-search').value!==state.filters.q) $('#f-search').value=state.filters.q;
 }
 function renderSide(){
-  const f=state.filters, all=live(), open=all.filter(isOpen), del=deletedTasks().length;
+  const f=state.filters, all=live(), open=all.filter(isOpen);
   const cnt=fn=>open.filter(fn).length;
-  const item=o=>'<li><button type="button" class="item" data-action="'+o.action+'" '+(o.data||'')+' aria-pressed="'+!!o.on+'" '+(o.exp!==undefined?'aria-expanded="'+o.exp+'"':'')+'>'+(o.icon||'')+'<span class="lbl">'+esc(o.label)+'</span>'+(o.n!==undefined?'<span class="n">'+o.n+'</span>':'')+(o.exp!==undefined?I.chev:'')+'</button>'+(o.children||'')+'</li>';
+  const item=o=>'<li><button type="button" class="item" data-action="'+o.action+'" '+(o.data||'')+' aria-pressed="'+!!o.on+'">'+(o.icon||'')+'<span class="lbl">'+esc(o.label)+'</span>'+(o.n!==undefined?'<span class="n">'+o.n+'</span>':'')+'</button></li>';
   const folder='<span class="muted">'+I.folder+'</span>';
   let html='<div class="sec"><h2>Work streams</h2></div><ul class="nav">';
-  html+=item({action:'filter-product',data:'data-value="all"',label:'All work',n:open.length,on:f.product==='all'&&f.group==='all',icon:folder});
+  html+=item({action:'filter-product',data:'data-value="all"',label:'All work',n:open.length,on:f.group==='all',icon:folder});
   html+=item({action:'filter-group',data:'data-value="Product"',label:'Product and platform',n:cnt(t=>(KINDS[t.kind]||{}).group==='Product'),on:f.group==='Product',icon:folder});
   html+=item({action:'filter-group',data:'data-value="Client"',label:'Client programs',n:cnt(t=>(KINDS[t.kind]||{}).group==='Client'),on:f.group==='Client',icon:folder});
-  html+='</ul><div class="sec"><h2>4E and GENIE</h2></div><ul class="nav">';
-  Object.entries(PRODUCTS).forEach(([g,arr])=>{
-    const isO=state.openGroups.has(g);
-    const children=isO?'<ul class="sub">'+arr.map(p=>item({action:'filter-product',data:'data-value="'+esc(p)+'"',label:p,n:cnt(t=>t.product===p),on:f.product===p})).join('')+'</ul>':'';
-    html+=item({action:'toggle-group',data:'data-value="'+g+'"',label:GROUP_LABEL[g]||g,n:cnt(t=>arr.includes(t.product)),on:f.product===g,exp:isO,icon:folder,children});
-  });
-  html+='</ul><div class="sec"><h2>Status</h2></div><ul class="nav">';
-  Object.entries(STATUS).forEach(([k,v])=>{ html+=item({action:'filter-status',data:'data-value="'+k+'"',label:v.label,n:all.filter(t=>t.status===k).length,on:f.status===k,icon:'<span class="dot '+k+'"></span>'}); });
-  html+='</ul><div class="sec"><h2>Attention</h2></div><ul class="nav">';
-  html+=item({action:'filter-status',data:'data-value="overdue"',label:'Overdue',n:all.filter(isOverdue).length,on:f.status==='overdue',icon:'<span class="dot ring" style="color:var(--todo)"></span>'});
-  html+=item({action:'filter-status',data:'data-value="dueweek"',label:'Due in 7 days',n:all.filter(isDueWeek).length,on:f.status==='dueweek',icon:'<span class="dot ring" style="color:var(--review)"></span>'});
-  html+=item({action:'filter-status',data:'data-value="blocked"',label:'Blocked',n:cnt(t=>!!t.blocked),on:f.status==='blocked',icon:'<span class="dot ring" style="color:var(--todo)"></span>'});
-  html+=item({action:'filter-status',data:'data-value="waiting"',label:'Waiting on others',n:cnt(t=>waitingOn(t).length>0),on:f.status==='waiting',icon:'<span class="dot ring" style="color:var(--prog)"></span>'});
-  if (del) html+=item({action:'filter-status',data:'data-value="deleted"',label:'Recently deleted',n:del,on:f.status==='deleted',icon:'<span class="muted">'+I.trash+'</span>'});
   html+='</ul><div class="sec"><h2>PM team</h2>'+(state.readOnly?'':'<button type="button" data-action="team-open">'+I.edit+'Manage</button>')+'</div><ul class="nav team">';
   const owners=ownerList();
   html+= owners.length ? owners.map(o=>{ const n=cnt(t=>(t.owner||'').trim()===o), od=all.filter(t=>(t.owner||'').trim()===o&&isOverdue(t)).length; return '<li><button type="button" class="item" data-action="filter-owner" data-value="'+esc(o)+'" aria-pressed="'+(f.owner===o)+'">'+avatar(o)+'<div class="who"><b>'+esc(o)+'</b><span>'+n+' open'+(od?', '+od+' overdue':'')+'</span></div></button></li>'; }).join('') : '<li><p class="hint" style="padding:6px 10px;margin:0">Add the PMs under Manage so owners are picked from a list.</p></li>';
   html+='</ul>';
   $('#sideScroll').innerHTML=html;
 }
+function renderStatusCard(){
+  const card=$('#statusCard'); const f=state.filters;
+  if (state.view==='report' || live().length===0) { card.hidden=true; return; }
+  card.hidden=false;
+  const base=filtered(true).filter(t=>!t.deleted); const open=base.filter(isOpen); const del=deletedTasks().length;
+  const st=(k,label,n,dot)=>'<button type="button" class="st-btn" data-action="filter-status" data-value="'+k+'" aria-pressed="'+(f.status===k)+'">'+dot+'<span>'+label+'</span><span class="n">'+n+'</span></button>';
+  let html=Object.entries(STATUS).map(([k,v])=>st(k,v.label,base.filter(t=>t.status===k).length,'<span class="dot '+k+'"></span>')).join('');
+  html+='<span class="st-sep mid"></span><span class="st-sep brk"></span>';
+  const att=(k,label,n,color)=>'<button type="button" class="st-btn att'+(n?'':' zero')+'" data-action="filter-status" data-value="'+k+'" aria-pressed="'+(f.status===k)+'"><span class="dot ring" style="color:'+color+'"></span><span>'+label+'</span><span class="n">'+n+'</span></button>';
+  html+=att('overdue','Overdue',base.filter(isOverdue).length,'var(--todo)')+att('dueweek','Due in 7 days',base.filter(isDueWeek).length,'var(--review)')+att('blocked','Blocked',open.filter(t=>!!t.blocked).length,'var(--todo)')+att('waiting','Waiting',open.filter(t=>waitingOn(t).length>0).length,'var(--prog)');
+  if (del) html+='<button type="button" class="st-btn att" data-action="filter-status" data-value="deleted" aria-pressed="'+(f.status==='deleted')+'"><span class="muted">'+I.trash+'</span><span>Recently deleted</span><span class="n">'+del+'</span></button>';
+  card.innerHTML=html;
+}
 function renderActiveFilters(){
   const f=state.filters, chips=[];
   const chip=(k,l)=>'<span class="af">'+esc(l)+'<button type="button" data-action="drop-filter" data-key="'+k+'" aria-label="Remove filter">'+I.x+'</button></span>';
   if (f.owner!=='all') chips.push(chip('owner','Owner: '+f.owner));
-  if (f.product!=='all') chips.push(chip('product','Product: '+f.product));
+  if (f.product!=='all') chips.push(chip('product','Product: '+(GROUP_LABEL[f.product]||f.product)));
   if (f.group!=='all') chips.push(chip('group', f.group==='Product'?'Product and platform':'Client programs'));
   if (f.status!=='all') chips.push(chip('status','Status: '+({open:'Open',overdue:'Overdue',dueweek:'Due in 7 days',blocked:'Blocked',waiting:'Waiting on others',deleted:'Recently deleted'}[f.status]||(STATUS[f.status]||{}).label)));
   if (f.q) chips.push(chip('q','Search: '+f.q));
@@ -1040,7 +1054,7 @@ function sampleTasks(){
 }
 
 /* ---------- Events ---------- */
-function setFilter(k,v){ state.filters[k]= state.filters[k]===v && v!=='all' ? 'all' : v; if (k==='product'&&v!=='all') state.filters.group='all'; if (k==='group'&&v!=='all') state.filters.product='all'; state.sideOpen=false; if (state.view==='report' && k==='status') state.view='kanban'; render(); }
+function setFilter(k,v){ state.filters[k]= state.filters[k]===v && v!=='all' ? 'all' : v; state.sideOpen=false; if (state.view==='report' && k==='status') state.view='kanban'; render(); }
 function moveTask(id, status){
   const t=state.tasks.get(id); if(!t||t.status===status) return;
   if (status!=='backlog' && !(parseD(t.start)&&parseD(t.end))) { openDialog(Object.assign({},t,{status}), status); toast('Add start and end dates to schedule this task.'); return; }
@@ -1073,10 +1087,9 @@ document.addEventListener('click', ev=>{
     case 'unblock': { const t=state.tasks.get(id); if (t) store.save(Object.assign({},t,{blocked:null})).then(()=>toast('Unblocked')); break; }
     case 'view': state.view=btn.dataset.view; lsSet('pmt.view',state.view); render(); break;
     case 'filter-owner': setFilter('owner',v); break;
-    case 'filter-product': if (v==='all') { state.filters.product='all'; state.filters.group='all'; state.sideOpen=false; render(); } else setFilter('product',v); break;
+    case 'filter-product': if (v==='all') { state.filters.group='all'; state.sideOpen=false; render(); } else setFilter('product',v); break;
     case 'filter-group': setFilter('group',v); break;
     case 'filter-status': setFilter('status',v); break;
-    case 'toggle-group': if (state.openGroups.has(v)) state.openGroups.delete(v); else state.openGroups.add(v); lsSet('pmt.groups',[...state.openGroups]); render(); break;
     case 'drop-filter': state.filters[btn.dataset.key]= btn.dataset.key==='q'?'':'all'; render(); break;
     case 'clear-filters': state.filters={owner:'all',product:'all',group:'all',status:'all',q:''}; state.filterOpen=false; render(); break;
     case 'toggle-filter': state.filterOpen=!state.filterOpen; render(); break;
@@ -1111,7 +1124,8 @@ document.addEventListener('change', ev=>{
   const el=ev.target.closest('[data-action]');
   if (el && el.dataset.action==='toggle-sub') { const t=state.tasks.get(el.dataset.id); if(!t) return; store.save(Object.assign({},t,{subtasks:t.subtasks.map(s=>s.id===el.dataset.sub?Object.assign({},s,{done:el.checked}):s)})); }
   else if (el && el.dataset.action==='set-status') moveTask(el.dataset.id, el.value);
-  else if (ev.target.id==='f-groupFilter') { state.filters.group=ev.target.value; if (ev.target.value!=='all') state.filters.product='all'; render(); state.filterOpen=true; $('#filterPop').hidden=false; }
+  else if (ev.target.id==='f-groupFilter') { state.filters.group=ev.target.value; render(); state.filterOpen=true; $('#filterPop').hidden=false; }
+  else if (ev.target.id==='f-productFilter') { state.filters.product=ev.target.value; render(); state.filterOpen=true; $('#filterPop').hidden=false; }
   else if (ev.target.id==='f-statusFilter') { state.filters.status=ev.target.value; if (state.view==='report') state.view='kanban'; render(); state.filterOpen=true; $('#filterPop').hidden=false; }
 });
 let searchTimer;
