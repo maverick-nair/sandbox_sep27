@@ -48,8 +48,8 @@ async function readXlsx(buf) {
 }
 async function readPdf(buf) {
   const pdfjs = await import('pdfjs-dist');
-  const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  // The worker is served from the CDN pinned to the installed version, so the app bundle stays small.
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const parts = [];
   for (let i = 1; i <= doc.numPages; i++) {
