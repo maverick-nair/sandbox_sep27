@@ -27,7 +27,7 @@ export function WorkspaceProvider({ children }) {
 
   const toast = useCallback((text, tone = 'info') => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((t) => [...t, { id, text, tone }]);
+    setToasts((t) => [...t.slice(-2), { id, text, tone }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4500);
   }, []);
 
@@ -60,7 +60,7 @@ export function WorkspaceProvider({ children }) {
   const duplicateAssessment = useCallback((id) => {
     const src = wsRef.current.assessments.find((a) => a.id === id);
     if (!src) return;
-    const copy = newAssessment({ intent: JSON.parse(JSON.stringify(src.intent)), skills: JSON.parse(JSON.stringify(src.skills)), skillsConfirmed: src.skillsConfirmed, blueprint: JSON.parse(JSON.stringify(src.blueprint)), scenarios: JSON.parse(JSON.stringify(src.scenarios)).map((s) => ({ ...s, approved: false, calibration: s.responseType === 'MCQ' ? 'not_applicable' : 'pending' })), config: { ...JSON.parse(JSON.stringify(src.config)), name: `${src.config.name || 'Assessment'} (copy)` }, step: src.scenarios?.length ? 4 : 1 });
+    const copy = newAssessment({ intent: JSON.parse(JSON.stringify(src.intent)), skills: JSON.parse(JSON.stringify(src.skills)), skillsConfirmed: src.skillsConfirmed, blueprint: JSON.parse(JSON.stringify(src.blueprint)), scenarios: JSON.parse(JSON.stringify(src.scenarios)).map((s) => ({ ...s, approved: false, calibration: s.responseType === 'MCQ' ? 'not_applicable' : 'pending' })), config: { ...JSON.parse(JSON.stringify(src.config)), name: `${src.config.name || 'Assessment'} (copy)` }, stage: src.scenarios?.length ? 2 : 1 });
     setWs((w) => audit(upsertAssessment(w, copy), { assessmentId: copy.id, action: 'assessment.duplicated', before: id }));
     setCurrentId(copy.id); setRoute('author');
   }, []);

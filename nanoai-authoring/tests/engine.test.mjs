@@ -233,3 +233,16 @@ test('context: client terminology drives company and product names, neutral othe
   assert.equal(buildContext({ intent: { terminology: 'Helios Works, Helios Assist' } }).company, 'Helios Works');
   assert.equal(buildContext({ intent: { terminology: '' } }).company, 'your company');
 });
+
+import { shuffledOrder, fixedOrder, violations, hashSeed } from '../src/engine/form.js';
+test('form order: shuffled per participant, stable per seed, Skills interleaved, no three audio in a row', () => {
+  const asm = build(['SK-COACH', 'SK-FEEDBK', 'SK-PRIOR', 'SK-DATADEC']);
+  const a = shuffledOrder(asm.scenarios, 'attempt-1'), b = shuffledOrder(asm.scenarios, 'attempt-2'), a2 = shuffledOrder(asm.scenarios, 'attempt-1');
+  assert.deepEqual(a.map((s) => s.id), a2.map((s) => s.id), 'same seed, same order');
+  assert.notDeepEqual(a.map((s) => s.id), b.map((s) => s.id), 'different participants, different order');
+  assert.equal(a.length, asm.scenarios.length);
+  assert.equal(new Set(a.map((s) => s.id)).size, asm.scenarios.length);
+  for (let seed = 0; seed < 50; seed++) assert.deepEqual(violations(shuffledOrder(asm.scenarios, seed)), [], `seed ${seed}`);
+  assert.deepEqual(violations(fixedOrder(asm.scenarios)), []);
+  assert.notEqual(hashSeed('a'), hashSeed('b'));
+});

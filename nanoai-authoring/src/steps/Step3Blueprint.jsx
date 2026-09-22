@@ -3,7 +3,8 @@ import { Button, Panel, Badge, Select, Progress, Severity } from '../components/
 import { RULES, RESPONSE_TYPES, DIFFICULTIES } from '../content/rules.js';
 import { getSkill, SITUATION_TAGS } from '../content/ontology.js';
 import { planBlueprint, setRowType, setRowQuestions, toggleRowMedia, addRow, removeRow, blueprintFindings, rowObservations } from '../engine/blueprint.js';
-import { generateScenario, switchResponseType, generationMode } from '../engine/generator.js';
+import { generationMode } from '../engine/generator.js';
+import { planIsStale } from '../engine/build.js';
 
 const KIND_TEXT = { trim: 'Trimmed the plan', media: 'Removed planned media to save reading time', convert: 'Converted an open response scenario to MCQ (3 questions) where the Skill stays well covered', drop: 'Removed a scenario the Skill could spare', simplify: 'Reduced difficulty from High to Medium to shorten the scenario' };
 function groupChanges(changes) {
@@ -12,8 +13,8 @@ function groupChanges(changes) {
   return Object.values(by).map((g) => g.skills.length <= 1 ? { kind: g.kind, text: g.single } : { kind: g.kind, text: `${KIND_TEXT[g.kind] || g.kind} on ${g.skills.length} scenarios (${[...new Set(g.skills)].join(', ')}).` });
 }
 
-export default function Step3Blueprint({ asm, update, go, readOnly, toast }) {
-  const [gen, setGen] = useState(null); // { i, total, status }
+export default function Step3Blueprint({ asm, update, go, readOnly, toast, embedded, onDone }) {
+  const [gen] = useState(null);
   const skillIds = asm.skills.map((s) => s.id);
   const seeds = asm.intent.extracted?.situations || [];
 
@@ -26,43 +27,18 @@ export default function Step3Blueprint({ asm, update, go, readOnly, toast }) {
   const hard = findings.filter((f) => f.severity === 'hard');
   const setBp = (next, action, meta) => update((a) => ({ ...a, blueprint: next }), { action, ...meta });
 
-  const generate = async () => {
-    const existing = asm.scenarios || [];
-    const rows = bp.rows;
-    const total = rows.length;
-    setGen({ i: 0, total, status: 'Starting' });
-    let scenarios = existing.filter((s) => rows.some((r) => r.id === s.blueprintRowId));
-    let working = { ...asm, scenarios };
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const have = scenarios.find((s) => s.blueprintRowId === row.id);
-      if (have) {
-        if (have.responseType !== row.responseType) { setGen({ i, total, status: `Switching ${getSkill(row.skillId)?.name} scenario to ${row.responseType}` }); const sw = await switchResponseType(have, working, row.responseType); scenarios = scenarios.map((s) => (s.id === have.id ? sw : s)); working = { ...working, scenarios }; }
-        continue;
-      }
-      setGen({ i, total, status: `${getSkill(row.skillId)?.name}: drafting` });
-      const sc = await generateScenario(row, working, i, { onStatus: (st) => setGen({ i, total, status: `${getSkill(row.skillId)?.name}: ${st}` }) });
-      scenarios = [...scenarios, sc]; working = { ...working, scenarios };
-      update((a) => ({ ...a, scenarios }), { undoable: false });
-    }
-    // Order by blueprint rows so the review runs Skill by Skill.
-    const ordered = rows.map((r) => scenarios.find((s) => s.blueprintRowId === r.id)).filter(Boolean);
-    update((a) => ({ ...a, scenarios: ordered }), { action: 'scenarios.generated', after: { count: ordered.length, mode: generationMode() } });
-    setGen(null);
-    toast(`${ordered.length} scenarios ready to review.`, 'ok');
-    go(4);
-  };
+  const generate = () => onDone?.(true);
 
   const target = RULES.time.totalTarget;
   const tone = bp.totalMinutes > RULES.time.totalHard ? 'block' : bp.totalMinutes > RULES.time.totalWarn ? 'warn' : undefined;
   const hasScenarios = asm.scenarios?.length > 0;
-  const stale = hasScenarios && (bp.rows.some((r) => !asm.scenarios.some((s) => s.blueprintRowId === r.id && s.responseType === r.responseType)) || asm.scenarios.some((s) => !bp.rows.some((r) => r.id === s.blueprintRowId)));
+  const stale = hasScenarios && planIsStale(asm);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-xl font-semibold">Blueprint and time plan</h1><p className="muted mt-1 text-sm">The plan comes before the scenarios. Change any response type, ask for more scenarios on a Skill, or reduce the total. Observations per Skill and total time update live.</p></div>
-        {!readOnly && <Button variant="secondary" onClick={() => { if (!hasScenarios || confirm('Re-plan from scratch? Generated scenarios for removed rows are dropped.')) plan(); }}>Re-plan</Button>}
+        <p className="muted text-sm">Change any response type, add or remove scenarios, or switch media. Observations per Skill and total time update live; rules are enforced by construction.</p>
+        {!readOnly && <Button variant="secondary" size="sm" onClick={() => { if (!hasScenarios || confirm('Re-plan from scratch? Scenarios for removed rows are dropped.')) plan(); }}>Re-plan</Button>}
       </div>
       <div className="grid gap-3 md:grid-cols-4">
         <div className="card p-4"><div className="faint text-[11px] uppercase tracking-wider">Scenarios</div><div className="text-2xl font-semibold">{bp.rows.length}</div><div className="muted text-xs">{RULES.scenarios.totalMin} to {RULES.scenarios.totalMax} allowed</div></div>
@@ -120,10 +96,9 @@ export default function Step3Blueprint({ asm, update, go, readOnly, toast }) {
           {findings.length === 0 ? <p className="text-sm text-[var(--ok)]">The plan meets every rule. Each Skill has 3 scenarios and 12 or more observations.</p> : <ul className="space-y-2 text-sm">{findings.map((f, i) => <li key={i} className="flex flex-col gap-1"><Severity severity={f.severity} /><span>{f.text}</span></li>)}</ul>}
         </Panel>
       </div>
-      {gen && <div className="card p-4"><div className="flex items-center justify-between text-sm"><span className="pulse">{gen.status}</span><span className="muted">{gen.i + 1} of {gen.total}</span></div><Progress value={gen.i + 1} max={gen.total} /><p className="faint mt-2 text-xs">{generationMode() === 'llm' ? 'The AI writes each situation, then reads it to produce the contextual analysis, scoring questions and limits.' : 'Scripted mode: drafting from the scenario library. Connect an API key in Settings for scenarios grounded in your documents.'}</p></div>}
       <div className="flex items-center justify-between gap-3">
-        <p className={`text-sm ${hard.length ? 'text-[var(--block)]' : 'muted'}`}>{hard.length ? 'Fix the items that block publish above, or generate anyway and fix them in review.' : hasScenarios && !stale ? 'Scenarios already exist for this plan. Continue to review, or change the plan and regenerate.' : 'Next: scenarios, contextual analyses and scoring questions are generated against this plan.'}</p>
-        <div className="flex gap-2"><Button variant="secondary" onClick={() => go(2)}>Back</Button>{hasScenarios && !stale ? <Button size="lg" onClick={() => go(4)}>Review scenarios</Button> : <Button size="lg" onClick={generate} busy={Boolean(gen)} disabled={readOnly}>{hasScenarios ? 'Update scenarios to match the plan' : 'Generate scenarios'}</Button>}</div>
+        <p className={`text-sm ${hard.length ? 'text-[var(--block)]' : 'muted'}`}>{hard.length ? 'Fix the items above, or apply anyway and fix them in review.' : stale ? 'The plan changed. Apply it to update the scenarios; existing ones are kept where the plan did not change.' : 'The scenarios match this plan.'}</p>
+        <div className="flex gap-2"><Button variant="secondary" onClick={() => onDone?.(false)}>Close</Button><Button onClick={generate} disabled={readOnly || !stale}>Apply plan and update scenarios</Button></div>
       </div>
     </div>
   );

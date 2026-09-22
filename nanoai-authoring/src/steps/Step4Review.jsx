@@ -24,7 +24,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
   const setScenario = (mut, action, meta = {}) => update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === sc.id ? (typeof mut === 'function' ? mut(s) : { ...s, ...mut }) : s)) }), { action, ...meta });
   const replaceScenario = (next, action, meta = {}) => update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === next.id ? next : s)) }), { action, ...meta });
 
-  if (!sc) return <div className="card p-8 text-sm">No scenarios yet. <Button variant="ghost" onClick={() => go(3)}>Go to the blueprint</Button></div>;
+  if (!sc) return <div className="card p-8 text-sm">No scenarios yet. <Button variant="ghost" onClick={() => go(3)}>Adjust the plan</Button></div>;
   const skill = getSkill(sc.skillId);
   const issues = [...issuesForScenario(gate, sc.id), ...gate.issues.filter((i) => !i.scenarioId && i.skillId === sc.skillId)];
   const hardIssues = issues.filter((i) => i.severity === 'hard' && i.rule !== 'approval');
@@ -90,7 +90,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
         <ol className="space-y-1">
           {scenarios.map((s, i) => { const iss = issuesForScenario(gate, s.id); const h = iss.filter((x) => x.severity === 'hard' && x.rule !== 'approval').length; return <li key={s.id}><button onClick={() => setSelId(s.id)} aria-current={s.id === selId} className={`w-full rounded-lg border p-2 text-left text-xs transition-colors ${s.id === selId ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--line)] bg-white hover:bg-slate-50'}`}><div className="flex items-center justify-between gap-1"><span className="font-medium">{i + 1}. {s.title}</span>{s.approved ? <Badge tone="ok">✓</Badge> : h ? <Badge tone="block">{h}</Badge> : s.pendingConfirmation ? <Badge tone="warn">confirm</Badge> : <Badge>review</Badge>}</div><div className="muted mt-0.5 flex flex-wrap gap-1">{asm.skills.find((k) => k.id === s.skillId)?.clientLabel || getSkill(s.skillId)?.name} · {s.responseType} · {s.recommendedMinutes} min{s.flaggedForReview && <span className="text-[var(--warn)]">· flagged</span>}</div></button></li>; })}
         </ol>
-        <div className="flex gap-2"><Button variant="secondary" size="sm" className="flex-1" onClick={() => go(3)}>Blueprint</Button><Button variant="secondary" size="sm" className="flex-1" onClick={() => go(5)}>Preview</Button></div>
+
       </aside>
 
       <div className="space-y-4">

@@ -5,7 +5,7 @@ import { runQualityGate } from '../engine/qualityGate.js';
 import { getSkill } from '../content/ontology.js';
 import { RULES } from '../content/rules.js';
 
-const STEP_LABELS = ['Describe intent', 'Confirm Skills', 'Blueprint', 'Review scenarios', 'Preview', 'Quality gate', 'Configure and publish'];
+const STAGE_LABELS = ['Brief', 'Scenarios', 'Preview', 'Publish'];
 
 export default function Home() {
   const { ws, createAssessment, openAssessment, deleteAssessment, duplicateAssessment } = useWorkspace();
@@ -16,10 +16,10 @@ export default function Home() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Assessments</h1>
-          <p className="muted mt-1 max-w-2xl text-sm">Turn a brief or a document into a scenario based Skills assessment. You answer four plain questions; the platform drafts the situations, the scoring questions and the limits, and you review them one scenario at a time.</p>
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+          <p className="muted mt-0.5 max-w-2xl text-sm">Speak, upload or type a brief and the platform builds a scenario based Skills assessment for you to review.</p>
         </div>
-        <Button size="lg" onClick={() => createAssessment()}>New assessment</Button>
+        <Button size="lg" onClick={() => createAssessment()}>+ New assessment</Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Drafts" value={mine.filter((a) => a.status === 'draft').length} />
@@ -57,7 +57,7 @@ function AssessmentCard({ a, onOpen, onDelete, onDuplicate }) {
         {a.status === 'published' ? <Badge tone="ok">Published v{a.currentVersion}</Badge> : <Badge>Draft{a.currentVersion ? ` (v${a.currentVersion} live)` : ''}</Badge>}
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        <Badge tone="neutral">Step {a.step}: {STEP_LABELS[a.step - 1]}</Badge>
+        <Badge tone="neutral">Stage {a.stage || 1}: {STAGE_LABELS[(a.stage || 1) - 1]}</Badge>
         {a.scenarios?.length > 0 && <Badge tone="neutral">{approved}/{a.scenarios.length} approved</Badge>}
         {gate && <Badge tone={gate.canPublish ? 'ok' : 'block'}>{gate.canPublish ? 'Ready to publish' : `${gate.hard.length} to fix`}</Badge>}
         {gate && <Badge tone={gate.totalMinutes > RULES.time.totalWarn ? 'warn' : 'neutral'}>{gate.totalMinutes} min</Badge>}

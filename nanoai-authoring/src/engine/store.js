@@ -4,7 +4,7 @@ import { RULES } from '../content/rules.js';
 import { ONTOLOGY_VERSION } from '../content/ontology.js';
 
 const KEY = 'nanoai.authoring.workspace.v1';
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export function emptyWorkspace() {
   return { schemaVersion: SCHEMA_VERSION, id: uid('ws'), name: 'My workspace', author: 'You', publishedCount: 0, assessments: [], audit: [], usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, calls: 0, errors: 0 } };
@@ -19,17 +19,20 @@ export function loadWorkspace() {
     return ws;
   } catch { return emptyWorkspace(); }
 }
-function migrate(ws) { return { ...emptyWorkspace(), ...ws, schemaVersion: SCHEMA_VERSION }; }
+function migrate(ws) {
+  const stageFor = (a) => a.stage || (a.step >= 7 ? 4 : a.step >= 5 ? 3 : a.step >= 3 && a.scenarios?.length ? 2 : 1);
+  return { ...emptyWorkspace(), ...ws, schemaVersion: SCHEMA_VERSION, assessments: (ws.assessments || []).map((a) => ({ ...a, stage: stageFor(a), config: { scenarioOrder: 'shuffled', captureMode: 'type', ...a.config } })) };
+}
 export function saveWorkspace(ws) { try { localStorage.setItem(KEY, JSON.stringify(ws)); } catch (e) { console.warn('save failed', e); } }
 
 export function newAssessment(partial = {}) {
   const now = Date.now();
   return {
-    id: uid('asm'), createdAt: now, updatedAt: now, status: 'draft', step: 1, currentVersion: 0,
+    id: uid('asm'), createdAt: now, updatedAt: now, status: 'draft', stage: 1, currentVersion: 0,
     intent: { audience: '', situationsText: '', purpose: 'baseline', terminology: '', documents: [], extracted: null, language: 'en' },
     skills: [], skillsConfirmed: false,
     blueprint: null, scenarios: [], generation: null,
-    config: { name: '', audienceVisibility: 'invited', languages: ['en'], participantLanguages: ['en'], windowStart: '', windowEnd: '', sittings: RULES.publish.defaultSittings, sittingWindowDays: RULES.publish.defaultSittingWindowDays, retakeDays: RULES.publish.defaultRetakeDays, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true }, exportCsv: true, exportPdf: true, expectedParticipants: 30 },
+    config: { name: '', audienceVisibility: 'invited', languages: ['en'], participantLanguages: ['en'], windowStart: '', windowEnd: '', sittings: RULES.publish.defaultSittings, sittingWindowDays: RULES.publish.defaultSittingWindowDays, retakeDays: RULES.publish.defaultRetakeDays, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true }, exportCsv: true, exportPdf: true, expectedParticipants: 30, scenarioOrder: 'shuffled' },
     versions: [], history: [], future: [], sample: false,
     ...partial,
   };

@@ -9,20 +9,7 @@ import { detectPII, anonymize } from '../engine/pii.js';
 import { formatSeconds } from '../engine/duration.js';
 import { editDistance as dist } from '../engine/text.js';
 
-// Fixed order per form: Skills interleaved so no two consecutive share a Skill, no more than two audio back to back.
-export function orderForm(scenarios) {
-  const pool = [...scenarios];
-  const out = [];
-  while (pool.length) {
-    const last = out[out.length - 1];
-    const audioRun = out.length >= 2 && out[out.length - 1].responseType === 'Audio' && out[out.length - 2].responseType === 'Audio';
-    let idx = pool.findIndex((s) => (!last || s.skillId !== last.skillId) && !(audioRun && s.responseType === 'Audio'));
-    if (idx < 0) idx = pool.findIndex((s) => !last || s.skillId !== last.skillId);
-    if (idx < 0) idx = 0;
-    out.push(pool.splice(idx, 1)[0]);
-  }
-  return out;
-}
+import { orderForm } from '../engine/form.js';
 
 export default function Step5Preview({ asm, update, go, readOnly, toast }) {
   const [device, setDevice] = useState('desktop');
@@ -31,7 +18,9 @@ export default function Step5Preview({ asm, update, go, readOnly, toast }) {
   const [responses, setResponses] = useState({});
   const [scoring, setScoring] = useState(false);
   const [report, setReport] = useState(null);
-  const form = useMemo(() => orderForm(asm.scenarios || []), [asm.scenarios]);
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  const mode = asm.config.scenarioOrder || 'shuffled';
+  const form = useMemo(() => orderForm(asm.scenarios || [], { mode, seed }), [asm.scenarios, mode, seed]);
   const total = form.reduce((a, s) => a + (s.recommendedMinutes || 0), 0);
   const sc = form[i];
 
@@ -56,17 +45,17 @@ export default function Step5Preview({ asm, update, go, readOnly, toast }) {
     const agg = aggregate(obsBySkill);
     setReport({ agg, evidence });
     setScoring(false); setStage('report');
-    update((a) => a, { action: 'preview.completed', after: { overall: agg.overall }, undoable: false });
+    update((a) => ({ ...a, previewed: true }), { action: 'preview.completed', after: { overall: agg.overall }, undoable: false });
   };
 
-  const restart = () => { setStage('welcome'); setI(0); setResponses({}); setReport(null); };
+  const restart = () => { setStage('welcome'); setI(0); setResponses({}); setReport(null); setSeed(Math.floor(Math.random() * 1e9)); };
   const Frame = device === 'mobile' ? 'div' : 'div';
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-xl font-semibold">Preview as a participant</h1><p className="muted mt-1 text-sm">The full experience: welcome, practice, every scenario with its limit and soft countdown, then the report a participant would receive. Answer in your own words to see how the scoring questions assess you.</p></div>
-        <div className="flex items-center gap-2"><div className="flex rounded-lg border border-[var(--line)] p-0.5">{['desktop', 'mobile'].map((d) => <button key={d} onClick={() => setDevice(d)} aria-pressed={device === d} className={`rounded-md px-3 py-1 text-xs font-medium ${device === d ? 'bg-[var(--brand)] text-white' : 'hover:bg-slate-50'}`}>{d === 'desktop' ? 'Desktop' : 'Mobile 390'}</button>)}</div><Button variant="secondary" size="sm" onClick={restart}>Restart</Button><Button variant="secondary" size="sm" onClick={() => go(4)}>Back to review</Button><Button size="sm" onClick={() => go(6)}>Quality gate</Button></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs"><Badge tone="brand">{mode === 'shuffled' ? 'Order shuffled for this participant' : 'Fixed order'}</Badge><span className="muted">Skills interleaved, no more than two audio in a row.</span>{mode === 'shuffled' && <button className="text-[var(--brand)]" onClick={restart}>Try another participant's order</button>}</div>
+        <div className="flex items-center gap-2"><div className="flex rounded-lg border border-[var(--line)] bg-white p-0.5">{['desktop', 'mobile'].map((d) => <button key={d} onClick={() => setDevice(d)} aria-pressed={device === d} className={`rounded-md px-3 py-1 text-xs font-medium ${device === d ? 'bg-[var(--brand)] text-white' : 'hover:bg-slate-50'}`}>{d === 'desktop' ? 'Desktop' : 'Mobile 390'}</button>)}</div><Button variant="secondary" size="sm" onClick={restart}>Restart</Button><Button variant="secondary" size="sm" onClick={() => go(2)}>Back to scenarios</Button><Button size="sm" onClick={() => go(4)}>Continue to publish</Button></div>
       </div>
       <div className="flex justify-center">
         <Frame className={device === 'mobile' ? 'phone-frame' : 'desktop-frame'}>

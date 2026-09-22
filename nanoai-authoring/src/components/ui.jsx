@@ -57,7 +57,7 @@ export function Modal({ open, title, onClose, children, footer, wide }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div role="dialog" aria-modal="true" aria-label={title} className={`card max-h-[90vh] w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} overflow-auto`}>
+      <div role="dialog" aria-modal="true" aria-label={title} className={`card max-h-[90vh] w-full ${wide ? 'max-w-6xl' : 'max-w-lg'} overflow-auto`}>
         <header className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3"><h3 className="text-sm font-semibold">{title}</h3><Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">Close</Button></header>
         <div className="p-5">{children}</div>
         {footer && <footer className="flex justify-end gap-2 border-t border-[var(--line)] px-5 py-3">{footer}</footer>}

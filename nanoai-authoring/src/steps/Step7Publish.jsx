@@ -10,7 +10,7 @@ import { observationsFor } from '../engine/duration.js';
 
 function download(name, text, type = 'application/json') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 
-export default function Step7Publish({ asm, update, go, gate, readOnly, toast }) {
+export default function Step7Publish({ asm, update, go, gate, readOnly, toast, embedded }) {
   const { ws, setWs } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
   const c = asm.config;
@@ -38,7 +38,7 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast })
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
       <div className="space-y-5">
-        <div><h1 className="text-xl font-semibold">Configure and publish</h1><p className="muted mt-1 text-sm">Minimal configuration. Publishing creates a versioned, immutable assessment. Edits after publish create a new version; participants in flight finish on theirs.</p></div>
+        {!embedded && <div><h1 className="text-xl font-semibold">Configure and publish</h1><p className="muted mt-1 text-sm">Minimal configuration. Publishing creates a versioned, immutable assessment. Edits after publish create a new version; participants in flight finish on theirs.</p></div>}
         <Panel title="Assessment" padding="p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Name" required hint="shown to participants on the welcome screen" className="sm:col-span-2"><Input value={c.name} onChange={(e) => set({ name: e.target.value })} disabled={readOnly} placeholder="Store manager readiness, Q4" /></Field>
@@ -55,6 +55,8 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast })
             <Field label="Sittings allowed"><Select value={c.sittings} onChange={(e) => set({ sittings: Number(e.target.value) })} disabled={readOnly}>{[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}</Select></Field>
             <Field label="Within (days)"><Input type="number" min={1} max={30} value={c.sittingWindowDays} onChange={(e) => set({ sittingWindowDays: Number(e.target.value) })} disabled={readOnly} /></Field>
             <Field label="No retake within (days)"><Input type="number" min={0} max={365} value={c.retakeDays} onChange={(e) => set({ retakeDays: Number(e.target.value) })} disabled={readOnly} /></Field>
+            <Field label="Scenario order"><Select value={c.scenarioOrder || 'shuffled'} onChange={(e) => set({ scenarioOrder: e.target.value }, 'config.scenario_order')} disabled={readOnly}><option value="shuffled">Shuffled per participant</option><option value="fixed">Fixed for everyone</option></Select></Field>
+            <p className="muted text-xs sm:col-span-2">Scenarios are independent, so each participant gets their own order: no two people see the same scenario at the same time. Skills stay interleaved and no more than two audio scenarios run back to back. The order is seeded by the attempt, so it holds across sittings.</p>
             <label className="flex items-center gap-2 text-sm sm:col-span-3"><input type="checkbox" checked={c.parallelFormOnRetake} onChange={(e) => set({ parallelFormOnRetake: e.target.checked })} disabled={readOnly} />Serve a parallel form on retake when one exists. Without one, the same form is served and prior exposure is flagged on the result.</label>
           </div>
         </Panel>
@@ -69,7 +71,7 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast })
         </Panel>
         <div className="flex items-center justify-between gap-3">
           <p className={`text-sm ${canPublish ? 'muted' : 'text-[var(--block)]'}`}>{readOnly ? `Version ${asm.currentVersion} is published. Use "Edit as new version" in the header to change it.` : nameMissing ? 'Give the assessment a name to publish.' : !gate.canPublish ? `${gate.hard.length} item${gate.hard.length === 1 ? '' : 's'} block publish.` : reviewRequired ? `This is one of the first ${RULES.review.mandatoryFirstN} assessments in this workspace, so it goes to KNOLSKAPE review after publish.` : 'Ready to publish.'}</p>
-          <div className="flex gap-2"><Button variant="secondary" onClick={() => go(6)}>Quality gate</Button><Button size="lg" disabled={!canPublish} onClick={() => setConfirming(true)}>Publish version {(asm.currentVersion || 0) + 1}</Button></div>
+          <div className="flex gap-2"><Button variant="secondary" onClick={() => go(3)}>Preview</Button><Button size="lg" disabled={!canPublish} onClick={() => setConfirming(true)}>Publish version {(asm.currentVersion || 0) + 1}</Button></div>
         </div>
         {confirming && (
           <Panel tone="ok" title={`Publish version ${(asm.currentVersion || 0) + 1}?`} padding="p-4">

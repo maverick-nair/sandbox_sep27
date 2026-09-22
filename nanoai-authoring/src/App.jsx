@@ -5,6 +5,7 @@ import { Toasts } from './components/ui.jsx';
 import Home from './screens/Home.jsx';
 import Settings from './screens/Settings.jsx';
 import Author from './screens/Author.jsx';
+import Help from './screens/Help.jsx';
 
 class Boundary extends React.Component {
   constructor(p) { super(p); this.state = { error: null }; }
@@ -18,7 +19,8 @@ class Boundary extends React.Component {
 function Router() {
   const { route, current, toasts } = useWorkspace();
   let page;
-  if (route === 'settings') page = <Shell><Settings /></Shell>;
+  if (route === 'settings') page = <Shell title="Settings" subtitle="AI connection, workspace, audit log and AI call log."><Settings /></Shell>;
+  else if (route === 'help') page = <Shell title="Help and support"><Help /></Shell>;
   else if (route === 'author' && current) page = <Author />;
   else page = <Shell><Home /></Shell>;
   return <>{page}<Toasts toasts={toasts} /></>;
