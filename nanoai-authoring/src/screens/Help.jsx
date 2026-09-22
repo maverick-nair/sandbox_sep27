@@ -11,6 +11,7 @@ export default function Help() {
           <li><strong className="text-[var(--ink)]">Scenarios.</strong> Everything is planned and written for you: situations, what a good answer must cover, scoring questions, MCQ options, time and response limits. Edit anything inline, regenerate with a plain instruction, and approve each scenario. "Adjust plan" changes the mix.</li>
           <li><strong className="text-[var(--ink)]">Preview.</strong> Take the assessment as a participant on desktop or mobile and see the sample report.</li>
           <li><strong className="text-[var(--ink)]">Publish.</strong> The quality gate lists anything that blocks, with the fix. Set the basics and publish a version.</li>
+          <li><strong className="text-[var(--ink)]">Calibration.</strong> After publish, the sidebar shows Calibration for every Audio or Text scenario. Two calibrators score the first 30 responses, the AI scores them too, and AI scoring activates when agreement holds.</li>
         </ol>
       </Panel>
       <Panel title="The rules the platform keeps for you" padding="p-5">

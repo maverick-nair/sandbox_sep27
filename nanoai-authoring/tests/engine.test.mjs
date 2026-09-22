@@ -246,3 +246,64 @@ test('form order: shuffled per participant, stable per seed, Skills interleaved,
   assert.deepEqual(violations(fixedOrder(asm.scenarios)), []);
   assert.notEqual(hashSeed('a'), hashSeed('b'));
 });
+
+import { icc1, computeAgreement, practiceResponses, parseResponses, emptyCalibration } from '../src/engine/calibration.js';
+import { snapshot, undo, pushHistory, isEmptyDraft, newAssessment, HISTORY_LIMIT } from '../src/engine/store.js';
+import { scriptedAnalysisFromText } from '../src/engine/generator.js';
+
+test('calibration: ICC(1) agrees for identical raters, falls for noise, and gates activation on both thresholds', () => {
+  assert.equal(icc1([[0, 0], [1, 1], [2, 2], [3, 3], [1, 1]]), 1);
+  assert.ok(icc1([[0, 3], [3, 0], [1, 2], [2, 1], [0, 3]]) < 0.3);
+  assert.equal(icc1([[1, 1]]), null, 'too few pairs');
+  const asm = build(['SK-COACH', 'SK-FEEDBK', 'SK-PRIOR']);
+  const sc = asm.scenarios.find((s) => s.responseType !== 'MCQ');
+  const cal = emptyCalibration();
+  cal.responses = practiceResponses(sc);
+  assert.equal(cal.responses.length, 30);
+  let agg = computeAgreement(sc, cal);
+  assert.equal(agg.canActivate, false);
+  assert.ok(agg.blockers.some((b) => /need both calibrators/.test(b)));
+  // Two calibrators and the AI all agree with the expected level of each practice response.
+  cal.responses = cal.responses.map((r) => { const lv = {}; for (const q of sc.scoringQuestions) lv[q.id] = r.expected; return { ...r, ratings: { A: lv, B: lv }, ai: lv }; });
+  agg = computeAgreement(sc, cal);
+  assert.equal(agg.canActivate, true);
+  assert.ok(agg.perQuestion.every((p) => p.humanHuman === 1 && p.aiHuman === 1));
+  // AI systematically off by two levels on one question blocks activation for that question only.
+  const q0 = sc.scoringQuestions[0].id;
+  cal.responses = cal.responses.map((r) => ({ ...r, ai: { ...r.ai, [q0]: (r.expected + 2) % 4 } }));
+  agg = computeAgreement(sc, cal);
+  assert.equal(agg.canActivate, false);
+  assert.ok(agg.perQuestion[0].aiHuman < 0.75 && agg.perQuestion[1].aiHuman === 1);
+  assert.equal(parseResponses('1. I would first ask the person what is going on.\n\n2. Tell them to fix it.\n\nshort').length, 2, 'numbered paragraphs split; fragments under 20 characters are dropped');
+});
+
+test('store: snapshots exclude document bodies, history is capped, undo keeps documents, empty drafts are detected', () => {
+  let a = newAssessment();
+  assert.ok(isEmptyDraft(a));
+  a = { ...a, intent: { ...a.intent, audience: 'Store managers', documents: [{ id: 'd1', text: 'x'.repeat(50000), anonymizedText: 'x'.repeat(50000), confirmed: true }] } };
+  assert.ok(!isEmptyDraft(a));
+  assert.ok(snapshot(a).length < 5000, 'document bodies are not in the snapshot');
+  for (let i = 0; i < 40; i++) a = pushHistory({ ...a, intent: { ...a.intent, audience: `Audience ${i}` } }, snapshot(a));
+  assert.equal(a.history.length, HISTORY_LIMIT);
+  const u = undo(a);
+  assert.equal(u.intent.documents.length, 1, 'undo keeps the documents');
+  assert.equal(u.intent.audience, 'Audience 38');
+});
+
+test('scripted re-analysis reads facts, constraints and stakeholders from the edited situation', () => {
+  const asm = build(['SK-COACH', 'SK-FEEDBK', 'SK-PRIOR']);
+  const sc = asm.scenarios.find((s) => s.responseType !== 'MCQ');
+  const edited = { ...sc, situation: 'You manage a store. Ravi says his delivery is two weeks late and a refund was promised. The policy says refunds above 50 need head office approval within two days. Two staff are absent and the weekend rota is unfilled. You have twenty minutes before the evening rush.' };
+  const a = scriptedAnalysisFromText(edited, getSkill(sc.skillId));
+  assert.ok(a.keyFacts.some((f) => /two weeks late|refund/.test(f)));
+  assert.ok(a.constraints.some((c) => /approval|within two days/.test(c)));
+  assert.ok(a.stakeholders.includes('Ravi'));
+  assert.equal(a.mode, 'scripted-text');
+});
+
+test('PII: common first names are caught without a cue word; mapping no longer fires on "delivery"', () => {
+  const f = detectPII('Priya Sharma from the Mumbai store called about order 4471.');
+  assert.ok(f.some((x) => x.type === 'NAME' && x.value === 'Priya Sharma'));
+  const p = proposeSkills('Store managers coach new colleagues, give feedback and handle late deliveries.');
+  assert.ok(!p.proposed.slice(0, 2).some((x) => x.id === 'SK-PLAN' && x.confidence === 'High'));
+});

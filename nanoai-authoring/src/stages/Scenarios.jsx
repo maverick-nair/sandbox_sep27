@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Badge, Modal, Progress, Select } from '../components/ui.jsx';
 import { RULES } from '../content/rules.js';
 import { getSkill } from '../content/ontology.js';
-import { planBlueprint } from '../engine/blueprint.js';
+import { planBlueprint, applyReductionOrder } from '../engine/blueprint.js';
 import { buildScenarios, planIsStale } from '../engine/build.js';
 import { observationsFor } from '../engine/duration.js';
 import Step3Blueprint from '../steps/Step3Blueprint.jsx';
@@ -55,6 +55,7 @@ export default function Scenarios(props) {
         <div className="flex items-center gap-2"><span className="faint text-[11px] uppercase tracking-wider">Order</span><Select value={order} onChange={(e) => setOrder(e.target.value)} disabled={readOnly} className="w-auto py-1 text-xs" aria-label="Scenario order"><option value="shuffled">Shuffled per participant</option><option value="fixed">Fixed for everyone</option></Select></div>
         <div className="ml-auto flex items-center gap-2">
           {stale && <Badge tone="warn">Plan changed</Badge>}
+          {!readOnly && total > RULES.time.totalTarget && <Button size="sm" variant="secondary" title="Applies the reduction order (media, convert to MCQ, drop, simplify) until the plan meets the target, then updates the scenarios" onClick={async () => { const scale = asm.blueprint.totalMinutes / Math.max(1, total); const target = Math.floor(RULES.time.totalTarget * scale); const bp = applyReductionOrder({ ...asm.blueprint, changes: [] }, target); if (bp.rows.length === asm.blueprint.rows.length && bp.totalMinutes === asm.blueprint.totalMinutes) return toast('Nothing more can be trimmed without dropping a Skill below 8 observations. Remove a Skill in the brief or tighten caps.', 'error'); update((a) => ({ ...a, blueprint: bp }), { action: 'blueprint.shortened', after: bp.changes.map((c) => c.kind) }); await runBuild({ ...asm, blueprint: bp }); toast(`Shortened: ${bp.changes.map((c) => c.text).join(' ')}`, 'ok'); }}>Make it shorter</Button>}
           <Button size="sm" variant="secondary" onClick={() => setPlanOpen(true)}>Adjust plan</Button>
         </div>
       </div>

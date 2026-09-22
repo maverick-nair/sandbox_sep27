@@ -20,7 +20,7 @@ export function mediaWords(media) {
 
 // Estimate for a planned row before the scenario exists. Deterministic from the plan.
 export function estimatePlannedMinutes(row) {
-  const base = { Audio: 6, Text: 7, MCQ: 5 }[row.responseType] || 6;
+  const base = { Audio: 6, Text: 8, MCQ: 5 }[row.responseType] || 6;
   const depth = { Low: 0, Medium: 1, High: 2 }[row.difficulty] || 0;
   const media = row.plannedMedia ? 1 : 0;
   const mcq = row.responseType === 'MCQ' ? Math.max(0, (row.plannedQuestions || 2) - 2) : 0;

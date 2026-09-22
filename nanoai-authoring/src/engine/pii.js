@@ -23,6 +23,7 @@ const SPII = [
   { type: 'CRIMINAL', re: /\b(?:criminal record|convicted of|arrested for)\b[^.]{0,40}/gi },
   { type: 'FINANCIAL', re: /\b(?:salary of|earns|ctc of|bank account(?: number)?)\s?[:\s]*[₹$€£]?\s?[\d,]{4,}\b/gi },
 ];
+const FIRST_NAMES = new Set('aarav aditya ajay akash amit ananya anil anita anjali arjun arun ashok ayesha deepak divya farhan fatima gaurav geeta harish imran ishaan jaya kavita kiran krishna lakshmi manish manoj meera mohammed mohan naveen neha nikhil nisha pooja pradeep prakash priya rahul raj rajesh rakesh ramesh ravi rekha ritu rohan rohit sachin sameer sanjay sanjana shreya sneha sunil sunita suresh swati tanvi varun vijay vikram vinay vivek zara aisha omar ibrahim noor hana mei tomas lucas sofia elena grace kwame daniel david michael james john robert william richard joseph thomas charles mary patricia jennifer linda elizabeth barbara susan jessica sarah karen nancy lisa emma olivia ava sophia isabella mia charlotte amelia harper liam noah oliver elijah lucas mason logan ethan aiden jacob jackson sebastian carter matthew henry alexander samuel benjamin andrew ryan nathan adam chris christopher kevin brian jason mark paul steven george peter simon anna laura emily rachel hannah chloe lucy sophie amy claire helen ruth julia maria carlos jose juan luis miguel pedro ana lucia carmen wei li chen zhang yuki haruto sora aoi ren kenji akira sato tanaka'.split(' '));
 const HONORIFIC_NAME = /\b(?:Mr|Mrs|Ms|Dr|Prof|Shri|Smt)\.?\s+[A-Z][a-z]+(?:\s[A-Z][a-z]+)?/g;
 const FULL_NAME = /\b[A-Z][a-z]{2,}(?:\s[A-Z][a-z]{2,}){1,3}\b/g;
 const NAME_EDGE = new Set(['Customer', 'Employee', 'Client', 'Manager', 'Contact', 'Later', 'Then', 'Dear', 'Regards', 'Thanks', 'Hello', 'Hi', 'The', 'Our', 'Your', 'When', 'After', 'Before', 'Meanwhile', 'Today', 'Yesterday', 'Colleague', 'Agent', 'Caller', 'Patient', 'From', 'With', 'Named', 'Analyst', 'Director', 'Supervisor', 'Team', 'Lead', 'Officer', 'Nurse', 'Driver', 'Rep', 'Signed', 'Sincerely', 'Cc', 'To', 'Re', 'Subject', 'Note', 'Update', 'Summary']);
@@ -57,7 +58,7 @@ export function detectPII(text = '', { allowNames = [] } = {}) {
     // Only flag when a cue suggests a real person, to keep false positives low on titles and headings.
     const before = text.slice(Math.max(0, start - 40), start);
     const after = text.slice(start + value.length, start + value.length + 14);
-    if (cueWord || /(?:employee|customer|client|manager|contact|from|by|with|to|named|colleague|agent|rep|caller|patient|ms|mr|dear|regards|thanks|signed|later|then)[\s,:-]*$/i.test(before) || /^\s*(?:\(|<|wrote|said|called|emailed|reported|complained|asked|told)/.test(after)) push({ kind: 'PII', type: 'NAME', start, end: start + value.length, value, placeholder: '[Person]' });
+    if (cueWord || FIRST_NAMES.has(words[0].toLowerCase()) || /(?:employee|customer|client|manager|contact|from|by|with|to|named|colleague|agent|rep|caller|patient|ms|mr|dear|regards|thanks|signed|later|then)[\s,:-]*$/i.test(before) || /^\s*(?:\(|<|wrote|said|called|emailed|reported|complained|asked|told)/.test(after)) push({ kind: 'PII', type: 'NAME', start, end: start + value.length, value, placeholder: '[Person]' });
   }
   findings.sort((a, b) => a.start - b.start);
   return findings;

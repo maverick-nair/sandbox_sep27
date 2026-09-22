@@ -45,7 +45,7 @@ export default function Step5Preview({ asm, update, go, readOnly, toast }) {
     const agg = aggregate(obsBySkill);
     setReport({ agg, evidence });
     setScoring(false); setStage('report');
-    update((a) => ({ ...a, previewed: true }), { action: 'preview.completed', after: { overall: agg.overall }, undoable: false });
+    update((a) => ({ ...a, previewed: true }), { action: 'preview.completed', after: { overall: agg.overall }, undoable: false, allowPublished: true });
   };
 
   const restart = () => { setStage('welcome'); setI(0); setResponses({}); setReport(null); setSeed(Math.floor(Math.random() * 1e9)); };

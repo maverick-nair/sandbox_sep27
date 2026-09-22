@@ -83,17 +83,22 @@ export function recompute(bp) {
   return { ...bp, rows, perSkill: Object.fromEntries(Object.entries(perSkill).map(([k, v]) => [k, { ...v, tags: [...v.tags], difficulties: [...v.difficulties] }])), totalMinutes, tagCoverage: [...tagCoverage] };
 }
 
+// When converting, the Skill's remaining open scenarios may carry 5 scoring questions (PRD allows 4 or 5)
+// so the Skill keeps 8 observations. The check reports whether that lift is needed.
 function skillKeepsMinimum(bp, skillId, { dropRowId, convertRowId } = {}) {
-  let obs = 0, count = 0, open = 0;
+  let obs = 0, count = 0, open = 0, obsWithFive = 0;
   for (const r of bp.rows.filter((x) => x.skillId === skillId)) {
     if (r.id === dropRowId) continue;
     count += 1;
-    if (r.id === convertRowId) { obs += 3; continue; }
+    if (r.id === convertRowId) { obs += 3; obsWithFive += 3; continue; }
     obs += rowObservations(r);
+    obsWithFive += r.responseType === 'MCQ' ? rowObservations(r) : RULES.scoringQuestions.max;
     if (r.responseType !== 'MCQ') open += 1;
   }
   const openAfterDrop = bp.rows.filter((x) => x.skillId === skillId && x.id !== dropRowId && x.id !== convertRowId && x.responseType !== 'MCQ').length;
-  return { ok: obs >= RULES.observations.perSkillMin && count >= RULES.scenarios.perSkillMin && (convertRowId ? openAfterDrop >= 1 : true), obs, count, open };
+  const okNow = obs >= RULES.observations.perSkillMin;
+  const okWithFive = Boolean(convertRowId || dropRowId) && obsWithFive >= RULES.observations.perSkillMin && openAfterDrop >= 1;
+  return { ok: (okNow || okWithFive) && count >= RULES.scenarios.perSkillMin && (convertRowId ? openAfterDrop >= 1 : true), needsFive: !okNow && okWithFive, obs: okNow ? obs : obsWithFive, count, open };
 }
 
 // Reduction order when the time plan is over target: simplify media, then convert the lowest value
@@ -116,18 +121,18 @@ export function applyReductionOrder(bpIn, target = RULES.time.totalTarget) {
     const candidates = bp.rows.filter((r) => r.responseType !== 'MCQ').map((r) => ({ r, keep: skillKeepsMinimum(bp, r.skillId, { convertRowId: r.id }) })).filter((c) => c.keep.ok)
       .sort((a, b) => (b.keep.obs - a.keep.obs) || (DIFFICULTIES.indexOf(a.r.difficulty) - DIFFICULTIES.indexOf(b.r.difficulty)));
     if (candidates.length) {
-      const { r } = candidates[0];
-      bp = recompute({ ...bp, rows: bp.rows.map((x) => (x.id === r.id ? { ...x, responseType: 'MCQ', plannedQuestions: 3 } : x)) });
-      changes.push({ kind: 'convert', rowId: r.id, skillId: r.skillId, text: `Changed a ${getSkill(r.skillId)?.name} scenario from ${r.responseType} to MCQ (3 questions). The Skill still has ${bp.perSkill[r.skillId].observations} observations.` });
+      const { r, keep } = candidates[0];
+      bp = recompute({ ...bp, rows: bp.rows.map((x) => (x.id === r.id ? { ...x, responseType: 'MCQ', plannedQuestions: 3 } : (keep.needsFive && x.skillId === r.skillId && x.responseType !== 'MCQ') ? { ...x, plannedQuestions: RULES.scoringQuestions.max } : x)) });
+      changes.push({ kind: 'convert', rowId: r.id, skillId: r.skillId, text: `Changed a ${getSkill(r.skillId)?.name} scenario from ${r.responseType} to MCQ (3 questions)${keep.needsFive ? ' and gave its other open scenario 5 scoring questions' : ''}. The Skill still has ${bp.perSkill[r.skillId].observations} observations.` });
       continue;
     }
     // 3. Drop a scenario on a Skill that keeps 8 observations and 2 scenarios without it.
     const drops = bp.rows.map((r) => ({ r, keep: skillKeepsMinimum(bp, r.skillId, { dropRowId: r.id }) })).filter((c) => c.keep.ok && bp.rows.length - 1 >= RULES.scenarios.totalMin)
       .sort((a, b) => (b.keep.obs - a.keep.obs) || (a.r.responseType === 'MCQ' ? -1 : 1));
     if (drops.length) {
-      const { r } = drops[0];
-      bp = recompute({ ...bp, rows: bp.rows.filter((x) => x.id !== r.id) });
-      changes.push({ kind: 'drop', rowId: r.id, skillId: r.skillId, text: `Removed one ${getSkill(r.skillId)?.name} scenario (${r.responseType}). The Skill keeps ${bp.perSkill[r.skillId].observations} observations across ${bp.perSkill[r.skillId].scenarios} scenarios.` });
+      const { r, keep } = drops[0];
+      bp = recompute({ ...bp, rows: bp.rows.filter((x) => x.id !== r.id).map((x) => (keep.needsFive && x.skillId === r.skillId && x.responseType !== 'MCQ' ? { ...x, plannedQuestions: RULES.scoringQuestions.max } : x)) });
+      changes.push({ kind: 'drop', rowId: r.id, skillId: r.skillId, text: `Removed one ${getSkill(r.skillId)?.name} scenario (${r.responseType})${keep.needsFive ? ' and gave its open scenario 5 scoring questions' : ''}. The Skill keeps ${bp.perSkill[r.skillId].observations} observations across ${bp.perSkill[r.skillId].scenarios} scenarios.` });
       continue;
     }
     // 4. Reduce complexity: step the longest High or Medium scenario down one difficulty level (PRD 13.9

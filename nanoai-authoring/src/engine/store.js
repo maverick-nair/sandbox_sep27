@@ -4,24 +4,25 @@ import { RULES } from '../content/rules.js';
 import { ONTOLOGY_VERSION } from '../content/ontology.js';
 
 const KEY = 'nanoai.authoring.workspace.v1';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export function emptyWorkspace() {
-  return { schemaVersion: SCHEMA_VERSION, id: uid('ws'), name: 'My workspace', author: 'You', publishedCount: 0, assessments: [], audit: [], usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, calls: 0, errors: 0 } };
+  return { schemaVersion: SCHEMA_VERSION, id: uid('ws'), name: 'My workspace', author: 'You', role: 'author', publishedCount: 0, assessments: [], audit: [], usage: { inputTokens: 0, outputTokens: 0, costUsd: 0, calls: 0, errors: 0 } };
 }
 
+export function loadWorkspaceFrom(ws) {
+  if (!ws) return emptyWorkspace();
+  return migrate(ws);
+}
 export function loadWorkspace() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return emptyWorkspace();
-    const ws = JSON.parse(raw);
-    if (ws.schemaVersion !== SCHEMA_VERSION) return migrate(ws);
-    return ws;
+    return loadWorkspaceFrom(raw ? JSON.parse(raw) : null);
   } catch { return emptyWorkspace(); }
 }
 function migrate(ws) {
   const stageFor = (a) => a.stage || (a.step >= 7 ? 4 : a.step >= 5 ? 3 : a.step >= 3 && a.scenarios?.length ? 2 : 1);
-  return { ...emptyWorkspace(), ...ws, schemaVersion: SCHEMA_VERSION, assessments: (ws.assessments || []).map((a) => ({ ...a, stage: stageFor(a), config: { scenarioOrder: 'shuffled', captureMode: 'type', ...a.config } })) };
+  return { ...emptyWorkspace(), ...ws, schemaVersion: SCHEMA_VERSION, assessments: (ws.assessments || []).filter((a) => !isEmptyDraft(a)).map((a) => ({ ...a, stage: stageFor(a), calibration: a.calibration || {}, history: (a.history || []).slice(-HISTORY_LIMIT), future: [], config: { scenarioOrder: 'shuffled', ...a.config } })) };
 }
 export function saveWorkspace(ws) { try { localStorage.setItem(KEY, JSON.stringify(ws)); } catch (e) { console.warn('save failed', e); } }
 
@@ -33,7 +34,7 @@ export function newAssessment(partial = {}) {
     skills: [], skillsConfirmed: false,
     blueprint: null, scenarios: [], generation: null,
     config: { name: '', audienceVisibility: 'invited', languages: ['en'], participantLanguages: ['en'], windowStart: '', windowEnd: '', sittings: RULES.publish.defaultSittings, sittingWindowDays: RULES.publish.defaultSittingWindowDays, retakeDays: RULES.publish.defaultRetakeDays, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true }, exportCsv: true, exportPdf: true, expectedParticipants: 30, scenarioOrder: 'shuffled' },
-    versions: [], history: [], future: [], sample: false,
+    versions: [], history: [], future: [], sample: false, calibration: {},
     ...partial,
   };
 }
@@ -51,19 +52,23 @@ export function upsertAssessment(ws, asm) {
 }
 
 // Undo stack per assessment: snapshots of the mutable content (skills, blueprint, scenarios, config).
-export function snapshot(asm) { return JSON.stringify({ skills: asm.skills, blueprint: asm.blueprint, scenarios: asm.scenarios, config: asm.config, intent: asm.intent }); }
-export function pushHistory(asm, prevSnapshot) { return { ...asm, history: [...asm.history.slice(-60), prevSnapshot], future: [] }; }
+// Document bodies are excluded from snapshots: they are large and have their own add and remove actions.
+export function snapshot(asm) { const { documents, ...intent } = asm.intent || {}; return JSON.stringify({ skills: asm.skills, blueprint: asm.blueprint, scenarios: asm.scenarios, config: asm.config, intent, calibration: asm.calibration }); }
+export const HISTORY_LIMIT = 25;
+export function pushHistory(asm, prevSnapshot) { return { ...asm, history: [...(asm.history || []).slice(-(HISTORY_LIMIT - 1)), prevSnapshot], future: [] }; }
+// Content the author owns; stage, previewed and history are navigation state.
+export function contentKey(asm) { return snapshot(asm) + JSON.stringify((asm.intent?.documents || []).map((d) => d.id)); }
+export function isEmptyDraft(a) { return a.status === 'draft' && !a.sample && !a.currentVersion && !a.intent?.audience?.trim() && !a.intent?.situationsText?.trim() && !(a.intent?.documents || []).length && !(a.skills || []).length; }
+function restore(asm, snap) { const s = JSON.parse(snap); return { ...asm, ...s, intent: { ...s.intent, documents: asm.intent?.documents || [] } }; }
 export function undo(asm) {
-  if (!asm.history.length) return asm;
+  if (!asm.history?.length) return asm;
   const cur = snapshot(asm);
-  const prev = JSON.parse(asm.history[asm.history.length - 1]);
-  return { ...asm, ...prev, history: asm.history.slice(0, -1), future: [cur, ...asm.future].slice(0, 60) };
+  return { ...restore(asm, asm.history[asm.history.length - 1]), history: asm.history.slice(0, -1), future: [cur, ...(asm.future || [])].slice(0, HISTORY_LIMIT) };
 }
 export function redo(asm) {
-  if (!asm.future.length) return asm;
+  if (!asm.future?.length) return asm;
   const cur = snapshot(asm);
-  const next = JSON.parse(asm.future[0]);
-  return { ...asm, ...next, history: [...asm.history, cur], future: asm.future.slice(1) };
+  return { ...restore(asm, asm.future[0]), history: [...asm.history, cur], future: asm.future.slice(1) };
 }
 
 // Publish: immutable version snapshot with pinned ontology, model and prompt versions (FR-A10, FR-G2).

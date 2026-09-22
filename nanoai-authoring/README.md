@@ -27,7 +27,15 @@ Four stages, all reachable from the sidebar.
 3. **Preview.** Desktop and 390 point mobile frames, practice recording and MCQ, soft countdown, audio with cap and transcript correction, text with live count, then a sample report from the Section 13 formulas. Scenario order is shuffled per participant by default, seeded by the attempt, with Skills interleaved and no more than two audio scenarios in a row; a fixed order is available for parallel forms.
 4. **Publish.** The quality gate summary with every hard block and suggestion, each linking to where it is fixed, then name, audience, languages, window, sittings, retake policy, scenario order, report visibility and exports. Publish creates an immutable version pinned to ontology, model and prompt versions.
 
-The workspace, an audit log of every change with actor and before and after state, and an AI call log live in the browser and can be exported.
+**Calibration.** After publish, the sidebar shows Calibration for every Audio or Text scenario. Responses arrive from delivery (or are pasted, or a practice set is loaded), two calibrators enter a level per scoring question, the AI scores the same responses, and agreement is computed per question as ICC(1). AI scoring activates only when AI to human agreement is 0.75 or above and human to human 0.70 or above on every question. Activation and pausing need the Calibrator role.
+
+**Roles.** Settings assigns Author, Reviewer, Calibrator or Workspace admin. Reviewers complete KNOLSKAPE review of published versions; calibrators activate AI scoring. Without sign in this is self declared, so a deployment must assign roles centrally.
+
+**Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, undo is capped at 25 steps and excludes document bodies, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
+
+**Verification without a key.** `scripts/mock-anthropic.mjs` is a stand in Messages API that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (calls, parsing, validation, fallback, UI) can be run with `baseURL` pointed at it. It says nothing about model quality; that needs a real key and the "Test generation" button in Settings.
+
+**Not in this build.** Sign in, tenancy and a server: the API key is held in the browser unless the base URL points at a proxy. Participant delivery, real response scoring and reports are the delivery platform's scope.
 
 ## Structure
 

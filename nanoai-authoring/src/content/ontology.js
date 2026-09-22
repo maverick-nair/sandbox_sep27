@@ -54,7 +54,7 @@ export const SKILLS = [
     id: 'SK-FEEDBK', name: 'Giving Feedback', domain: 'People Leadership', macro: 'Developing Others', affinity: 'open', voice: true, hasProducts: true,
     definition: 'Shares specific, timely observations about behavior and impact in a way the receiver can act on.',
     aliases: ['feedback', 'constructive feedback', 'performance feedback', 'critical feedback'],
-    keywords: ['feedback', 'observe', 'impact', 'behavior', 'appraisal', 'review', 'praise', 'correct'],
+    keywords: ['feedback', 'appraisal', 'praise', 'performance review', 'observed behavior'],
     indicators: [
       ind('FEEDBK-E1', 'Describes the specific behavior and situation rather than a label or trait'),
       ind('FEEDBK-E2', 'States the impact on people, work or customers'),
@@ -86,7 +86,7 @@ export const SKILLS = [
     id: 'SK-PRIOR', name: 'Prioritization', domain: 'Execution', macro: 'Planning and Organizing', affinity: 'mcq', voice: false, hasProducts: true,
     definition: 'Chooses what to do first, later and not at all, using impact, urgency and dependencies rather than noise.',
     aliases: ['prioritising', 'prioritizing', 'time management', 'focus', 'triage', 'managing competing demands', 'saying no'],
-    keywords: ['priority', 'prioriti', 'urgent', 'deadline', 'competing', 'trade off', 'backlog', 'first', 'focus', 'triage'],
+    keywords: ['priority', 'prioriti', 'urgent', 'deadline', 'competing', 'trade off', 'backlog', 'do first', 'triage', 'which to do'],
     indicators: [
       ind('PRIOR-E1', 'Ranks by business impact and risk rather than by who asked loudest or most recently'),
       ind('PRIOR-E2', 'Identifies dependencies and does the enabling work first'),
@@ -102,7 +102,7 @@ export const SKILLS = [
     id: 'SK-DATADEC', name: 'Data Driven Decision Making', domain: 'Thinking', macro: 'Analytical Thinking', affinity: 'mcq', voice: false, hasProducts: true,
     definition: 'Reads the numbers correctly, asks what they do and do not show, and decides in proportion to the evidence.',
     aliases: ['analytical thinking', 'data literacy', 'evidence based decisions', 'reading dashboards'],
-    keywords: ['data', 'chart', 'dashboard', 'metric', 'trend', 'number', 'report', 'analysis', 'kpi', 'evidence'],
+    keywords: ['data', 'chart', 'dashboard', 'metric', 'trend', 'numbers', 'analysis', 'kpi', 'evidence', 'figures'],
     indicators: [
       ind('DATADEC-E1', 'Identifies the specific figure or trend in the data that matters for the decision'),
       ind('DATADEC-E2', 'Distinguishes what the data shows from what it might explain'),
@@ -150,7 +150,7 @@ export const SKILLS = [
     id: 'SK-PROBS', name: 'Problem Solving', domain: 'Thinking', macro: 'Analytical Thinking', affinity: 'open', voice: false, hasProducts: true,
     definition: 'Defines the real problem, generates options, and chooses one with a clear rationale and a way to check it worked.',
     aliases: ['structured problem solving', 'critical thinking', 'root cause analysis', 'troubleshooting'],
-    keywords: ['problem', 'root cause', 'issue', 'option', 'solution', 'diagnose', 'why', 'fix', 'recurring'],
+    keywords: ['problem', 'root cause', 'diagnose', 'recurring', 'keeps happening', 'solution', 'troubleshoot'],
     indicators: [
       ind('PROBS-E1', 'States the problem as a gap between what is and what should be, with evidence'),
       ind('PROBS-E2', 'Separates symptoms from likely causes'),
@@ -198,7 +198,7 @@ export const SKILLS = [
     id: 'SK-PLAN', name: 'Planning and Execution', domain: 'Execution', macro: 'Planning and Organizing', affinity: 'open', voice: false, hasProducts: true,
     definition: 'Turns a goal into a sequenced plan with owners, risks and checkpoints, then adjusts as delivery unfolds.',
     aliases: ['execution', 'project planning', 'delivery', 'getting things done', 'operational planning'],
-    keywords: ['plan', 'milestone', 'deliver', 'timeline', 'owner', 'resource', 'slip', 'schedule', 'launch', 'dependency'],
+    keywords: ['project plan', 'milestone', 'timeline', 'critical path', 'slip', 'schedule', 'launch', 'dependency', 'checkpoint', 'execution'],
     indicators: [
       ind('PLAN-E1', 'Breaks the goal into sequenced steps with owners and dates'),
       ind('PLAN-E2', 'Identifies the critical path and the risks that threaten it'),

@@ -17,11 +17,12 @@ class Boundary extends React.Component {
 }
 
 function Router() {
-  const { route, current, toasts } = useWorkspace();
+  const { route, current, toasts, loading } = useWorkspace();
+  if (loading) return <div className="flex h-full items-center justify-center"><div className="pulse text-sm muted">Opening your workspace</div></div>;
   let page;
   if (route === 'settings') page = <Shell title="Settings" subtitle="AI connection, workspace, audit log and AI call log."><Settings /></Shell>;
   else if (route === 'help') page = <Shell title="Help and support"><Help /></Shell>;
-  else if (route === 'author' && current) page = <Author />;
+  else if ((route === 'author' || route === 'calibration') && current) page = <Author />;
   else page = <Shell><Home /></Shell>;
   return <>{page}<Toasts toasts={toasts} /></>;
 }

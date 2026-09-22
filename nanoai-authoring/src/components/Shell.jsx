@@ -23,59 +23,67 @@ export const STAGES = [
   { id: 'publish', label: 'Publish', hint: 'Check and go live' },
 ];
 
-export default function Shell({ children, crumbs = [], title, subtitle, actions, stage, onStage, stageStatus }) {
-  const { ws, route, setRoute, goHome, createAssessment, current, undo, redo, canUndo, canRedo, openAssessment } = useWorkspace();
+export default function Shell({ children, crumbs = [], title, subtitle, actions, stage, onStage, stageStatus, onCalibration }) {
+  const { ws, route, setRoute, goHome, createAssessment, current, undo, redo, canUndo, canRedo, openAssessment, saveStatus, backend } = useWorkspace();
   const [q, setQ] = useState('');
+  const [drawer, setDrawer] = useState(false);
+  const nav = (fn) => () => { setDrawer(false); fn(); };
   const ai = llmAvailable();
   const sample = ws.assessments.find((a) => a.sample);
   const results = q.trim() ? ws.assessments.filter((a) => (a.config.name || 'Untitled').toLowerCase().includes(q.toLowerCase())).slice(0, 6) : [];
-  return (
-    <div className="flex min-h-full">
-      <aside className="no-print sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[var(--line)] bg-white px-4 py-5 md:flex">
-        <button onClick={goHome} className="flex items-center gap-2.5 px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]" aria-label="NanoAI Authoring home">
+  const sidebar = (
+      <aside className={`no-print ${drawer ? 'fixed inset-y-0 left-0 z-50 flex w-72 shadow-2xl' : 'sticky top-0 hidden md:flex'} h-screen w-60 shrink-0 flex-col border-r border-[var(--line)] bg-white px-4 py-5`}>
+        {drawer && <button className="absolute right-3 top-4 text-sm muted" onClick={() => setDrawer(false)} aria-label="Close menu">Close</button>}
+        <button onClick={nav(goHome)} className="flex items-center gap-2.5 px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]" aria-label="NanoAI Authoring home">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)] text-sm font-bold text-white">N</span>
           <span className="text-left leading-tight"><span className="block text-[15px] font-semibold">NanoAI</span><span className="faint block text-[11px]">Authoring · GenieKreator</span></span>
         </button>
         <nav className="mt-7 flex flex-1 flex-col gap-6 overflow-auto">
           <div>
             <div className="faint mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.12em]">Menu</div>
-            <button className="side-item" aria-current={route === 'home' ? 'page' : undefined} onClick={goHome}><Icon d={I.grid} />Dashboard</button>
-            <button className="side-item" onClick={() => createAssessment()}><Icon d={I.plus} />New assessment</button>
-            {sample && <button className="side-item" aria-current={route === 'author' && current?.sample ? 'page' : undefined} onClick={() => openAssessment(sample.id)}><Icon d={I.star} />Sample assessment</button>}
+            <button className="side-item" aria-current={route === 'home' ? 'page' : undefined} onClick={nav(goHome)}><Icon d={I.grid} />Dashboard</button>
+            <button className="side-item" onClick={nav(() => createAssessment())}><Icon d={I.plus} />New assessment</button>
+            {sample && <button className="side-item" aria-current={route === 'author' && current?.sample ? 'page' : undefined} onClick={nav(() => openAssessment(sample.id))}><Icon d={I.star} />Sample assessment</button>}
           </div>
-          {route === 'author' && current && (
+          {(route === 'author' || route === 'calibration') && current && (
             <div>
               <div className="faint mb-2 flex items-center justify-between px-3 text-[10px] font-semibold uppercase tracking-[0.12em]"><span>Stages</span><span>{stageStatus?.filter(Boolean).length || 0}/{STAGES.length}</span></div>
               {STAGES.map((s, i) => { const n = i + 1; const done = stageStatus?.[i]; return (
-                <button key={s.id} className="side-item" aria-current={stage === n ? 'step' : undefined} onClick={() => onStage?.(n)} disabled={!onStage}>
+                <button key={s.id} className="side-item" aria-current={route === 'author' && stage === n ? 'step' : undefined} onClick={nav(() => onStage?.(n))} disabled={!onStage}>
                   <span className={`dot ${done && stage !== n ? 'done' : ''}`}>{done && stage !== n ? '✓' : n}</span>
                   <span className="leading-tight"><span className="block">{s.label}</span><span className="faint block text-[11px] font-normal">{s.hint}</span></span>
                 </button>); })}
+              {onCalibration && current.scenarios?.some((s) => s.responseType !== 'MCQ') && <button className="side-item mt-1" aria-current={route === 'calibration' ? 'page' : undefined} onClick={nav(onCalibration)}><span className="dot">◎</span><span className="leading-tight"><span className="block">Calibration</span><span className="faint block text-[11px] font-normal">Activate AI scoring</span></span></button>}
             </div>
           )}
           <div>
             <div className="faint mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.12em]">General</div>
-            <button className="side-item" aria-current={route === 'settings' ? 'page' : undefined} onClick={() => setRoute('settings')}><Icon d={I.gear} />Settings</button>
-            <button className="side-item" aria-current={route === 'help' ? 'page' : undefined} onClick={() => setRoute('help')}><Icon d={I.help} />Help and support</button>
+            <button className="side-item" aria-current={route === 'settings' ? 'page' : undefined} onClick={nav(() => setRoute('settings'))}><Icon d={I.gear} />Settings</button>
+            <button className="side-item" aria-current={route === 'help' ? 'page' : undefined} onClick={nav(() => setRoute('help'))}><Icon d={I.help} />Help and support</button>
           </div>
         </nav>
         <div className={`mt-4 rounded-xl p-3.5 text-white ${ai ? 'bg-[#1f2a37]' : 'bg-gradient-to-br from-[#2b1b12] to-[#4a2a14]'}`}>
           <div className="flex items-center gap-2 text-sm font-semibold"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand)] text-[11px]">+</span>{ai ? 'AI assisted' : 'Scripted mode'}</div>
           <p className="mt-1 text-[11px] text-white/75">{ai ? `Drafting with ${loadSettings().model || DEFAULT_MODEL}.` : 'Add an API key to draft scenarios from your own documents.'}</p>
-          {!ai && <button onClick={() => setRoute('settings')} className="mt-2.5 w-full rounded-lg bg-[var(--brand)] py-1.5 text-xs font-semibold hover:bg-[var(--brand-2)]">Connect AI</button>}
+          {!ai && <button onClick={nav(() => setRoute('settings'))} className="mt-2.5 w-full rounded-lg bg-[var(--brand)] py-1.5 text-xs font-semibold hover:bg-[var(--brand-2)]">Connect AI</button>}
         </div>
-      </aside>
+      </aside>);
+  return (
+    <div className="flex min-h-full">
+      {drawer && <div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={() => setDrawer(false)} />}
+      {sidebar}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--paper)]/90 backdrop-blur">
           <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
-            <div className="flex items-center gap-2 md:hidden"><button onClick={goHome} className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)] text-sm font-bold text-white">N</button><Badge tone={ai ? 'ok' : 'neutral'}>{ai ? 'AI' : 'Scripted'}</Badge></div>
+            <div className="flex items-center gap-2 md:hidden"><button onClick={() => setDrawer(true)} aria-label="Open menu" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--line)] bg-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button><button onClick={goHome} className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)] text-sm font-bold text-white">N</button><Badge tone={ai ? 'ok' : 'neutral'}>{ai ? 'AI' : 'Scripted'}</Badge></div>
             <div className="relative hidden w-full max-w-md md:block">
               <span className="pointer-events-none absolute left-3 top-2.5 text-[var(--ink-3)]"><Icon d={I.search} /></span>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search assessments" aria-label="Search assessments" className="w-full rounded-full border border-transparent bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-ring)]" />
               {results.length > 0 && <ul className="card absolute z-50 mt-1 w-full overflow-hidden shadow-lg">{results.map((a) => <li key={a.id}><button className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => { openAssessment(a.id); setQ(''); }}><span>{a.config.name || 'Untitled assessment'}</span><Badge tone={a.status === 'published' ? 'ok' : 'neutral'}>{a.status}</Badge></button></li>)}</ul>}
             </div>
             <div className="flex items-center gap-1.5">
-              {route === 'author' && current && <><Button variant="ghost" size="sm" onClick={undo} disabled={!canUndo} title="Undo" aria-label="Undo"><Icon d={I.undo} /></Button><Button variant="ghost" size="sm" onClick={redo} disabled={!canRedo} title="Redo" aria-label="Redo"><Icon d={I.redo} /></Button></>}
+              {saveStatus?.ok === false ? <Badge tone="block" title={saveStatus.reason}>{saveStatus.reason === 'quota' ? 'Storage full: export your workspace' : 'Not saved'}</Badge> : saveStatus?.fallback ? <Badge tone="warn" title="IndexedDB unavailable; using a smaller fallback store">Saved (limited storage)</Badge> : <span className="faint hidden text-[11px] lg:inline">{saveStatus?.at ? 'Saved' : ''}</span>}
+              {(route === 'author' || route === 'calibration') && current && <><Button variant="ghost" size="sm" onClick={undo} disabled={!canUndo} title="Undo" aria-label="Undo"><Icon d={I.undo} /></Button><Button variant="ghost" size="sm" onClick={redo} disabled={!canRedo} title="Redo" aria-label="Redo"><Icon d={I.redo} /></Button></>}
               <div className="ml-1 hidden items-center gap-2 rounded-full bg-white px-2 py-1 pr-3 shadow-sm sm:flex"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-semibold text-[var(--brand)]">{(ws.author || 'A').slice(0, 1).toUpperCase()}</span><span className="text-xs font-medium">{ws.author || 'Author'}</span></div>
             </div>
           </div>

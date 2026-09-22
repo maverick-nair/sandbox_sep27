@@ -8,6 +8,7 @@ import Brief from '../stages/Brief.jsx';
 import Scenarios from '../stages/Scenarios.jsx';
 import Step5Preview from '../steps/Step5Preview.jsx';
 import Publish from '../stages/Publish.jsx';
+import Calibration from '../screens/Calibration.jsx';
 
 // Four stages. Brief folds intent and Skills; Scenarios folds the blueprint and the review; Publish folds
 // the quality gate and configuration. Estimated time to publish stays visible.
@@ -21,7 +22,7 @@ export function estimateToPublish(asm, gate) {
 }
 
 export default function Author() {
-  const { current: asm, update, toast, goHome } = useWorkspace();
+  const { current: asm, update, toast, goHome, route, setRoute } = useWorkspace();
   const [focus, setFocus] = useState(null); // { scenarioId, plan }
   const gate = useMemo(() => runQualityGate(asm), [asm]);
   const readOnly = asm.status === 'published';
@@ -33,13 +34,13 @@ export default function Author() {
     if (n === 2) return skillsOk;
     return skillsOk && Boolean(a.scenarios?.length);
   };
-  const go = (n, opts = {}) => { if (opts.scenarioId || opts.plan) setFocus({ scenarioId: opts.scenarioId, plan: opts.plan }); update((a) => (canGoFor(a, n) ? { ...a, stage: n } : a), { undoable: false }); window.scrollTo({ top: 0 }); };
+  const go = (n, opts = {}) => { if (route !== 'author') setRoute('author'); if (opts.scenarioId || opts.plan) setFocus({ scenarioId: opts.scenarioId, plan: opts.plan }); update((a) => (canGoFor(a, n) ? { ...a, stage: n } : a), { undoable: false, allowPublished: true }); window.scrollTo({ top: 0 }); };
   useEffect(() => { if (!canGoFor(asm, stage)) update({ stage: 1 }, { undoable: false }); }, []); // eslint-disable-line
 
   const stageStatus = [Boolean(asm.skillsConfirmed), (asm.scenarios?.length || 0) > 0 && asm.scenarios.every((s) => s.approved), Boolean(asm.previewed), asm.status === 'published'];
 
   const startNewVersion = () => {
-    update((a) => ({ ...a, status: 'draft', stage: 2 }), { action: 'version.draft_started', before: `v${asm.currentVersion}`, after: `v${asm.currentVersion + 1} draft` });
+    update((a) => ({ ...a, status: 'draft', stage: 2 }), { action: 'version.draft_started', before: `v${asm.currentVersion}`, after: `v${asm.currentVersion + 1} draft`, allowPublished: true });
     toast(`Editing a new version. Version ${asm.currentVersion} stays live for participants in flight.`);
   };
 
@@ -61,8 +62,13 @@ export default function Author() {
       {!readOnly && stage === 3 && <Button size="sm" onClick={() => go(4)}>Continue to publish</Button>}
     </>
   );
+  if (route === 'calibration') return (
+    <Shell stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Dashboard', onClick: goHome }, { label: name }, { label: 'Calibration' }]} title="Calibrate AI scoring" subtitle="Two calibrators score the first 30 responses to each open response scenario alongside the AI. When agreement holds, AI scoring activates for that scenario.">
+      <Calibration asm={asm} update={update} toast={toast} />
+    </Shell>
+  );
   return (
-    <Shell stage={stage} onStage={go} stageStatus={stageStatus} crumbs={[{ label: 'Dashboard', onClick: goHome }, { label: name }, { label: STAGES[stage - 1].label }]} title={titles[stage][0]} subtitle={titles[stage][1]} actions={actions}>
+    <Shell stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Dashboard', onClick: goHome }, { label: name }, { label: STAGES[stage - 1].label }]} title={titles[stage][0]} subtitle={titles[stage][1]} actions={actions}>
       <View {...props} />
     </Shell>
   );

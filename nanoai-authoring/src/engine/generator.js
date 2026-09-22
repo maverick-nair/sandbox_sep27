@@ -38,6 +38,12 @@ function questionFromIdeal(text) {
 // ---------- Scripted builders ----------
 export function buildScoringQuestions(seed, skill, count, names, ctx) {
   const ideal = seed.ideal.slice(0, count);
+  // A fifth question, when the plan asks for one, observes an effective indicator the seed did not cover.
+  while (ideal.length < count) {
+    const used = new Set(ideal.map((e) => e.indicator));
+    const ind = effectiveIndicators(skill).find((x) => !used.has(x.id)) || effectiveIndicators(skill)[ideal.length % effectiveIndicators(skill).length];
+    ideal.push({ text: `${ind.text.charAt(0).toUpperCase()}${ind.text.slice(1)}, using the specific facts of this situation`, indicator: ind.id, fact: ideal.length % seed.facts.length });
+  }
   return ideal.map((el, i) => {
     const ind = skill.indicators.find((x) => x.id === el.indicator) || effectiveIndicators(skill)[i % effectiveIndicators(skill).length];
     const fact = fillTemplate(seed.facts[el.fact ?? i % seed.facts.length] || seed.facts[0], ctx, names);
@@ -142,7 +148,7 @@ export function scriptedScenario(row, asm, index, { variant = 0 } = {}) {
     seedTitle: seed.title, pendingConfirmation: null,
   };
   if (isVariant) sc.source = { kind: 'variant', text: `Variant of a library scenario. Regenerate with an API key or edit the situation so it is not a near duplicate.` };
-  return analyzeScripted(sc, { seed, names, ctx, seedNum: index });
+  return analyzeScripted(sc, { seed, names, ctx, seedNum: index, plannedQuestions: row.plannedQuestions });
 }
 
 function usedTitles(asm) { return new Set((asm.scenarios || []).map((s) => s.seedTitle).filter(Boolean)); }
@@ -159,7 +165,7 @@ export function analyzeScripted(sc, { seed, names, ctx, seedNum = 0, plannedQues
     decisionAtStake: fill(seed.prompt),
     sources: [{ kind: 'indicators', text: `Generated from the ${skill.name} Skill indicators (${effectiveIndicators(skill).map((i) => i.id).join(', ')})` }, ...(media ? [{ kind: 'media', text: `Read from the ${media.type}: ${media.title || media.alt}` }] : [])],
   };
-  const sqCount = seed.ideal.length >= 5 ? 5 : RULES.scoringQuestions.default;
+  const sqCount = sc.responseType !== 'MCQ' && plannedQuestions >= RULES.scoringQuestions.min && plannedQuestions <= RULES.scoringQuestions.max ? plannedQuestions : (seed.ideal.length >= 5 ? 5 : RULES.scoringQuestions.default);
   const out = { ...sc, analysis };
   if (sc.responseType === 'MCQ') { out.mcq = buildMcq(seed, skill, Math.min(RULES.mcq.questionsMax, plannedQuestions || sc.mcq?.length || 2), names, ctx, seedNum); out.scoringQuestions = []; out.cap = {}; }
   else { out.scoringQuestions = buildScoringQuestions(seed, skill, sqCount, names, ctx); out.mcq = []; out.cap = recommendCap(sc.responseType, analysis.modelAnswer); }
@@ -207,11 +213,11 @@ async function llmScenario(row, asm, index, avoid) {
   };
 }
 
-async function llmAnalyze(sc, plannedQuestions) {
+async function llmAnalyze(sc, plannedQuestions, openQuestions) {
   const skill = getSkill(sc.skillId);
   const mediaText = sc.media ? `Media (${sc.media.type}): ${sc.media.title || ''}\n${JSON.stringify(sc.media.data || sc.media.alt || sc.media.text)}` : 'No media.';
   const isMcq = sc.responseType === 'MCQ';
-  const user = `Run contextual analysis and derive the scoring instrument for this NanoAI scenario.\n\nPrimary Skill: ${skill.name}. Definition: ${skill.definition}\nIndicators:\n${INDICATOR_LIST(skill)}\nProficiency levels: L0 ${skill.levels.L0}; L1 ${skill.levels.L1}; L2 ${skill.levels.L2}; L3 ${skill.levels.L3}.\n\nContext header: ${sc.contextHeader}\nSituation: ${sc.situation}\nPrompt: ${sc.prompt}\n${mediaText}\nResponse type: ${sc.responseType}.\n\nSteps: read the scenario and extract key facts, constraints, stakeholders and the decision at stake; read the media as data and state what it shows and which facts a good answer must use; using the indicators, state what an appropriate response must address (4 or 5 elements, each tied to one indicator id) and what a misaligned one looks like; write a model answer of 90 to 160 words in the participant's voice and 3 typical weak answer patterns.\n${isMcq ? `Then write ${plannedQuestions || 2} MCQ questions (1 to 3). Each has exactly 4 options of 15 to 40 words, all plausible things a real colleague might do, each written to one proficiency level (one at L3, one at L2, one at L1, one at L0), keyed 1 to 5 (L3=5, L2=4, L1=2, L0=1) with a one sentence rationale that reads as a coaching note and names the indicator id.` : `Then derive exactly 4 scoring questions (5 only if the analysis has five distinct elements). Each tests one element of appropriateness, is tied to one indicator id, has anchors for L0 to L3 that describe what the answer contains (never how well it is written), and traces to an element of the analysis by index. Scoring is content not delivery: anchors must not mention grammar, fluency, length or accent.`}`;
+  const user = `Run contextual analysis and derive the scoring instrument for this NanoAI scenario.\n\nPrimary Skill: ${skill.name}. Definition: ${skill.definition}\nIndicators:\n${INDICATOR_LIST(skill)}\nProficiency levels: L0 ${skill.levels.L0}; L1 ${skill.levels.L1}; L2 ${skill.levels.L2}; L3 ${skill.levels.L3}.\n\nContext header: ${sc.contextHeader}\nSituation: ${sc.situation}\nPrompt: ${sc.prompt}\n${mediaText}\nResponse type: ${sc.responseType}.\n\nSteps: read the scenario and extract key facts, constraints, stakeholders and the decision at stake; read the media as data and state what it shows and which facts a good answer must use; using the indicators, state what an appropriate response must address (4 or 5 elements, each tied to one indicator id) and what a misaligned one looks like; write a model answer of 90 to 160 words in the participant's voice and 3 typical weak answer patterns.\n${isMcq ? `Then write ${plannedQuestions || 2} MCQ questions (1 to 3). Each has exactly 4 options of 15 to 40 words, all plausible things a real colleague might do, each written to one proficiency level (one at L3, one at L2, one at L1, one at L0), keyed 1 to 5 (L3=5, L2=4, L1=2, L0=1) with a one sentence rationale that reads as a coaching note and names the indicator id.` : `Then derive exactly ${openQuestions === 5 ? 5 : 4} scoring questions${openQuestions === 5 ? '' : ' (5 only if the analysis has five distinct elements)'}. Each tests one element of appropriateness, is tied to one indicator id, has anchors for L0 to L3 that describe what the answer contains (never how well it is written), and traces to an element of the analysis by index. Scoring is content not delivery: anchors must not mention grammar, fluency, length or accent.`}`;
   const schema = `{"keyFacts": ["string"], "constraints": ["string"], "stakeholders": ["string"], "decisionAtStake": "string", "mediaShows": ["string"], "idealMustAddress": [{"text": "string", "indicatorId": "string"}], "modelAnswer": "string", "weakPatterns": ["string"], ${isMcq ? '"mcq": [{"text": "string", "options": [{"text": "string", "level": "L0|L1|L2|L3", "key": 1, "rationale": "string", "indicatorId": "string"}]}]' : '"scoringQuestions": [{"text": "string", "indicatorId": "string", "anchors": {"L0": "string", "L1": "string", "L2": "string", "L3": "string"}, "traceTo": ["ideal:0", "fact:1"]}]'}}`;
   const res = await structured({ purpose: isMcq ? 'mcq' : 'analysis', system: 'You are the NanoAI contextual analysis engine.', user, schemaHint: schema, maxTokens: 4500 });
   if (!res.ok || !validateAnalysisJson(res.json, skill, sc.responseType)) return null;
@@ -235,7 +241,7 @@ export async function generateScenario(row, asm, index, { onStatus } = {}) {
     const sc = await llmScenario(row, asm, index, avoid);
     if (sc) {
       onStatus?.('Running contextual analysis');
-      const analyzed = await llmAnalyze(sc, row.plannedQuestions);
+      const analyzed = await llmAnalyze(sc, row.plannedQuestions, row.plannedQuestions);
       if (analyzed) return analyzed;
       // Analysis failed: keep the LLM situation, fall back to a library instrument the author can edit.
       const seed = seedsForSkill(sc.skillId)[0];
@@ -246,20 +252,43 @@ export async function generateScenario(row, asm, index, { onStatus } = {}) {
   return scriptedScenario(row, asm, index);
 }
 
+// Scripted reading of an edited situation: facts, constraints and stakeholders come from the author's text,
+// so the analysis follows the edit even without a model. Scoring questions are kept from the instrument and
+// re-traced to the new facts; the banner says so.
+export function scriptedAnalysisFromText(sc, skill) {
+  const sentences = splitSentences(sc.situation || '');
+  const facts = sentences.filter((s) => /\d|"|'|percent|week|day|month|hour|minute|deadline|late|due|ago|since|already/i.test(s)).map((s) => s.replace(/\s+/g, ' ').trim()).slice(0, 6);
+  const constraints = sentences.filter((s) => /\b(cannot|can't|must|only|within|before|no |not |never|limit|policy|approval|budget|deadline|has to|need to|needs)\b/i.test(s)).map((s) => s.trim()).slice(0, 4);
+  const people = [...new Set((sc.situation.match(/\b[A-Z][a-z]{2,}\b/g) || []).filter((w) => !/^(You|Your|The|This|That|They|There|Then|When|What|After|Before|Two|Three|One|Head|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(w)))].slice(0, 6);
+  const roles = [...new Set((sc.situation.match(/\b(?:customer|client|team|colleague|manager|director|head office|regional manager|supervisor|staff|auditor|supplier|vendor|board|CFO|CEO|HR)\b/gi) || []).map((r) => r.toLowerCase()))].slice(0, 6);
+  const stakeholders = [...people, ...roles].slice(0, 6);
+  const ideal = (sc.analysis?.idealMustAddress || []).length ? sc.analysis.idealMustAddress : effectiveIndicators(skill).slice(0, 4).map((i) => ({ text: i.text, indicatorId: i.id }));
+  return {
+    keyFacts: facts.length ? facts : sentences.slice(0, 3), constraints, stakeholders,
+    decisionAtStake: sc.prompt, mediaShows: sc.media ? mediaSummary(sc.media) : [],
+    idealMustAddress: ideal, modelAnswer: sc.analysis?.modelAnswer || '', weakPatterns: sc.analysis?.weakPatterns || [],
+    sources: [{ kind: 'text', text: 'Facts, constraints and stakeholders read from your edited situation (scripted mode). The scoring questions were kept and re-traced; review them against the new facts.' }, ...(sc.media ? [{ kind: 'media', text: `Read from the ${sc.media.type}: ${sc.media.title || sc.media.alt}` }] : [])],
+    mode: 'scripted-text',
+  };
+}
+
 // Re-run contextual analysis after the situation or media changed (FR-A7). Returns the scenario with
 // new questions in pendingConfirmation and approval reset.
 export async function reanalyze(sc, asm) {
   const before = { scoringQuestions: sc.scoringQuestions, mcq: sc.mcq, cap: sc.cap, recommendedMinutes: sc.recommendedMinutes, modelAnswer: sc.analysis?.modelAnswer };
   let next = null;
   if (llmAvailable()) next = await llmAnalyze(sc, sc.mcq?.length || 2);
+  let mode = 'llm';
   if (!next) {
-    const seed = seedForScenario(sc);
-    next = analyzeScripted(sc, { seed, names: sc.allowedTerms?.length >= 3 ? sc.allowedTerms : pickNames(1, 3), ctx: buildContext(asm), plannedQuestions: sc.mcq?.length || 2 });
-    // Keep the author's edited facts visible: the analysis re-reads the media if it changed.
-    if (sc.media) next.analysis.mediaShows = mediaSummary(sc.media);
+    mode = 'scripted';
+    const skill = getSkill(sc.skillId);
+    const analysis = scriptedAnalysisFromText(sc, skill);
+    const factIdx = (i) => `fact:${i % Math.max(1, analysis.keyFacts.length)}`;
+    next = { ...sc, analysis, scoringQuestions: (sc.scoringQuestions || []).map((q, i) => ({ ...q, traceTo: [`ideal:${i}`, factIdx(i)] })), recommendedMinutes: estimateScenarioMinutes(sc) };
+    if (sc.responseType !== 'MCQ' && analysis.modelAnswer) next.cap = sc.cap?.audioSeconds || sc.cap?.textChars ? sc.cap : recommendCap(sc.responseType, analysis.modelAnswer);
   }
   const changed = sc.responseType === 'MCQ' ? diffMcq(before.mcq, next.mcq) : diffQuestions(before.scoringQuestions, next.scoringQuestions);
-  return { ...next, approved: false, version: (sc.version || 1) + 1, pendingConfirmation: { before, changed, at: Date.now() } };
+  return { ...next, approved: false, version: (sc.version || 1) + 1, pendingConfirmation: { before, changed: mode === 'scripted' ? changed.map((c) => ({ ...c, status: c.status === 'unchanged' ? 'kept' : c.status })) : changed, mode, at: Date.now() } };
 }
 
 function diffQuestions(oldQs = [], newQs = []) {
@@ -332,6 +361,11 @@ function scriptedRegenerate(sc, asm, { scope, targetId, optionId, instruction, s
   const skill = getSkill(sc.skillId);
   const subst = parseSubstitution(instruction);
   const applyText = (t) => (subst ? t.replace(new RegExp(escapeRe(subst.from), 'gi'), subst.to) : t);
+  if (scope === 'scenario' && /\b(shorter|shorten|trim|tighter)\b/i.test(instruction || '')) {
+    const sentences = splitSentences(sc.situation);
+    if (sentences.length > 6) { const keep = sentences.filter((_, i) => i !== sentences.length - 2 && i !== Math.floor(sentences.length / 2)); return { ok: true, scenario: { ...sc, situation: keep.join(' '), approved: false, version: (sc.version || 1) + 1 }, mode: 'scripted', note: 'Removed two sentences to shorten the situation. Re-check the facts the scoring questions rely on.' }; }
+    return { ok: false, scenario: sc, mode: 'scripted', note: 'The situation is already at the minimum length for a scenario.' };
+  }
   if (scope === 'scenario') {
     const seeds = seedsForSkill(sc.skillId);
     const used = usedTitles(asm);

@@ -23,22 +23,28 @@ function useDictation(onText) {
   const [live, setLive] = useState(false);
   const [supported] = useState(() => typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
   const recRef = useRef(null); const baseRef = useRef('');
+  const [error, setError] = useState('');
   const start = (current) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
+    setError('');
     const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
     baseRef.current = current ? `${current.trim()} ` : '';
     r.onresult = (e) => { let t = ''; for (const res of e.results) t += res[0].transcript + ' '; onText(baseRef.current + t.trim()); };
-    r.onend = () => setLive(false); r.onerror = () => setLive(false);
-    r.start(); recRef.current = r; setLive(true);
+    r.onend = () => setLive(false);
+    r.onerror = (e) => { setLive(false); setError(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Microphone access was blocked. Allow it in the browser, or type or upload instead.' : e.error === 'network' ? 'Speech recognition needs a network connection.' : 'Dictation stopped. Type or upload instead.'); };
+    try { r.start(); recRef.current = r; setLive(true); } catch { setError('Dictation could not start in this browser. Type or upload instead.'); }
   };
   const stop = () => { try { recRef.current?.stop(); } catch {} setLive(false); };
   useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
-  return { live, supported, start, stop };
+  return { live, supported, start, stop, error };
 }
 
 export default function Brief({ asm, update, go, readOnly, toast }) {
   const intent = asm.intent;
-  const set = (patch, action) => update((a) => ({ ...a, intent: { ...a.intent, ...patch } }), action ? { action, after: patch } : undefined);
+  // Live typing and dictation update without an undo step; the blur or action commit records one.
+  const set = (patch, action) => update((a) => ({ ...a, intent: { ...a.intent, ...patch } }), action ? { action, after: patch } : { undoable: false });
+  const briefPii = useMemo(() => detectPII(intent.situationsText || ''), [intent.situationsText]);
+  const anonymizeBrief = () => { const out = anonymize(intent.situationsText, briefPii); set({ situationsText: out.text }, 'intent.brief_anonymized'); toast(`Replaced ${briefPii.length} personal detail${briefPii.length === 1 ? '' : 's'} with placeholders.`, 'ok'); };
   const [busy, setBusy] = useState('');
   const [build, setBuild] = useState(null);
   const [query, setQuery] = useState('');
@@ -48,6 +54,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const [confirmedLow, setConfirmedLow] = useState({});
   const [more, setMore] = useState(Boolean(intent.terminology));
   const dictation = useDictation((t) => set({ situationsText: t }));
+  const dictationError = dictation.error;
   const text = useMemo(() => intentText(asm), [asm.intent]);
 
   const onFiles = async (files) => {
@@ -118,7 +125,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const hasMaterial = intent.situationsText.trim() || intent.documents.some((d) => d.confirmed);
   const lowUnconfirmed = asm.skills.filter((s) => s.confidence === 'Low' && !confirmedLow[s.id]);
   const needAudience = !intent.audience.trim();
-  const blockReason = needAudience ? 'Add who is being assessed.' : unconfirmed.length ? `Confirm anonymization on ${unconfirmed.length} document${unconfirmed.length === 1 ? '' : 's'}.` : n === 0 ? '' : n < RULES.skills.min ? `Choose at least ${RULES.skills.min} Skills: fewer cannot separate strengths from gaps.` : n > RULES.skills.max ? `Choose at most ${RULES.skills.max} Skills so the assessment stays short form.` : lowUnconfirmed.length ? `Confirm the ${lowUnconfirmed.length} Low confidence mapping${lowUnconfirmed.length === 1 ? '' : 's'}.` : '';
+  const blockReason = needAudience ? 'Add who is being assessed.' : briefPii.length ? 'Anonymize the personal data in your brief.' : unconfirmed.length ? `Confirm anonymization on ${unconfirmed.length} document${unconfirmed.length === 1 ? '' : 's'}.` : n === 0 ? '' : n < RULES.skills.min ? `Choose at least ${RULES.skills.min} Skills: fewer cannot separate strengths from gaps.` : n > RULES.skills.max ? `Choose at most ${RULES.skills.max} Skills so the assessment stays short form.` : lowUnconfirmed.length ? `Confirm the ${lowUnconfirmed.length} Low confidence mapping${lowUnconfirmed.length === 1 ? '' : 's'}.` : '';
   const results = useMemo(() => searchSkills(query).filter((r) => !asm.skills.some((s) => s.id === r.id)).slice(0, 6), [query, asm.skills]);
   const alreadyBuilt = asm.scenarios?.length > 0 && asm.skillsConfirmed;
 
@@ -130,11 +137,12 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold">What do you want to assess?</h2>
             <div className="flex items-center gap-1.5">
-              {dictation.supported ? <button disabled={readOnly} onClick={() => (dictation.live ? dictation.stop() : dictation.start(intent.situationsText))} aria-pressed={dictation.live} className={`pill ${dictation.live ? 'mic-live' : ''}`}><Mic live={dictation.live} />{dictation.live ? 'Listening, tap to stop' : 'Speak'}</button> : <span className="pill opacity-60" title="Dictation needs Chrome, Edge or Safari">Speak (not in this browser)</span>}
+              {dictation.supported ? <button disabled={readOnly} onClick={() => (dictation.live ? dictation.stop() : dictation.start(intent.situationsText))} aria-pressed={dictation.live} className={`pill ${dictation.live ? 'mic-live' : ''}`}><Mic live={dictation.live} />{dictation.live ? 'Listening, tap to stop' : 'Speak'}</button> : <span className="pill opacity-60" title="Dictation uses the browser's speech recognition, available in Chrome, Edge and Safari. In other browsers, type or upload.">Speak needs Chrome, Edge or Safari</span>}
               <label className={`pill cursor-pointer ${readOnly ? 'pointer-events-none opacity-50' : ''}`}><Up />Upload brief<input type="file" multiple accept={ACCEPTED} className="hidden" onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} disabled={readOnly} /></label>
             </div>
           </div>
           <p className="muted mt-0.5 text-xs">Describe the situations people face, in your words. Or drop in SOPs, case notes, incident logs, a programme outline or a call transcript. One line is enough to start.</p>
+          {dictationError && <p className="mt-1 text-xs text-[var(--block)]">{dictationError}</p>}
           <div className={`mt-3 rounded-xl border ${dictation.live ? 'border-[var(--brand)] ring-2 ring-[var(--brand-ring)]' : 'border-[var(--line)]'} bg-white`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles([...e.dataTransfer.files]); }}>
             <textarea value={intent.situationsText} onChange={(e) => set({ situationsText: e.target.value })} onBlur={() => set({}, 'intent.situations')} disabled={readOnly} rows={5} aria-label="Brief" placeholder={dictation.live ? 'Listening. Start talking about the situations your people face.' : 'Store managers handle escalations when a delivery is late, decide who covers a shift at short notice, and give feedback after a mystery shopper visit...'} className="w-full resize-none rounded-xl border-0 bg-transparent p-4 text-[15px] leading-relaxed focus:outline-none" />
             <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] px-3 py-2">
@@ -142,6 +150,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
               <span className="faint ml-auto text-[11px]">{busy || 'PDF, DOCX, PPTX, XLSX, TXT, or drag files here. Text stays in your workspace.'}</span>
             </div>
           </div>
+          {briefPii.length > 0 && <div className="mt-3 rounded-xl border border-[var(--warn)] bg-[var(--warn-soft)]/50 p-3 text-sm"><div className="font-medium">Personal data in your brief</div><p className="muted mt-0.5 text-xs">{Object.entries(summarizePii(briefPii)).map(([k, v]) => `${v} ${PII_LABELS[k] || k}`).join(', ')}. Real names and details must not reach the model or the scenarios. Replace them with placeholders such as [Person]; character names are invented for you.</p>{!readOnly && <Button size="sm" className="mt-2" onClick={anonymizeBrief}>Anonymize the brief</Button>}</div>}
           {unconfirmed.length > 0 && <ul className="mt-3 space-y-2">{unconfirmed.map((d) => <li key={d.id} className="rounded-xl border border-[var(--warn)] bg-[var(--warn-soft)]/50 p-3 text-sm"><div className="font-medium">{d.name}: personal data found</div><p className="muted mt-0.5 text-xs">{Object.entries(d.piiSummary).map(([k, v]) => `${v} ${PII_LABELS[k] || k}`).join(', ')}. Replaced with placeholders such as [Person] before anything is generated; sensitive details are removed entirely. The original stays here only.</p><details className="mt-1"><summary className="faint cursor-pointer text-xs">See what the platform will read</summary><pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-xs">{d.anonymizedText.slice(0, 2000)}</pre></details><Button size="sm" className="mt-2" onClick={() => confirmDoc(d.id)}>Confirm anonymization</Button></li>)}</ul>}
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -150,7 +159,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           </div>
           <button className="mt-3 text-xs text-[var(--brand)]" onClick={() => setMore(!more)}>{more ? 'Fewer options' : 'More options: your company and product names'}</button>
           {more && <label className="mt-2 block"><span className="faint mb-1 block text-xs">Names to use in scenarios. The first becomes the company, the second a product. Comma separated.</span><Input value={intent.terminology} onChange={(e) => set({ terminology: e.target.value })} onBlur={() => set({}, 'intent.terminology')} placeholder="Northwind Retail, Store Connect" disabled={readOnly} /></label>}
-          {n === 0 && <div className="mt-4 flex items-center justify-between gap-3"><p className={`text-sm ${needAudience || unconfirmed.length ? 'muted' : 'muted'}`}>{needAudience ? 'Add who is being assessed, then we propose the Skills.' : unconfirmed.length ? 'Confirm anonymization, then we propose the Skills.' : 'Next: the platform proposes 3 to 5 Skills from your brief.'}</p><Button size="lg" disabled={needAudience || unconfirmed.length > 0 || readOnly} busy={Boolean(busy)} onClick={propose}>Propose Skills</Button></div>}
+          {n === 0 && <div className="mt-4 flex items-center justify-between gap-3"><p className={`text-sm ${needAudience || unconfirmed.length ? 'muted' : 'muted'}`}>{needAudience ? 'Add who is being assessed, then we propose the Skills.' : briefPii.length ? 'Anonymize the personal data in your brief first.' : unconfirmed.length ? 'Confirm anonymization, then we propose the Skills.' : 'Next: the platform proposes 3 to 5 Skills from your brief.'}</p><Button size="lg" disabled={needAudience || unconfirmed.length > 0 || briefPii.length > 0 || readOnly} busy={Boolean(busy)} onClick={propose}>Propose Skills</Button></div>}
         </section>
 
         {/* Skills */}

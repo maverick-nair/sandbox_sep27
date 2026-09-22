@@ -20,7 +20,7 @@ export function scoreSkill(skill, text) {
 }
 
 export function confidenceFor(score, best) {
-  if (score >= 4 && score >= best * 0.5) return 'High';
+  if (score >= 6 && score >= best * 0.5) return 'High';
   if (score >= 2) return 'Medium';
   return 'Low';
 }

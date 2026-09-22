@@ -75,7 +75,7 @@ export function Toasts({ toasts }) {
 }
 
 // Inline editable text. Commits on blur or Ctrl+Enter; Escape reverts.
-export function InlineText({ value, onCommit, multiline = false, className = '', placeholder = 'Click to edit', as = 'div', ariaLabel }) {
+export function InlineText({ value, onCommit, multiline = false, className = '', placeholder = 'Click to edit', as = 'div', ariaLabel, readOnly = false }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value || '');
   const ref = useRef(null);
@@ -87,6 +87,7 @@ export function InlineText({ value, onCommit, multiline = false, className = '',
     return multiline ? <textarea {...common} rows={Math.max(3, Math.min(14, Math.ceil((draft.length || 40) / 90)))} /> : <input {...common} />;
   }
   const Tag = as;
+  if (readOnly) return <Tag className={`${className} ${!value ? 'faint italic' : ''}`}>{value || placeholder}</Tag>;
   return <Tag tabIndex={0} role="button" aria-label={ariaLabel ? `Edit ${ariaLabel}` : 'Edit text'} className={`inline-edit ${className} ${!value ? 'faint italic' : ''}`} onClick={() => setEditing(true)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setEditing(true))}>{value || placeholder}</Tag>;
 }
 
