@@ -85,7 +85,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
 
   return (
     <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-      <aside className="space-y-3">
+      <aside aria-label="Scenario list" className="space-y-3">
         <div className="card p-3"><div className="flex items-center justify-between text-sm"><span className="font-semibold">Scenarios</span><Badge tone={approvedCount === scenarios.length ? 'ok' : 'neutral'}>{approvedCount}/{scenarios.length} approved</Badge></div><p className="faint mt-1 text-xs">One per screen. Approve each to publish. Time: {gate.totalMinutes} min total.</p></div>
         <ol className="space-y-1">
           {scenarios.map((s, i) => { const iss = issuesForScenario(gate, s.id); const h = iss.filter((x) => x.severity === 'hard' && x.rule !== 'approval').length; return <li key={s.id}><button onClick={() => setSelId(s.id)} aria-current={s.id === selId} className={`w-full rounded-lg border p-2 text-left text-xs transition-colors ${s.id === selId ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--line)] bg-white hover:bg-slate-50'}`}><div className="flex items-center justify-between gap-1"><span className="font-medium">{i + 1}. {s.title}</span>{s.approved ? <Badge tone="ok">✓</Badge> : h ? <Badge tone="block">{h}</Badge> : s.pendingConfirmation ? <Badge tone="warn">confirm</Badge> : <Badge>review</Badge>}</div><div className="muted mt-0.5 flex flex-wrap gap-1">{asm.skills.find((k) => k.id === s.skillId)?.clientLabel || getSkill(s.skillId)?.name} · {s.responseType} · {s.recommendedMinutes} min{s.flaggedForReview && <span className="text-[var(--warn)]">· flagged</span>}</div></button></li>; })}
@@ -97,14 +97,14 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2"><Badge tone="brand">{asm.skills.find((k) => k.id === sc.skillId)?.clientLabel || skill.name}</Badge><Badge>{SITUATION_TAGS.find((t) => t.id === sc.tag)?.name}</Badge><Badge>{sc.difficulty} difficulty</Badge>{sc.approved ? <Badge tone="ok">Approved</Badge> : <Badge>Not yet approved</Badge>}{sc.flaggedForReview && <Badge tone="warn">Flagged for KNOLSKAPE review</Badge>}<Badge title="Every generated element shows its source">{sc.generatedBy === 'llm' ? 'AI drafted' : 'Library drafted'}</Badge></div>
-            <h1 className="mt-1 text-xl font-semibold"><InlineText readOnly={readOnly} value={sc.title} onCommit={(v) => setScenario({ title: v }, 'scenario.title', { after: v })} ariaLabel="scenario title" /></h1>
+            <h2 className="mt-1 text-xl font-semibold"><InlineText readOnly={readOnly} value={sc.title} onCommit={(v) => setScenario({ title: v }, 'scenario.title', { after: v })} ariaLabel="scenario title" /></h2>
             <Source>{sc.source?.text}</Source>
           </div>
           {!readOnly && <div className="flex flex-wrap gap-1.5"><Button variant="secondary" size="sm" onClick={() => setRegen({ scope: 'scenario', label: 'the whole scenario' })}>Regenerate scenario</Button><Button variant="secondary" size="sm" onClick={() => setScenario({ flaggedForReview: !sc.flaggedForReview }, 'scenario.flag', { after: !sc.flaggedForReview })}>{sc.flaggedForReview ? 'Unflag' : 'Flag for KNOLSKAPE review'}</Button>{sc.approved ? <Button variant="secondary" size="sm" onClick={() => setScenario({ approved: false }, 'scenario.unapproved')}>Unapprove</Button> : <Button variant="success" size="sm" onClick={approve} disabled={Boolean(busy)}>Mark approved</Button>}</div>}
         </div>
         {busy && <div className="card pulse p-3 text-sm">{busy}</div>}
         {sc.pendingConfirmation && (
-          <Panel tone="warn" title={sc.pendingConfirmation.mode === 'scripted' ? 'The situation changed: facts re-read, scoring questions kept' : 'The situation or media changed, so the analysis re-ran'} subtitle={sc.pendingConfirmation.mode === 'scripted' ? 'Scripted mode read the key facts, constraints and stakeholders from your new text. The scoring questions were kept and re-traced; check they still fit, or connect AI for a full re-derivation.' : 'Confirm the changed scoring questions or revert to the previous set.'} padding="p-4">
+          <Panel as="h3" tone="warn" title={sc.pendingConfirmation.mode === 'scripted' ? 'The situation changed: facts re-read, scoring questions kept' : 'The situation or media changed, so the analysis re-ran'} subtitle={sc.pendingConfirmation.mode === 'scripted' ? 'Scripted mode read the key facts, constraints and stakeholders from your new text. The scoring questions were kept and re-traced; check they still fit, or connect AI for a full re-derivation.' : 'Confirm the changed scoring questions or revert to the previous set.'} padding="p-4">
             <ul className="space-y-1 text-sm">{sc.pendingConfirmation.changed.map((c) => <li key={c.id} className="flex gap-2"><Badge tone={c.status === 'unchanged' || c.status === 'kept' ? 'neutral' : c.status === 'removed' ? 'block' : 'warn'}>{c.status}</Badge><span>{c.text}{c.status === 'changed' && c.previous && <span className="faint block text-xs">was: {c.previous}</span>}</span></li>)}</ul>
             {sc.pendingConfirmation.before.cap && JSON.stringify(sc.pendingConfirmation.before.cap) !== JSON.stringify(sc.cap) && <p className="muted mt-2 text-xs">Recommended limit changed from {capText(sc.responseType, sc.pendingConfirmation.before.cap)} to {capText(sc.responseType, sc.cap)}.</p>}
             <div className="mt-3 flex gap-2"><Button size="sm" onClick={confirmPending}>Confirm changes</Button><Button size="sm" variant="secondary" onClick={revertPending}>Keep previous questions</Button></div>
@@ -116,7 +116,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
 
         <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
           <div className="space-y-4">
-            <Panel title="What the participant sees" subtitle="Edit any text inline. Editing the situation re-runs the contextual analysis." padding="p-5">
+            <Panel as="h3" title="What the participant sees" subtitle="Edit any text inline. Editing the situation re-runs the contextual analysis." padding="p-5">
               <div className="space-y-3">
                 <div><div className="faint mb-1 text-[11px] uppercase tracking-wider">Context header <span className="normal-case">({wordCount(sc.contextHeader)} of 30 words)</span></div><InlineText readOnly={readOnly} value={sc.contextHeader} onCommit={(v) => editSituation('contextHeader', v)} multiline className="text-sm font-medium" ariaLabel="context header" /></div>
                 <div><div className="faint mb-1 flex items-center justify-between text-[11px] uppercase tracking-wider"><span>Situation <span className="normal-case">({wordCount(sc.situation)} words, grade {grade} reading level)</span></span>{!readOnly && <button className="normal-case text-[var(--brand)]" onClick={() => setRegen({ scope: 'sentence', sentenceIndex: 0, label: 'one sentence' })}>Regenerate one sentence</button>}</div><InlineText readOnly={readOnly} value={sc.situation} onCommit={(v) => editSituation('situation', v)} multiline className="text-[15px] leading-relaxed" ariaLabel="situation" /></div>
@@ -126,7 +126,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
               </div>
             </Panel>
 
-            <Panel title="Contextual analysis" subtitle="What the AI read in the situation and the media. Scoring questions are derived from this." padding="p-5">
+            <Panel as="h3" title="Contextual analysis" subtitle="What the AI read in the situation and the media. Scoring questions are derived from this." padding="p-5">
               <div className="grid gap-4 text-sm sm:grid-cols-2">
                 <AnalysisList label="Key facts" items={sc.analysis?.keyFacts} onChange={(items) => setScenario((s) => ({ ...s, analysis: { ...s.analysis, keyFacts: items } }), 'analysis.facts_edited')} readOnly={readOnly} />
                 <AnalysisList label="Constraints" items={sc.analysis?.constraints} onChange={(items) => setScenario((s) => ({ ...s, analysis: { ...s.analysis, constraints: items } }), 'analysis.constraints_edited')} readOnly={readOnly} />
@@ -140,7 +140,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
             </Panel>
 
             {sc.responseType !== 'MCQ' ? (
-              <Panel title={`Scoring questions (${sc.scoringQuestions.length})`} subtitle="Each audio or text answer is assessed against these, one observation per question. Each is tied to a behavior of the Skill with plain language anchors." right={!readOnly && <Button size="sm" variant="ghost" onClick={addQuestion}>Add question</Button>} padding="p-0">
+              <Panel as="h3" title={`Scoring questions (${sc.scoringQuestions.length})`} subtitle="Each audio or text answer is assessed against these, one observation per question. Each is tied to a behavior of the Skill with plain language anchors." right={!readOnly && <Button size="sm" variant="ghost" onClick={addQuestion}>Add question</Button>} padding="p-0">
                 <ol className="divide-y divide-[var(--line)]">
                   {sc.scoringQuestions.map((q, qi) => { const ind = indicatorById(q.indicatorId); return (
                     <li key={q.id} className="p-4">
@@ -156,7 +156,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
                 </ol>
               </Panel>
             ) : (
-              <Panel title={`Questions and options (${sc.mcq.length} of up to 3)`} subtitle="Up to 4 options, all plausible, each written to one proficiency level with a keyed value of 1 to 5 and a rationale that reads as a coaching note. Editing an option re-keys it." right={!readOnly && <Button size="sm" variant="ghost" onClick={addMcqQuestion}>Add question</Button>} padding="p-0">
+              <Panel as="h3" title={`Questions and options (${sc.mcq.length} of up to 3)`} subtitle="Up to 4 options, all plausible, each written to one proficiency level with a keyed value of 1 to 5 and a rationale that reads as a coaching note. Editing an option re-keys it." right={!readOnly && <Button size="sm" variant="ghost" onClick={addMcqQuestion}>Add question</Button>} padding="p-0">
                 <ol className="divide-y divide-[var(--line)]">
                   {sc.mcq.map((q, qi) => (
                     <li key={q.id} className="p-4">
@@ -176,8 +176,8 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
             )}
           </div>
 
-          <aside className="space-y-4">
-            <Panel title="Response and limits" subtitle="The AI recommended these from the complexity and the model answer. Adjust within range." padding="p-4">
+          <aside aria-label="Response settings and Skill" className="space-y-4">
+            <Panel as="h3" title="Response and limits" subtitle="The AI recommended these from the complexity and the model answer. Adjust within range." padding="p-4">
               <div className="space-y-4 text-sm">
                 <div><div className="faint mb-1 text-[11px] uppercase tracking-wider">Response type</div><div className="flex gap-1">{RESPONSE_TYPES.map((t) => <button key={t} disabled={readOnly || Boolean(busy)} onClick={() => t !== sc.responseType && switchType(t)} aria-pressed={sc.responseType === t} className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium ${sc.responseType === t ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]' : 'border-[var(--line)] hover:bg-slate-50'}`}>{t}</button>)}</div><p className="faint mt-1 text-xs">{sc.responseType === 'Audio' ? 'Recorded answer, transcribed and scored on content.' : sc.responseType === 'Text' ? 'Typed answer with a live character count.' : 'Single select per question, no cap.'} Switching rebuilds the scoring instrument and recomputes observations and time.</p></div>
                 <div><div className="mb-1 flex items-center justify-between"><span className="faint text-[11px] uppercase tracking-wider">Recommended time</span><span className="font-mono text-sm">{sc.recommendedMinutes} min</span></div><input type="range" min={RULES.time.scenarioMin} max={RULES.time.scenarioMax} value={sc.recommendedMinutes} onChange={(e) => setMinutes(e.target.value)} disabled={readOnly} className="w-full" aria-label="Recommended time in minutes" /><p className="faint mt-1 text-xs">AI estimate {estimateScenarioMinutes(sc)} min from reading load, analysis depth, response type and model answer size. Shown to participants as guidance, never a cutoff.</p></div>
@@ -187,8 +187,8 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
                 {sc.responseType !== 'MCQ' && <div className="rounded-lg bg-slate-50 p-2 text-xs"><span className="font-medium">AI scoring calibration:</span> {sc.calibration === 'complete' ? 'complete' : 'pending. Before AI scoring activates for this scenario, 30 responses are scored by two calibrators and AI to human agreement must reach 0.75 per question.'}</div>}
               </div>
             </Panel>
-            <Panel title="Skill being measured" padding="p-4">
-              <div className="text-sm"><div className="font-semibold">{skill.name}</div><p className="muted text-xs">{skill.definition}</p><div className="mt-2 flex flex-wrap gap-1">{skill.indicators.filter((i) => i.effective).map((i) => <span key={i.id} className={`chip ${sc.responseType === 'MCQ' ? sc.mcq.some((q) => q.options.some((o) => o.indicatorId === i.id)) : sc.scoringQuestions.some((q) => q.indicatorId === i.id) ? 'border-[var(--brand)] text-[var(--brand)]' : 'opacity-50'}`} title={i.text}>{i.id}</span>)}</div><p className="faint mt-1 text-xs">Highlighted behaviors are observed by this scenario.</p></div>
+            <Panel as="h3" title="Skill being measured" padding="p-4">
+              <div className="text-sm"><div className="font-semibold">{skill.name}</div><p className="muted text-xs">{skill.definition}</p><div className="mt-2 flex flex-wrap gap-1">{skill.indicators.filter((i) => i.effective).map((i) => <span key={i.id} className={`chip ${(sc.responseType === 'MCQ' ? sc.mcq.some((q) => q.options.some((o) => o.indicatorId === i.id)) : sc.scoringQuestions.some((q) => q.indicatorId === i.id)) ? 'border-[var(--brand)] text-[var(--brand-2)] font-semibold' : 'border-dashed'}`} title={i.text}>{i.id}<span className="sr-only">{(sc.responseType === 'MCQ' ? sc.mcq.some((q) => q.options.some((o) => o.indicatorId === i.id)) : sc.scoringQuestions.some((q) => q.indicatorId === i.id)) ? ' (observed)' : ' (not observed)'}</span></span>)}</div><p className="faint mt-1 text-xs">Solid chips are behaviors this scenario observes; dashed ones are not.</p></div>
             </Panel>
           </aside>
         </div>

@@ -63,12 +63,12 @@ export default function Author() {
     </>
   );
   if (route === 'calibration') return (
-    <Shell stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Dashboard', onClick: goHome }, { label: name }, { label: 'Calibration' }]} title="Calibrate AI scoring" subtitle="Two calibrators score the first 30 responses to each open response scenario alongside the AI. When agreement holds, AI scoring activates for that scenario.">
+    <Shell sidebar back={{ label: 'All your products', onClick: goHome }} stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Evaluate', onClick: goHome }, { label: name }, { label: 'Calibration' }]} title="Calibrate AI scoring" subtitle="Two calibrators score the first 30 responses to each open response scenario alongside the AI. When agreement holds, AI scoring activates for that scenario.">
       <Calibration asm={asm} update={update} toast={toast} />
     </Shell>
   );
   return (
-    <Shell stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Dashboard', onClick: goHome }, { label: name }, { label: STAGES[stage - 1].label }]} title={titles[stage][0]} subtitle={titles[stage][1]} actions={actions}>
+    <Shell sidebar back={{ label: 'All your products', onClick: goHome }} stage={stage} onStage={go} stageStatus={stageStatus} onCalibration={() => setRoute('calibration')} crumbs={[{ label: 'Evaluate', onClick: goHome }, { label: name }, { label: STAGES[stage - 1].label }]} title={titles[stage][0]} subtitle={titles[stage][1]} actions={actions}>
       <View {...props} />
     </Shell>
   );

@@ -15,15 +15,15 @@ const check = (name, ok, extra = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} 
 const shot = (n) => page.screenshot({ path: `${mode}-${n}.png` });
 try {
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.waitForSelector('h1:has-text("Dashboard")');
+  await page.waitForSelector('text=All Your Products');
   // Empty draft cleanup
-  await page.getByRole('button', { name: 'New assessment' }).first().click(); await page.waitForTimeout(200);
-  await page.getByRole('button', { name: 'Dashboard' }).first().click(); await page.waitForTimeout(200);
-  await page.getByRole('button', { name: 'New assessment' }).first().click(); await page.waitForTimeout(200);
-  await page.getByRole('button', { name: 'Dashboard' }).first().click(); await page.waitForTimeout(300);
-  check('no empty drafts left behind', (await page.locator('li.card').count()) === 0, `cards=${await page.locator('li.card').count()}`);
+  await page.getByRole('button', { name: /Create New Assessment/ }).click(); await page.waitForTimeout(200);
+  await page.getByRole('button', { name: 'Home', exact: true }).click(); await page.waitForTimeout(200);
+  await page.getByRole('button', { name: /Create New Assessment/ }).click(); await page.waitForTimeout(200);
+  await page.getByRole('button', { name: 'Home', exact: true }).click(); await page.waitForTimeout(300);
+  check('no empty drafts left behind', (await page.locator('li.card', { hasText: 'Untitled' }).count()) === 0, `untitled=${await page.locator('li.card', { hasText: 'Untitled' }).count()}`);
   // Brief with typed PII
-  await page.getByRole('button', { name: 'New assessment' }).first().click(); await page.waitForTimeout(200);
+  await page.getByRole('button', { name: /Create New Assessment/ }).click(); await page.waitForTimeout(200);
   const brief = page.getByRole('textbox', { name: 'Brief' });
   await brief.fill('Store managers coach new colleagues and handle late deliveries. Priya Sharma (98200 12345) complained last week.');
   await page.waitForTimeout(200);
@@ -35,8 +35,8 @@ try {
   check('brief anonymized', /\[Person\]/.test(v) && !/Priya/.test(v), v.slice(0, 80));
   await page.locator('input[type=file]').first().setInputFiles('brief.txt'); await page.waitForTimeout(500);
   await page.getByRole('button', { name: 'Confirm anonymization' }).click();
-  await page.getByRole('button', { name: 'Propose Skills' }).click();
-  await page.waitForSelector('text=Skills to measure'); await page.waitForTimeout(300);
+  await page.waitForSelector('text=Skills to measure', { timeout: 20000 });
+  check('skills proposed automatically after document confirm', true); await page.waitForTimeout(300);
   for (const cb of await page.locator('input[type=checkbox]').all()) { if (!(await cb.isChecked())) await cb.check(); }
   await page.getByRole('button', { name: 'Build my assessment' }).click();
   await page.waitForSelector('text=What the participant sees', { timeout: 90000 }); await page.waitForTimeout(400);
@@ -63,8 +63,8 @@ try {
   await page.getByRole('button', { name: 'Confirm changes' }).click();
   // Undo history is small after typing
   // Approve all and publish
-  const n = await page.locator('aside ol li button').count();
-  for (let i = 0; i < n; i++) { await page.locator('aside ol li button').nth(i).click(); await page.waitForTimeout(100); const b = page.getByRole('button', { name: /^Mark approved/ }).first(); if (await b.count()) { await b.click(); await page.waitForTimeout(120); } }
+  const n = await page.locator('aside[aria-label="Scenario list"] ol li button').count();
+  for (let i = 0; i < n; i++) { await page.locator('aside[aria-label="Scenario list"] ol li button').nth(i).click(); await page.waitForTimeout(100); const b = page.getByRole('button', { name: /^Mark approved/ }).first(); if (await b.count()) { await b.click(); await page.waitForTimeout(120); } }
   await page.locator('aside button.side-item:has-text("Publish")').click(); await page.waitForTimeout(400);
   await shot('publish');
   const gateRows = await page.locator('text=not yet approved').count();
@@ -84,10 +84,9 @@ try {
   check('published: no inline edit affordance', (await page.getByRole('button', { name: 'Edit situation' }).count()) === 0);
   check('published: no approve or regenerate buttons', (await page.getByRole('button', { name: 'Regenerate scenario' }).count()) === 0);
   // Calibration flow as calibrator
-  await page.getByRole('button', { name: 'Settings' }).click(); await page.waitForTimeout(200);
-  await page.locator('select').filter({ hasText: 'Calibrator' }).selectOption('calibrator'); await page.waitForTimeout(200);
-  await page.getByRole('button', { name: 'Dashboard' }).first().click(); await page.waitForTimeout(200);
-  await page.locator('li.card').first().getByRole('button', { name: 'Open' }).click(); await page.waitForTimeout(300);
+  await page.getByRole('button', { name: 'Account menu' }).click(); await page.getByRole('menuitem', { name: 'AI and workspace settings' }).click(); await page.waitForTimeout(300);
+  await page.getByRole('dialog').locator('select').filter({ hasText: 'Calibrator' }).selectOption('calibrator'); await page.waitForTimeout(200);
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click(); await page.waitForTimeout(200);
   await page.locator('aside button.side-item:has-text("Calibration")').click(); await page.waitForTimeout(300);
   await page.getByRole('button', { name: 'Load 30 practice responses' }).click(); await page.waitForTimeout(300);
   await page.getByRole('button', { name: 'Score with AI' }).click(); await page.waitForTimeout(mode === 'llm' ? 8000 : 1500);
@@ -103,8 +102,8 @@ try {
   if (await act.isEnabled()) { await act.click(); await page.waitForTimeout(300); check('calibration activated', (await page.locator('text=complete').count()) > 0); }
   // Mobile drawer
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200);
-  await page.getByRole('button', { name: 'Open menu' }).click(); await page.waitForTimeout(200);
-  check('mobile drawer shows settings', await page.getByRole('button', { name: 'Settings' }).isVisible());
+  await page.getByRole('button', { name: 'Open assessment menu' }).click(); await page.waitForTimeout(200);
+  check('mobile drawer shows settings', await page.getByRole('button', { name: 'AI and workspace settings' }).isVisible());
   await shot('mobile-drawer');
 } catch (e) { errors.push(`script: ${e.message}`); await shot('99-error'); }
 console.log(results.join('\n'));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Panel, Field, Input, Select, Badge } from '../components/ui.jsx';
-import { RULES, PURPOSES } from '../content/rules.js';
+import { RULES, PURPOSES, purposeById } from '../content/rules.js';
 import { getSkill, ONTOLOGY_VERSION } from '../content/ontology.js';
 import { publish as publishAsm, toCsv } from '../engine/store.js';
 import { currentModelVersion } from '../engine/generator.js';
@@ -80,9 +80,9 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast, e
           </Panel>
         )}
       </div>
-      <aside className="space-y-4">
+      <aside aria-label="Summary and versions" className="space-y-4">
         <Panel title="Summary" padding="p-4">
-          <dl className="grid grid-cols-2 gap-y-1.5 text-sm"><dt className="muted">Skills</dt><dd>{asm.skills.length}</dd><dt className="muted">Scenarios</dt><dd>{asm.scenarios.length} ({asm.scenarios.filter((s) => s.responseType === 'Audio').length} audio, {asm.scenarios.filter((s) => s.responseType === 'Text').length} text, {asm.scenarios.filter((s) => s.responseType === 'MCQ').length} MCQ)</dd><dt className="muted">Observations</dt><dd>{asm.scenarios.reduce((a, s) => a + observationsFor(s), 0)}</dd><dt className="muted">Estimated time</dt><dd>{gate.totalMinutes} min</dd><dt className="muted">Purpose</dt><dd className="capitalize">{asm.intent.purpose}</dd><dt className="muted">Audience</dt><dd className="truncate" title={asm.intent.audience}>{asm.intent.audience || '–'}</dd></dl>
+          <dl className="grid grid-cols-2 gap-y-1.5 text-sm"><dt className="muted">Skills</dt><dd>{asm.skills.length}</dd><dt className="muted">Scenarios</dt><dd>{asm.scenarios.length} ({asm.scenarios.filter((s) => s.responseType === 'Audio').length} audio, {asm.scenarios.filter((s) => s.responseType === 'Text').length} text, {asm.scenarios.filter((s) => s.responseType === 'MCQ').length} MCQ)</dd><dt className="muted">Observations</dt><dd>{asm.scenarios.reduce((a, s) => a + observationsFor(s), 0)}</dd><dt className="muted">Estimated time</dt><dd>{gate.totalMinutes} min</dd><dt className="muted">Purpose</dt><dd>{purposeById(asm.intent.purpose).label}</dd><dt className="muted">Audience</dt><dd className="truncate" title={asm.intent.audience}>{asm.intent.audience || '–'}</dd></dl>
           <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="secondary" onClick={exportBlueprintCsv}>Export scenario list (CSV)</Button></div>
         </Panel>
         <Panel title="Versions" subtitle="Each version pins ontology, model and prompt versions. Historical scores are never recomputed silently." padding="p-0">

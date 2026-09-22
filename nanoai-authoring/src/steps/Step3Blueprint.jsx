@@ -52,7 +52,7 @@ export default function Step3Blueprint({ asm, update, go, readOnly, toast, embed
       )}
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--ink-2)]"><th className="px-4 py-2">#</th><th className="px-2 py-2">Skill</th><th className="px-2 py-2">Response</th><th className="px-2 py-2">Questions</th><th className="px-2 py-2">Difficulty</th><th className="px-2 py-2">Situation</th><th className="px-2 py-2">Media</th><th className="px-2 py-2">Grounded in</th><th className="px-2 py-2 text-right">Time</th><th className="px-2 py-2" /></tr></thead>
+          <thead><tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--ink-2)]"><th className="px-4 py-2">#</th><th className="px-2 py-2">Skill</th><th className="px-2 py-2">Response</th><th className="px-2 py-2">Questions</th><th className="px-2 py-2">Difficulty</th><th className="px-2 py-2">Situation</th><th className="px-2 py-2">Media</th><th className="px-2 py-2">Grounded in</th><th className="px-2 py-2 text-right">Time</th><th className="px-2 py-2"><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>
             {skillIds.map((skillId) => {
               const rows = bp.rows.filter((r) => r.skillId === skillId);
@@ -87,7 +87,7 @@ export default function Step3Blueprint({ asm, update, go, readOnly, toast, embed
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <Panel title="Coverage" padding="p-4">
           <div className="grid gap-3 text-sm sm:grid-cols-3">
-            <div><div className="faint text-[11px] uppercase">Situation tags covered</div><div className="mt-1 flex flex-wrap gap-1">{SITUATION_TAGS.map((t) => <span key={t.id} className={`chip ${bp.tagCoverage.includes(t.id) ? 'border-[var(--brand)] text-[var(--brand)]' : 'opacity-40'}`}>{t.name}</span>)}</div></div>
+            <div><div className="faint text-[11px] uppercase">Situation tags covered</div><div className="mt-1 flex flex-wrap gap-1">{SITUATION_TAGS.map((t) => <span key={t.id} className={`chip ${bp.tagCoverage.includes(t.id) ? 'border-[var(--brand)] text-[var(--brand-2)] font-semibold' : 'border-dashed'}`}>{t.name}<span className="sr-only">{bp.tagCoverage.includes(t.id) ? ' (covered)' : ' (not covered)'}</span></span>)}</div></div>
             <div><div className="faint text-[11px] uppercase">Difficulty spread</div><div className="mt-1 flex gap-1">{DIFFICULTIES.map((d) => <span key={d} className="chip">{d}: {bp.rows.filter((r) => r.difficulty === d).length}</span>)}</div></div>
             <div><div className="faint text-[11px] uppercase">Response mix</div><div className="mt-1 flex gap-1">{RESPONSE_TYPES.map((t) => <span key={t} className="chip">{t}: {bp.rows.filter((r) => r.responseType === t).length}</span>)}</div></div>
           </div>

@@ -3,9 +3,8 @@ import { WorkspaceProvider, useWorkspace } from './engine/WorkspaceContext.jsx';
 import Shell from './components/Shell.jsx';
 import { Toasts } from './components/ui.jsx';
 import Home from './screens/Home.jsx';
-import Settings from './screens/Settings.jsx';
 import Author from './screens/Author.jsx';
-import Help from './screens/Help.jsx';
+import Templates from './screens/Templates.jsx';
 
 class Boundary extends React.Component {
   constructor(p) { super(p); this.state = { error: null }; }
@@ -20,8 +19,7 @@ function Router() {
   const { route, current, toasts, loading } = useWorkspace();
   if (loading) return <div className="flex h-full items-center justify-center"><div className="pulse text-sm muted">Opening your workspace</div></div>;
   let page;
-  if (route === 'settings') page = <Shell title="Settings" subtitle="AI connection, workspace, audit log and AI call log."><Settings /></Shell>;
-  else if (route === 'help') page = <Shell title="Help and support"><Help /></Shell>;
+  if (route === 'templates') page = <Shell><Templates /></Shell>;
   else if ((route === 'author' || route === 'calibration') && current) page = <Author />;
   else page = <Shell><Home /></Shell>;
   return <>{page}<Toasts toasts={toasts} /></>;

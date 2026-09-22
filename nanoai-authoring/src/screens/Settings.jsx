@@ -57,7 +57,7 @@ export default function Settings() {
         </div>
       </Panel>
       <Panel title="Audit log" subtitle="Every authoring, scoring question, key, cap, publish and configuration change with actor and before and after state." right={<Button size="sm" variant="secondary" onClick={() => download('nanoai-audit.csv', toCsv(ws.audit.map((e) => ({ at: new Date(e.at).toISOString(), actor: e.actor, assessment: e.assessmentId, action: e.action, before: typeof e.before === 'string' ? e.before : JSON.stringify(e.before ?? ''), after: typeof e.after === 'string' ? e.after : JSON.stringify(e.after ?? '') }))), 'text/csv')}>Export CSV</Button>} className="lg:col-span-2" padding="p-0">
-        <div className="max-h-80 overflow-auto">
+        <div className="max-h-80 overflow-auto" tabIndex={0} aria-label="Audit log, scrollable">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-white"><tr className="text-left"><th className="px-4 py-2">When</th><th className="px-2 py-2">Actor</th><th className="px-2 py-2">Action</th><th className="px-2 py-2">Before</th><th className="px-2 py-2">After</th></tr></thead>
             <tbody>{ws.audit.slice(0, 300).map((e) => <tr key={e.id} className="border-t border-[var(--line)] align-top"><td className="whitespace-nowrap px-4 py-1.5">{new Date(e.at).toLocaleString()}</td><td className="px-2 py-1.5">{e.actor}</td><td className="px-2 py-1.5"><Badge>{e.action}</Badge></td><td className="max-w-xs truncate px-2 py-1.5 font-mono">{typeof e.before === 'string' ? e.before : JSON.stringify(e.before ?? '')}</td><td className="max-w-xs truncate px-2 py-1.5 font-mono">{typeof e.after === 'string' ? e.after : JSON.stringify(e.after ?? '')}</td></tr>)}</tbody>
@@ -66,7 +66,7 @@ export default function Settings() {
         </div>
       </Panel>
       <Panel title="AI call log" subtitle="Prompt version, model, input hash, schema validity, latency. No content is logged." className="lg:col-span-2" padding="p-0">
-        <div className="max-h-64 overflow-auto">
+        <div className="max-h-64 overflow-auto" tabIndex={0} aria-label="AI call log, scrollable">
           <table className="w-full text-xs"><thead className="sticky top-0 bg-white"><tr className="text-left"><th className="px-4 py-2">When</th><th className="px-2 py-2">Purpose</th><th className="px-2 py-2">Model</th><th className="px-2 py-2">Hash</th><th className="px-2 py-2">Schema valid</th><th className="px-2 py-2">Latency</th><th className="px-2 py-2">Tokens</th></tr></thead>
             <tbody>{[...callLog].reverse().slice(0, 200).map((c, i) => <tr key={i} className="border-t border-[var(--line)]"><td className="whitespace-nowrap px-4 py-1.5">{new Date(c.at).toLocaleTimeString()}</td><td className="px-2 py-1.5">{c.purpose}</td><td className="px-2 py-1.5">{c.model}</td><td className="px-2 py-1.5 font-mono">{c.inputHash}</td><td className="px-2 py-1.5">{c.ok ? <Badge tone="ok">yes</Badge> : <Badge tone="block">{c.reason}</Badge>}</td><td className="px-2 py-1.5">{c.latencyMs} ms</td><td className="px-2 py-1.5">{c.usage ? `${c.usage.input_tokens}/${c.usage.output_tokens}` : ''}</td></tr>)}</tbody></table>
           {callLog.length === 0 && <p className="muted p-4 text-sm">No AI calls this session.</p>}

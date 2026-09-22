@@ -3,6 +3,7 @@ import { emptyWorkspace, newAssessment, upsertAssessment, audit, snapshot, conte
 import { loadPersisted, savePersisted, onSaveStatus, loadUiState, saveUiState, tabChannel, flushSave } from './storage.js';
 import { onUsage } from './llm.js';
 import { buildSampleAssessment } from '../content/sample.js';
+import { getSkill } from '../content/ontology.js';
 
 const Ctx = createContext(null);
 
@@ -21,6 +22,7 @@ export function WorkspaceProvider({ children }) {
   const [currentId, setCurrentId] = useState(null);
   const [route, setRoute] = useState('home');
   const [toasts, setToasts] = useState([]);
+  const [panel, setPanel] = useState(null); // 'settings' | 'help' | null, shown as a dialog over any page
   const wsRef = useRef(null); wsRef.current = ws;
   const channel = useRef(null);
   const tabId = useRef(Math.random().toString(36).slice(2));
@@ -35,8 +37,8 @@ export function WorkspaceProvider({ children }) {
       const loaded = migrateLoaded(loadWorkspaceFrom(workspace));
       setBackend(b); setWs(loaded);
       const ui = loadUiState();
-      if (ui.currentId && loaded.assessments.some((a) => a.id === ui.currentId)) { setCurrentId(ui.currentId); setRoute(ui.route === 'author' || ui.route === 'calibration' ? ui.route : 'author'); }
-      else if (ui.route && ui.route !== 'author' && ui.route !== 'calibration') setRoute(ui.route);
+      if (ui.currentId && loaded.assessments.some((a) => a.id === ui.currentId) && (ui.route === 'author' || ui.route === 'calibration')) { setCurrentId(ui.currentId); setRoute(ui.route); }
+      else if (ui.route === 'templates') setRoute('templates');
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -112,6 +114,13 @@ export function WorkspaceProvider({ children }) {
     return asm;
   }, []);
   const openAssessment = useCallback((id, r = 'author') => { leave(); setCurrentId(id); setRoute(r); }, [leave]);
+  // Start from a template: brief, audience, purpose and Skills prefilled; the author confirms and builds.
+  const createFromTemplate = useCallback((tpl) => {
+    const asm = newAssessment({ intent: { audience: tpl.audience, situationsText: tpl.brief, purpose: tpl.purpose, terminology: '', documents: [], extracted: null, language: 'en', fromTemplate: tpl.id }, skills: tpl.skills.map((id) => ({ id, confidence: 'High', evidence: [], source: `From the "${tpl.name}" template` })), config: { ...newAssessment().config, name: tpl.name } });
+    setWs((w) => audit(upsertAssessment(w, asm), { assessmentId: asm.id, action: 'assessment.created_from_template', after: tpl.id }));
+    setCurrentId(asm.id); setRoute('author');
+    return asm;
+  }, []);
   const deleteAssessment = useCallback((id) => { setWs((w) => audit({ ...w, assessments: w.assessments.filter((a) => a.id !== id) }, { assessmentId: id, action: 'assessment.deleted' })); if (currentId === id) { setCurrentId(null); setRoute('home'); } }, [currentId]);
   const duplicateAssessment = useCallback((id) => {
     const src = wsRef.current.assessments.find((a) => a.id === id);
@@ -124,7 +133,7 @@ export function WorkspaceProvider({ children }) {
   const undo = useCallback(() => update((a) => undoAsm(a), { undoable: false, action: 'undo' }), [update]);
   const redo = useCallback(() => update((a) => redoAsm(a), { undoable: false, action: 'redo' }), [update]);
 
-  const value = { ws, setWs, loading, backend, saveStatus, current, currentId, route, setRoute: goRoute, update, createAssessment, openAssessment, deleteAssessment, duplicateAssessment, undo, redo, canUndo: Boolean(current?.history?.length), canRedo: Boolean(current?.future?.length), toast, toasts, goHome, role: ws?.role || 'author', schemaVersion: SCHEMA_VERSION };
+  const value = { ws, setWs, loading, backend, saveStatus, current, currentId, route, setRoute: goRoute, update, createAssessment, openAssessment, createFromTemplate, panel, openPanel: setPanel, closePanel: () => setPanel(null), deleteAssessment, duplicateAssessment, undo, redo, canUndo: Boolean(current?.history?.length), canRedo: Boolean(current?.future?.length), toast, toasts, goHome, role: ws?.role || 'author', schemaVersion: SCHEMA_VERSION };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

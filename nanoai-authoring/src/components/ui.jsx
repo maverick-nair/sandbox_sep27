@@ -15,15 +15,15 @@ export function Button({ variant = 'primary', size = 'md', className = '', disab
 
 export function Spinner({ size = 16 }) { return <span className="pulse inline-block rounded-full border-2 border-current border-t-transparent" style={{ width: size, height: size, animation: 'spin .8s linear infinite' }} aria-hidden="true" />; }
 
-export function Panel({ title, subtitle, right, children, className = '', tone, padding = 'p-5' }) {
+export function Panel({ title, subtitle, right, children, className = '', tone, padding = 'p-5', as: H = 'h2' }) {
   const tones = { warn: 'border-[var(--warn)]/40', block: 'border-[var(--block)]/40', ok: 'border-[var(--ok)]/40' };
   return (
     <section className={`card ${tones[tone] || ''} ${className}`}>
       {(title || right) && (
-        <header className="flex items-start justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
-          <div>{title && <h3 className="text-sm font-semibold">{title}</h3>}{subtitle && <p className="muted mt-0.5 text-xs">{subtitle}</p>}</div>
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
+          <div>{title && <H className="text-sm font-semibold">{title}</H>}{subtitle && <p className="muted mt-0.5 text-xs">{subtitle}</p>}</div>
           {right}
-        </header>
+        </div>
       )}
       <div className={padding}>{children}</div>
     </section>
@@ -53,12 +53,24 @@ export function Severity({ severity }) { return severity === 'hard' ? <Badge ton
 export function Source({ children }) { return <span className="faint inline-flex items-center gap-1 text-[11px]"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 6v4m0 4h.01" /></svg>{children}</span>; }
 
 export function Modal({ open, title, onClose, children, footer, wide }) {
-  useEffect(() => { if (!open) return; const onKey = (e) => e.key === 'Escape' && onClose?.(); window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [open, onClose]);
+  const ref = useRef(null); const opener = useRef(null);
+  // Focus moves into the dialog on open and returns to the opener on close; Tab cycles inside (2.1.2, 2.4.3).
+  useEffect(() => {
+    if (!open) return;
+    opener.current = document.activeElement;
+    const el = ref.current; el?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onClose?.(); }
+      if (e.key === 'Tab' && el) { const f = [...el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]; if (!f.length) return; const first = f[0], last = f[f.length - 1]; if (e.shiftKey && (document.activeElement === first || document.activeElement === el)) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); opener.current?.focus?.(); };
+  }, [open, onClose]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div role="dialog" aria-modal="true" aria-label={title} className={`card max-h-[90vh] w-full ${wide ? 'max-w-6xl' : 'max-w-lg'} overflow-auto`}>
-        <header className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3"><h3 className="text-sm font-semibold">{title}</h3><Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">Close</Button></header>
+      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={`card max-h-[90vh] w-full ${wide ? 'max-w-6xl' : 'max-w-lg'} overflow-auto`}>
+        <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3"><h2 className="text-sm font-semibold">{title}</h2><Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">Close</Button></div>
         <div className="p-5">{children}</div>
         {footer && <footer className="flex justify-end gap-2 border-t border-[var(--line)] px-5 py-3">{footer}</footer>}
       </div>
@@ -109,7 +121,7 @@ export function Steps({ steps, current, onGo, canGo }) {
   );
 }
 
-export function EmptyState({ title, text, action }) { return <div className="card flex flex-col items-center gap-2 p-10 text-center"><h3 className="text-base font-semibold">{title}</h3><p className="muted max-w-md text-sm">{text}</p>{action}</div>; }
+export function EmptyState({ title, text, action }) { return <div className="card flex flex-col items-center gap-2 p-10 text-center"><h2 className="text-base font-semibold">{title}</h2><p className="muted max-w-md text-sm">{text}</p>{action}</div>; }
 export function Stat({ label, value, sub, tone }) { const c = tone === 'block' ? 'text-[var(--block)]' : tone === 'warn' ? 'text-[var(--warn)]' : tone === 'ok' ? 'text-[var(--ok)]' : ''; return <div className="card px-4 py-3"><div className="faint text-[11px] uppercase tracking-wider">{label}</div><div className={`text-xl font-semibold ${c}`}>{value}</div>{sub && <div className="muted text-xs">{sub}</div>}</div>; }
 export function Kbd({ children }) { return <kbd className="rounded border border-[var(--line)] bg-slate-50 px-1 text-[10px]">{children}</kbd>; }
 export function Progress({ value, max = 100, tone }) { const pct = Math.max(0, Math.min(100, (value / max) * 100)); const c = tone === 'block' ? 'bg-[var(--block)]' : tone === 'warn' ? 'bg-[var(--warn)]' : 'bg-[var(--brand)]'; return <div className="h-1.5 w-full rounded bg-slate-200"><div className={`h-1.5 rounded ${c}`} style={{ width: `${pct}%` }} /></div>; }

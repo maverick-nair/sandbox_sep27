@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Panel, Input, Badge, Confidence, Source, Modal, Progress } from '../components/ui.jsx';
-import { PURPOSES, RULES } from '../content/rules.js';
+import { PURPOSES, RULES, purposeById } from '../content/rules.js';
+import { Select } from '../components/ui.jsx';
 import { getSkill, SKILLS } from '../content/ontology.js';
 import { extractText, extractSituations, ACCEPTED } from '../engine/documents.js';
 import { detectPII, anonymize, PII_LABELS } from '../engine/pii.js';
@@ -53,9 +54,29 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const [swapFor, setSwapFor] = useState(null);
   const [confirmedLow, setConfirmedLow] = useState({});
   const [more, setMore] = useState(Boolean(intent.terminology));
+  useEffect(() => { if (intent.terminology && !more) setMore(true); }, [intent.terminology]); // eslint-disable-line
   const dictation = useDictation((t) => set({ situationsText: t }));
   const dictationError = dictation.error;
   const text = useMemo(() => intentText(asm), [asm.intent]);
+
+  // Prefill every field from what the document says: audience from roles, purpose from cue words, company and
+  // product names from repeated proper nouns, and the brief itself from the extracted situations.
+  const prefillFrom = (extracted, docName) => {
+    if (!extracted) return [];
+    const filled = [];
+    const patch = {};
+    const cur = intent;
+    if (!cur.audience.trim()) { const aud = extracted.audience || (extracted.roles?.length ? extracted.roles[0].replace(/^\w/, (c) => c.toUpperCase()) + (extracted.roles.length > 1 ? 's' : '') : ''); if (aud) { patch.audience = aud; filled.push('audience'); } }
+    const text = `${extracted.summary || ''} ${(extracted.situations || []).map((s) => s.text).join(' ')} ${(extracted.decisions || []).join(' ')}`.toLowerCase();
+    if (!cur.purposeTouched) {
+      const guess = extracted.purpose || (/onboard|new hire|first 90|induction/.test(text) ? 'onboarding' : /promot|readiness|new role|step up/.test(text) ? 'readiness' : /retest|after the program|post.?program|follow.?up/.test(text) ? 'retest' : /compliance|audit|regulat/.test(text) ? 'function' : /manager|team lead|supervisor/.test(text) ? 'manager' : /sop|case note|incident|complaint/.test(text) ? 'client' : null);
+      if (guess && guess !== cur.purpose) { patch.purpose = guess; filled.push('purpose'); }
+    }
+    if (!cur.terminology.trim() && extracted.terms?.length) { patch.terminology = extracted.terms.slice(0, 2).join(', '); filled.push('company and product names'); }
+    if (!cur.situationsText.trim() && extracted.situations?.length) { patch.situationsText = extracted.situations.slice(0, 4).map((s) => s.text).join('\n\n'); filled.push('brief'); }
+    if (filled.length) { update((a) => ({ ...a, intent: { ...a.intent, ...patch, prefilled: { from: docName, fields: filled, at: Date.now() } } }), { action: 'intent.prefilled', after: { from: docName, fields: filled } }); }
+    return filled;
+  };
 
   const onFiles = async (files) => {
     if (!files.length) return;
@@ -67,11 +88,35 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
         const doc = { id: uid('doc'), name: f.name, type, chars: t.length, truncated, text: t, piiFindings: findings.map((x) => ({ type: x.type, kind: x.kind })), piiSummary: summarizePii(findings), anonymizedText: findings.length ? anonymize(t, findings).text : t, confirmed: findings.length === 0, addedAt: Date.now() };
         update((a) => ({ ...a, intent: { ...a.intent, documents: [...a.intent.documents, doc], extracted: null } }), { action: 'document.uploaded', after: { name: f.name, chars: t.length, pii: doc.piiSummary } });
         if (findings.length) toast(`${f.name}: personal data found. Confirm anonymization below before building.`);
+        else {
+          // Clean document: read it now, fill the fields it answers, and propose the Skills straight away.
+          setBusy(`Reading ${f.name} and filling in the brief`);
+          const material = `${intent.situationsText}\n\nDocument: ${f.name}\n${doc.anonymizedText}`;
+          let extracted = llmAvailable() ? await llmExtractIntent(material) : null;
+          if (!extracted) { const p = extractSituations(doc.anonymizedText, f.name); extracted = { ...p, mode: 'scripted' }; } else extracted.mode = 'llm';
+          set({ extracted }, 'intent.analyzed');
+          const filled = prefillFrom(extracted, f.name);
+          toast(filled.length ? `Filled in ${filled.join(', ')} from ${f.name}. Check and adjust.` : `${f.name} added. No usable situations found in it.`, filled.length ? 'ok' : 'info');
+          if ((filled.includes('audience') || intent.audience.trim()) && !asm.skills.length) setTimeout(() => proposeRef.current?.(), 50);
+        }
       } catch (err) { toast(`${f.name}: ${err.message}`, 'error'); }
     }
     setBusy('');
   };
-  const confirmDoc = (id) => update((a) => ({ ...a, intent: { ...a.intent, documents: a.intent.documents.map((d) => (d.id === id ? { ...d, confirmed: true } : d)) } }), { action: 'document.anonymization_confirmed', after: id });
+  const proposeRef = useRef(null);
+  const confirmDoc = async (id) => {
+    update((a) => ({ ...a, intent: { ...a.intent, documents: a.intent.documents.map((d) => (d.id === id ? { ...d, confirmed: true } : d)) } }), { action: 'document.anonymization_confirmed', after: id });
+    const doc = intent.documents.find((d) => d.id === id);
+    if (!doc) return;
+    setBusy(`Reading ${doc.name} and filling in the brief`);
+    let extracted = llmAvailable() ? await llmExtractIntent(doc.anonymizedText) : null;
+    if (!extracted) extracted = { ...extractSituations(doc.anonymizedText, doc.name), mode: 'scripted' }; else extracted.mode = 'llm';
+    set({ extracted }, 'intent.analyzed');
+    const filled = prefillFrom(extracted, doc.name);
+    if (filled.length) toast(`Filled in ${filled.join(', ')} from ${doc.name}. Check and adjust.`, 'ok');
+    setBusy('');
+    if ((filled.includes('audience') || intent.audience.trim()) && !asm.skills.length) setTimeout(() => proposeRef.current?.(), 50);
+  };
   const removeDoc = (id) => update((a) => ({ ...a, intent: { ...a.intent, documents: a.intent.documents.filter((d) => d.id !== id), extracted: null } }), { action: 'document.removed', before: id });
 
   const analyze = async () => {
@@ -89,6 +134,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   };
 
   const propose = async () => {
+    if (!asm.intent.audience.trim()) return;
     setBusy('Reading your brief and matching it to the Skills Ontology');
     await analyze();
     const local = proposeSkills(intentText({ ...asm, intent: { ...intent } }) + '\n' + text);
@@ -99,6 +145,8 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
     setBusy('');
   };
 
+  useEffect(() => { proposeRef.current = propose; });
+  const Prefilled = ({ field }) => (intent.prefilled?.fields?.includes(field) ? <Badge tone="brand" title={`Filled from ${intent.prefilled.from}`}>From your document</Badge> : null);
   const add = (id, extra = {}) => {
     if (asm.skills.some((s) => s.id === id)) return toast(`${getSkill(id).name} is already in the assessment.`);
     if (asm.skills.length >= RULES.skills.max) return toast(`An assessment holds at most ${RULES.skills.max} Skills so it stays short form. Remove one first.`, 'error');
@@ -141,7 +189,8 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
               <label className={`pill cursor-pointer ${readOnly ? 'pointer-events-none opacity-50' : ''}`}><Up />Upload brief<input type="file" multiple accept={ACCEPTED} className="hidden" onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} disabled={readOnly} /></label>
             </div>
           </div>
-          <p className="muted mt-0.5 text-xs">Describe the situations people face, in your words. Or drop in SOPs, case notes, incident logs, a programme outline or a call transcript. One line is enough to start.</p>
+          <p className="muted mt-0.5 text-xs">Describe the situations people face, in your words. Or drop in SOPs, case notes, incident logs, a programme outline or a call transcript: the platform fills in the brief, audience, purpose and names from it. One line is enough to start.</p>
+          {intent.prefilled && <p className="mt-1 text-xs"><Badge tone="brand">Filled from {intent.prefilled.from}</Badge> <span className="muted">{intent.prefilled.fields.join(', ')}. Everything is editable.</span></p>}
           {dictationError && <p className="mt-1 text-xs text-[var(--block)]">{dictationError}</p>}
           <div className={`mt-3 rounded-xl border ${dictation.live ? 'border-[var(--brand)] ring-2 ring-[var(--brand-ring)]' : 'border-[var(--line)]'} bg-white`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles([...e.dataTransfer.files]); }}>
             <textarea value={intent.situationsText} onChange={(e) => set({ situationsText: e.target.value })} onBlur={() => set({}, 'intent.situations')} disabled={readOnly} rows={5} aria-label="Brief" placeholder={dictation.live ? 'Listening. Start talking about the situations your people face.' : 'Store managers handle escalations when a delivery is late, decide who covers a shift at short notice, and give feedback after a mystery shopper visit...'} className="w-full resize-none rounded-xl border-0 bg-transparent p-4 text-[15px] leading-relaxed focus:outline-none" />
@@ -154,11 +203,11 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           {unconfirmed.length > 0 && <ul className="mt-3 space-y-2">{unconfirmed.map((d) => <li key={d.id} className="rounded-xl border border-[var(--warn)] bg-[var(--warn-soft)]/50 p-3 text-sm"><div className="font-medium">{d.name}: personal data found</div><p className="muted mt-0.5 text-xs">{Object.entries(d.piiSummary).map(([k, v]) => `${v} ${PII_LABELS[k] || k}`).join(', ')}. Replaced with placeholders such as [Person] before anything is generated; sensitive details are removed entirely. The original stays here only.</p><details className="mt-1"><summary className="faint cursor-pointer text-xs">See what the platform will read</summary><pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-xs">{d.anonymizedText.slice(0, 2000)}</pre></details><Button size="sm" className="mt-2" onClick={() => confirmDoc(d.id)}>Confirm anonymization</Button></li>)}</ul>}
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block"><span className="mb-1 block text-sm font-medium">Who is being assessed? <span className="text-xs font-normal text-[var(--block)]">required</span></span><Input value={intent.audience} onChange={(e) => set({ audience: e.target.value })} onBlur={() => set({}, 'intent.audience')} placeholder="Store managers, 1 to 2 years in role" disabled={readOnly} /></label>
-            <div><span className="mb-1 block text-sm font-medium">Why?</span><div className="flex flex-wrap gap-1.5">{PURPOSES.map((p) => <button key={p.id} disabled={readOnly} onClick={() => set({ purpose: p.id }, 'intent.purpose')} aria-pressed={intent.purpose === p.id} className="pill" title={p.hint}>{p.label}</button>)}</div></div>
+            <label className="block"><span className="mb-1 flex items-center gap-2 text-sm font-medium">Who is being assessed? <span className="text-xs font-normal text-[var(--block)]">required</span><Prefilled field="audience" /></span><Input value={intent.audience} onChange={(e) => set({ audience: e.target.value })} onBlur={() => set({}, 'intent.audience')} placeholder="Store managers, 1 to 2 years in role" disabled={readOnly} /></label>
+            <label className="block"><span className="mb-1 flex items-center gap-2 text-sm font-medium">Why are you running it? <Prefilled field="purpose" /></span><Select value={intent.purpose} onChange={(e) => { const p = purposeById(e.target.value); update((a) => ({ ...a, intent: { ...a.intent, purpose: p.id, purposeTouched: true }, config: a.config.purposeDefaultsFor && a.config.purposeDefaultsFor !== p.id || !a.config.purposeDefaultsFor ? { ...a.config, ...p.defaults, purposeDefaultsFor: p.id } : a.config }), { action: 'intent.purpose', after: p.id }); }} disabled={readOnly} aria-describedby="purpose-hint">{['Programmes', 'Talent', 'Organisation', 'Other'].map((g) => <optgroup key={g} label={g}>{PURPOSES.filter((p) => p.group === g).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</optgroup>)}</Select><span id="purpose-hint" className="faint mt-1 block text-xs">{purposeById(intent.purpose).hint}. Sets retake, sittings and report visibility defaults; change them at publish.</span></label>
           </div>
           <button className="mt-3 text-xs text-[var(--brand)]" onClick={() => setMore(!more)}>{more ? 'Fewer options' : 'More options: your company and product names'}</button>
-          {more && <label className="mt-2 block"><span className="faint mb-1 block text-xs">Names to use in scenarios. The first becomes the company, the second a product. Comma separated.</span><Input value={intent.terminology} onChange={(e) => set({ terminology: e.target.value })} onBlur={() => set({}, 'intent.terminology')} placeholder="Northwind Retail, Store Connect" disabled={readOnly} /></label>}
+          {more && <label className="mt-2 block"><span className="faint mb-1 flex items-center gap-2 text-xs"><Prefilled field="company and product names" />Names to use in scenarios. The first becomes the company, the second a product. Comma separated.</span><Input value={intent.terminology} onChange={(e) => set({ terminology: e.target.value })} onBlur={() => set({}, 'intent.terminology')} placeholder="Northwind Retail, Store Connect" disabled={readOnly} /></label>}
           {n === 0 && <div className="mt-4 flex items-center justify-between gap-3"><p className={`text-sm ${needAudience || unconfirmed.length ? 'muted' : 'muted'}`}>{needAudience ? 'Add who is being assessed, then we propose the Skills.' : briefPii.length ? 'Anonymize the personal data in your brief first.' : unconfirmed.length ? 'Confirm anonymization, then we propose the Skills.' : 'Next: the platform proposes 3 to 5 Skills from your brief.'}</p><Button size="lg" disabled={needAudience || unconfirmed.length > 0 || briefPii.length > 0 || readOnly} busy={Boolean(busy)} onClick={propose}>Propose Skills</Button></div>}
         </section>
 
@@ -190,7 +239,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
         )}
       </div>
 
-      <aside className="space-y-4">
+      <aside aria-label="Skill tools and findings" className="space-y-4">
         {n > 0 && !readOnly && (
           <Panel title="Add a Skill" padding="p-4">
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search in plain words: delegation, numbers, saying no" aria-label="Search Skills" />

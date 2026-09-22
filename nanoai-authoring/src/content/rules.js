@@ -19,12 +19,20 @@ export const RULES = {
 
 export const RESPONSE_TYPES = ['Audio', 'Text', 'MCQ'];
 export const DIFFICULTIES = ['Low', 'Medium', 'High'];
+// Why the assessment is run. Each purpose sets sensible defaults for retest, sittings and report visibility.
 export const PURPOSES = [
-  { id: 'baseline', label: 'Program baseline', hint: 'Before a program, with a retest 6 to 12 weeks after' },
-  { id: 'retest', label: 'Retest', hint: 'Parallel form after a program' },
-  { id: 'readiness', label: 'Role readiness', hint: 'New role, promotion readiness, role change' },
-  { id: 'function', label: 'Function evaluation', hint: 'HR led, annual or semi annual' },
+  { id: 'baseline', label: 'Programme baseline', hint: 'Measure before a learning programme so you can show movement later', group: 'Programmes', defaults: { retakeDays: 30, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true } } },
+  { id: 'retest', label: 'Programme retest', hint: 'Parallel form 6 to 12 weeks after the programme; the report shows movement per Skill', group: 'Programmes', defaults: { retakeDays: 30, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true } } },
+  { id: 'reinforcement', label: 'Post training reinforcement check', hint: 'A short check 2 to 4 weeks after training to see whether it is being applied', group: 'Programmes', defaults: { retakeDays: 14, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: true, org: true } } },
+  { id: 'readiness', label: 'Role readiness', hint: 'New role, promotion readiness conversation or role change', group: 'Talent', defaults: { retakeDays: 90, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: true, org: true } } },
+  { id: 'onboarding', label: 'Onboarding readiness', hint: 'New hires at 60 to 90 days, on the situations they now face', group: 'Talent', defaults: { retakeDays: 60, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: true, org: true } } },
+  { id: 'development', label: 'Individual development planning', hint: 'Give each person a baseline and actions for their development plan', group: 'Talent', defaults: { retakeDays: 90, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: false } } },
+  { id: 'manager', label: 'Manager effectiveness', hint: 'Semi annual view of feedback, coaching, delegation and difficult conversations across a manager population', group: 'Organisation', defaults: { retakeDays: 120, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: true, org: true } } },
+  { id: 'function', label: 'Function wide Skills evaluation', hint: 'HR led, annual or semi annual, across a whole function', group: 'Organisation', defaults: { retakeDays: 180, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: false, org: true } } },
+  { id: 'client', label: 'Client specific situation assessment', hint: 'Built from the client\'s own SOPs, case notes or incident logs and their Skill framework', group: 'Organisation', defaults: { retakeDays: 30, parallelFormOnRetake: true, reportVisibility: { participant: true, manager: true, org: true } } },
+  { id: 'pilot', label: 'Pilot or design partner run', hint: 'A first run with a small group to check realism and timing before a wider rollout', group: 'Other', defaults: { retakeDays: 0, parallelFormOnRetake: false, reportVisibility: { participant: true, manager: false, org: true } } },
 ];
+export function purposeById(id) { return PURPOSES.find((p) => p.id === id) || PURPOSES[0]; }
 
 export const BANDS = [
   { name: 'Novice', min: 1.0, max: 2.9, meaning: 'Responses rarely show the effective behaviors; MCQ choices favor ineffective options' },
