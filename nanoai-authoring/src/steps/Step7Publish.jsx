@@ -14,7 +14,7 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast, e
   const { ws, setWs, role } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
   const c = asm.config;
-  useEffect(() => { if (!c.name.trim() && !readOnly && asm.intent.audience.trim()) { const p = PURPOSES.find((x) => x.id === asm.intent.purpose)?.label || 'Assessment'; update((a) => ({ ...a, config: { ...a.config, name: `${p}: ${a.intent.audience.trim().slice(0, 60)}` } }), { undoable: false }); } }, []); // eslint-disable-line
+  useEffect(() => { if (!c.name.trim() && !readOnly && asm.intent.audience.trim()) { const p = PURPOSES.find((x) => x.id === asm.intent.purpose)?.label || 'Assessment'; update((a) => ({ ...a, config: { ...a.config, name: `${p}: ${a.intent.audience.trim().slice(0, 60)}` } }), {}); } }, []); // eslint-disable-line
   const set = (patch, action) => update((a) => ({ ...a, config: { ...a.config, ...patch } }), { action: action || 'config.changed', after: patch });
   const setVis = (k, v) => set({ reportVisibility: { ...c.reportVisibility, [k]: v } }, 'config.report_visibility');
   const reviewRequired = ws.publishedCount < RULES.review.mandatoryFirstN;
@@ -23,7 +23,7 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast, e
 
   const doPublish = () => {
     const next = publishAsm(asm, { modelVersion: currentModelVersion(), promptVersion: PROMPT_VERSION, reviewRequired });
-    update(() => next, { action: 'assessment.published', after: { version: next.currentVersion, ontology: ONTOLOGY_VERSION, model: currentModelVersion(), review: reviewRequired ? 'knolskape_review' : 'none' }, undoable: false });
+    update(() => next, { action: 'assessment.published', after: { version: next.currentVersion, ontology: ONTOLOGY_VERSION, model: currentModelVersion(), review: reviewRequired ? 'knolskape_review' : 'none' } });
     setWs((w) => ({ ...w, publishedCount: (w.publishedCount || 0) + 1 }));
     setConfirming(false);
     toast(`Published version ${next.currentVersion}. ${reviewRequired ? 'It goes to KNOLSKAPE review before participants can be invited.' : 'Participants can be invited now.'}`, 'ok');

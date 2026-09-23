@@ -39,7 +39,7 @@ Four stages, all reachable from the sidebar.
 
 **Roles.** Settings assigns Author, Reviewer, Calibrator or Workspace admin. Reviewers complete KNOLSKAPE review of published versions; calibrators activate AI scoring. Without sign in this is self declared, so a deployment must assign roles centrally.
 
-**Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, undo is capped at 25 steps and excludes document bodies, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
+**Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
 
 **Local verification.** `scripts/mock-anthropic.mjs` is a stand in for the GenieKreator AI gateway that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (requests, parsing, validation, placeholders, UI) can be run by setting `window.GENIE_AI.gateway` to it. It says nothing about model quality; that is checked against the real gateway.
 
@@ -48,6 +48,6 @@ Four stages, all reachable from the sidebar.
 ## Structure
 
 - `src/content/` the frozen ontology subset (16 atomic Skills with indicators, L0 to L3 levels and situation tags), the PRD rules as constants, the 48 scenario seeds, and the sample assessment.
-- `src/engine/` blueprint planner and reduction order, per participant form ordering, duration and cap planner, quality gate, bias screen, PII shield, Skill mapper, generator (AI only, with schema validation, placeholders and retry on failure, scoped regeneration, re-analysis, re-key; `library.js` holds the seed based builder used only by the sample and tests), scoring formulas, document ingestion, workspace store with versions, undo and audit.
+- `src/engine/` blueprint planner and reduction order, per participant form ordering, duration and cap planner, quality gate, bias screen, PII shield, Skill mapper, generator (AI only, with schema validation, placeholders and retry on failure, scoped regeneration, re-analysis, re-key; `library.js` holds the seed based builder used only by the sample and tests), scoring formulas, document ingestion, workspace store with versions and audit.
 - `src/stages/` the Brief, Scenarios and Publish stages; `src/steps/` the review, blueprint, gate, preview and configuration components they compose. `src/screens/` dashboard, settings, help and the stage router. `src/components/` UI primitives, media renderers and editor, shell.
 - `tests/` node test suite over the engine.

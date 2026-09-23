@@ -249,7 +249,7 @@ test('form order: shuffled per participant, stable per seed, Skills interleaved,
 });
 
 import { icc1, computeAgreement, practiceResponses, parseResponses, emptyCalibration } from '../src/engine/calibration.js';
-import { snapshot, undo, pushHistory, isEmptyDraft, newAssessment, HISTORY_LIMIT } from '../src/engine/store.js';
+import { snapshot, isEmptyDraft, newAssessment, loadWorkspaceFrom } from '../src/engine/store.js';
 import { scriptedAnalysisFromText } from '../src/engine/library.js';
 
 test('calibration: ICC(1) agrees for identical raters, falls for noise, and gates activation on both thresholds', () => {
@@ -278,17 +278,16 @@ test('calibration: ICC(1) agrees for identical raters, falls for noise, and gate
   assert.equal(parseResponses('1. I would first ask the person what is going on.\n\n2. Tell them to fix it.\n\nshort').length, 2, 'numbered paragraphs split; fragments under 20 characters are dropped');
 });
 
-test('store: snapshots exclude document bodies, history is capped, undo keeps documents, empty drafts are detected', () => {
+test('store: content snapshots exclude document bodies, old undo history is dropped, empty drafts are detected', () => {
   let a = newAssessment();
   assert.ok(isEmptyDraft(a));
+  assert.equal(a.history, undefined, 'new assessments carry no undo history');
   a = { ...a, intent: { ...a.intent, audience: 'Store managers', documents: [{ id: 'd1', text: 'x'.repeat(50000), anonymizedText: 'x'.repeat(50000), confirmed: true }] } };
   assert.ok(!isEmptyDraft(a));
   assert.ok(snapshot(a).length < 5000, 'document bodies are not in the snapshot');
-  for (let i = 0; i < 40; i++) a = pushHistory({ ...a, intent: { ...a.intent, audience: `Audience ${i}` } }, snapshot(a));
-  assert.equal(a.history.length, HISTORY_LIMIT);
-  const u = undo(a);
-  assert.equal(u.intent.documents.length, 1, 'undo keeps the documents');
-  assert.equal(u.intent.audience, 'Audience 38');
+  const ws = loadWorkspaceFrom({ assessments: [{ ...a, history: ['old'], future: ['old'] }] });
+  assert.equal(ws.assessments[0].history, undefined, 'saved undo history is removed on load');
+  assert.equal(ws.assessments[0].future, undefined);
 });
 
 test('library: text analysis helper reads facts, constraints and stakeholders from an edited situation', () => {

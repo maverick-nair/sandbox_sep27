@@ -63,7 +63,6 @@ try {
   results.push(`INFO banner: ${bannerTitle}`);
   await shot('reanalysis');
   await page.getByRole('button', { name: 'Confirm changes' }).click();
-  // Undo history is small after typing
   // Approve all and publish
   const n = await page.locator('aside[aria-label="Scenario list"] ol li button').count();
   for (let i = 0; i < n; i++) { await page.locator('aside[aria-label="Scenario list"] ol li button').nth(i).click(); await page.waitForTimeout(100); const b = page.getByRole('button', { name: /^Mark approved/ }).first(); if (await b.count()) { await b.click(); await page.waitForTimeout(120); } }

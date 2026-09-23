@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { emptyWorkspace, newAssessment, upsertAssessment, audit, snapshot, contentKey, pushHistory, undo as undoAsm, redo as redoAsm, isEmptyDraft, SCHEMA_VERSION } from './store.js';
+import { emptyWorkspace, newAssessment, upsertAssessment, audit, contentKey, isEmptyDraft, SCHEMA_VERSION } from './store.js';
 import { loadPersisted, savePersisted, onSaveStatus, loadUiState, saveUiState, tabChannel, flushSave } from './storage.js';
 import { onUsage } from './llm.js';
 import { buildSampleAssessment } from '../content/sample.js';
@@ -77,7 +77,7 @@ export function WorkspaceProvider({ children }) {
 
   const current = useMemo(() => ws?.assessments.find((a) => a.id === currentId) || null, [ws, currentId]);
 
-  // update(mutator, { action, before, after, undoable, allowPublished, assessmentId })
+  // update(mutator, { action, before, after, allowPublished, assessmentId })
   // A published assessment refuses content changes unless the caller says it is starting a new version.
   const update = useCallback((mutator, meta = {}) => {
     let refused = false;
@@ -85,12 +85,10 @@ export function WorkspaceProvider({ children }) {
       if (!w) return w;
       const asm = w.assessments.find((a) => a.id === (meta.assessmentId || currentId));
       if (!asm) return w;
-      const prevSnap = snapshot(asm);
       let next = typeof mutator === 'function' ? mutator(asm) : { ...asm, ...mutator };
       if (!next) return w;
       if (asm.status === 'published' && !meta.allowPublished && contentKey(next) !== contentKey(asm)) { refused = true; return w; }
       next = { ...next, updatedAt: Date.now() };
-      if (meta.undoable !== false && snapshot(next) !== prevSnap) next = pushHistory(next, prevSnap);
       let w2 = upsertAssessment(w, next);
       if (meta.action) w2 = audit(w2, { assessmentId: asm.id, action: meta.action, before: meta.before, after: meta.after });
       return w2;
@@ -131,10 +129,8 @@ export function WorkspaceProvider({ children }) {
     setCurrentId(copy.id); setRoute('author');
   }, []);
 
-  const undo = useCallback(() => update((a) => undoAsm(a), { undoable: false, action: 'undo' }), [update]);
-  const redo = useCallback(() => update((a) => redoAsm(a), { undoable: false, action: 'redo' }), [update]);
 
-  const value = { ws, setWs, loading, backend, saveStatus, current, currentId, route, setRoute: goRoute, update, createAssessment, openAssessment, createFromTemplate, panel, openPanel: setPanel, closePanel: () => setPanel(null), deleteAssessment, duplicateAssessment, undo, redo, canUndo: Boolean(current?.history?.length), canRedo: Boolean(current?.future?.length), toast, toasts, goHome, role: ws?.role || 'author', schemaVersion: SCHEMA_VERSION };
+  const value = { ws, setWs, loading, backend, saveStatus, current, currentId, route, setRoute: goRoute, update, createAssessment, openAssessment, createFromTemplate, panel, openPanel: setPanel, closePanel: () => setPanel(null), deleteAssessment, duplicateAssessment, toast, toasts, goHome, role: ws?.role || 'author', schemaVersion: SCHEMA_VERSION };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

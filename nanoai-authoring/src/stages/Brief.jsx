@@ -69,8 +69,8 @@ function useDictation(onText, focusBox) {
 
 export default function Brief({ asm, update, go, readOnly, toast }) {
   const intent = asm.intent;
-  // Live typing and dictation update without an undo step; the blur or action commit records one.
-  const set = (patch, action) => update((a) => ({ ...a, intent: { ...a.intent, ...patch } }), action ? { action, after: patch } : { undoable: false });
+  // Live typing and dictation update without an audit entry; the blur or action commit records one.
+  const set = (patch, action) => update((a) => ({ ...a, intent: { ...a.intent, ...patch } }), action ? { action, after: patch } : {});
   const briefPii = useMemo(() => detectPII(intent.situationsText || ''), [intent.situationsText]);
   const anonymizeBrief = () => { const out = anonymize(intent.situationsText, briefPii); set({ situationsText: out.text }, 'intent.brief_anonymized'); toast(`Replaced ${briefPii.length} personal detail${briefPii.length === 1 ? '' : 's'} with placeholders.`, 'ok'); };
   const [busy, setBusy] = useState('');

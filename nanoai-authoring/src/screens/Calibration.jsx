@@ -22,7 +22,7 @@ export default function Calibration({ asm, update, toast }) {
   const agreement = useMemo(() => (sc ? computeAgreement(sc, cal) : null), [sc, cal]);
 
   if (!sc) return <div className="card p-6 text-sm muted">This assessment has no Audio or Text scenarios, so there is nothing to calibrate. MCQ is scored from the key.</div>;
-  const setCal = (mut, action, meta = {}) => update((a) => ({ ...a, calibration: { ...(a.calibration || {}), [sc.id]: typeof mut === 'function' ? mut(a.calibration?.[sc.id] || emptyCalibration()) : mut } }), { action, allowPublished: true, undoable: false, ...meta });
+  const setCal = (mut, action, meta = {}) => update((a) => ({ ...a, calibration: { ...(a.calibration || {}), [sc.id]: typeof mut === 'function' ? mut(a.calibration?.[sc.id] || emptyCalibration()) : mut } }), { action, allowPublished: true, ...meta });
 
   const addResponses = (list) => { if (!list.length) return toast('No responses found. One response per paragraph, at least 20 characters.', 'error'); setCal((c) => ({ ...c, status: c.status === 'pending' ? 'in_progress' : c.status, responses: [...c.responses, ...list.map((r) => { const f = detectPII(r.text, { allowNames: sc.allowedTerms || [] }); return { ...r, text: f.length ? anonymize(r.text, f).text : r.text, redactions: f.length }; })] }), 'calibration.responses_added', { after: list.length }); };
   const scoreAi = async () => {
@@ -42,10 +42,10 @@ export default function Calibration({ asm, update, toast }) {
   const rate = (rid, who, qid, level) => setCal((c) => ({ ...c, status: 'in_progress', responses: c.responses.map((r) => (r.id === rid ? { ...r, ratings: { ...r.ratings, [who]: { ...(r.ratings?.[who] || {}), [qid]: (level === '' ? undefined : Number(level)) } } } : r)) }), 'calibration.level_entered', { after: { rid, who, qid, level } });
   const activate = () => {
     setCal((c) => ({ ...c, status: 'complete', agreement, activatedAt: Date.now(), activatedBy: ws.author }), 'calibration.activated', { after: { scenario: sc.id, agreement: agreement.perQuestion.map((p) => [p.aiHuman, p.humanHuman]) } });
-    update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'complete' } : s)), versions: (a.versions || []).map((v) => ({ ...v, scenarios: v.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'complete' } : s)) })) }), { action: 'scenario.ai_scoring_activated', after: sc.id, allowPublished: true, undoable: false });
+    update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'complete' } : s)), versions: (a.versions || []).map((v) => ({ ...v, scenarios: v.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'complete' } : s)) })) }), { action: 'scenario.ai_scoring_activated', after: sc.id, allowPublished: true });
     toast(`AI scoring activated for "${sc.title}".`, 'ok');
   };
-  const pause = () => { setCal((c) => ({ ...c, status: 'paused', pausedReason: 'Paused by calibrator' }), 'calibration.paused'); update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'pending' } : s)) }), { action: 'scenario.ai_scoring_paused', allowPublished: true, undoable: false }); };
+  const pause = () => { setCal((c) => ({ ...c, status: 'paused', pausedReason: 'Paused by calibrator' }), 'calibration.paused'); update((a) => ({ ...a, scenarios: a.scenarios.map((s) => (s.id === sc.id ? { ...s, calibration: 'pending' } : s)) }), { action: 'scenario.ai_scoring_paused', allowPublished: true }); };
   const status = calibrationStatus(sc, cal);
   const tone = { complete: 'ok', in_progress: 'warn', paused: 'block', pending: 'neutral' }[status];
 

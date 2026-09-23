@@ -34,8 +34,8 @@ export default function Author() {
     if (n === 2) return skillsOk;
     return skillsOk && Boolean(a.scenarios?.length);
   };
-  const go = (n, opts = {}) => { if (route !== 'author') setRoute('author'); if (opts.scenarioId || opts.plan) setFocus({ scenarioId: opts.scenarioId, plan: opts.plan }); update((a) => (canGoFor(a, n) ? { ...a, stage: n } : a), { undoable: false, allowPublished: true }); window.scrollTo({ top: 0 }); };
-  useEffect(() => { if (!canGoFor(asm, stage)) update({ stage: 1 }, { undoable: false }); }, []); // eslint-disable-line
+  const go = (n, opts = {}) => { if (route !== 'author') setRoute('author'); if (opts.scenarioId || opts.plan) setFocus({ scenarioId: opts.scenarioId, plan: opts.plan }); update((a) => (canGoFor(a, n) ? { ...a, stage: n } : a), { allowPublished: true }); window.scrollTo({ top: 0 }); };
+  useEffect(() => { if (!canGoFor(asm, stage)) update({ stage: 1 }, {}); }, []); // eslint-disable-line
 
   const stageStatus = [Boolean(asm.skillsConfirmed), (asm.scenarios?.length || 0) > 0 && asm.scenarios.every((s) => s.approved), Boolean(asm.previewed), asm.status === 'published'];
 

@@ -208,7 +208,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
       <Modal open={Boolean(regen)} title={`Regenerate ${regen?.label || ''}`} onClose={() => setRegen(null)} footer={<><Button variant="secondary" onClick={() => setRegen(null)}>Cancel</Button><Button onClick={runRegen} busy={Boolean(busy)}>Regenerate</Button></>}>
         {regen?.scope === 'sentence' && <div className="mb-3"><div className="faint mb-1 text-xs uppercase tracking-wider">Which sentence</div><Select value={regen.sentenceIndex} onChange={(e) => setRegen({ ...regen, sentenceIndex: Number(e.target.value) })}>{sentences.map((s, i) => <option key={i} value={i}>{s.slice(0, 90)}</option>)}</Select></div>}
         <Textarea value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder={'Plain instruction, for example: "make this about a distributor, not a retailer" or "raise the stakes: the client is the largest account".'} />
-        <p className="faint mt-2 text-xs">The AI rewrites only what you asked for and re-runs the analysis where the facts change. Undo is available.</p>
+        <p className="faint mt-2 text-xs">The AI rewrites only what you asked for and re-runs the analysis where the facts change.</p>
       </Modal>
       <Modal open={mediaOpen} title="Scenario media" onClose={() => setMediaOpen(false)} wide>
         <MediaEditor media={sc.media} onChange={editMedia} onRemove={() => editMedia(null)} onClose={() => setMediaOpen(false)} />

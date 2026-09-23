@@ -36,7 +36,7 @@ export function buildScenarios({ asm, update, onProgress }) {
   const total = rows.length;
   const entry = { progress: { done: rows.length - missingRows(asm).length, total, status: 'Planning scenarios, response types and time', writing: [] } };
   const setProgress = (patch) => { entry.progress = { ...entry.progress, ...patch }; onProgress?.(entry.progress); emit(); };
-  const meta = { undoable: false, assessmentId: asm.id, allowPublished: false };
+  const meta = { assessmentId: asm.id, allowPublished: false };
   // Drop scenarios whose row left the plan, keeping everything else the author has.
   update?.((a) => ({ ...a, scenarios: (a.scenarios || []).filter((s) => rows.some((r) => r.id === s.blueprintRowId)) }), meta);
 

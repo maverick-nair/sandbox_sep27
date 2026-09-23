@@ -10,8 +10,6 @@ export const I = {
   cloud: 'M7 18a4 4 0 0 1-.5-8 6 6 0 0 1 11.6 1.5A3.5 3.5 0 0 1 17.5 18z',
   user: 'M20 21a8 8 0 1 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   search: 'M21 21l-4.3-4.3M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z',
-  undo: 'M3 7v6h6M3 13a9 9 0 1 0 3-7.7L3 7',
-  redo: 'M21 7v6h-6M21 13a9 9 0 1 1-3-7.7L21 7',
   back: 'M19 12H5m7-7l-7 7 7 7',
   gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3H9.8l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4.4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z',
   help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01',
@@ -36,7 +34,7 @@ export function Logo({ onClick }) {
 // The GenieKreator frame: full width header (search, home, save state, profile) and, inside an
 // assessment, a sidebar with the stages, calibration and quick actions. Settings and help are dialogs, not pages.
 export default function Shell({ children, crumbs = [], title, subtitle, actions, stage, onStage, stageStatus, onCalibration, sidebar = false, back }) {
-  const { ws, route, setRoute, goHome, createAssessment, current, undo, redo, canUndo, canRedo, openAssessment, saveStatus, panel, openPanel, closePanel, role } = useWorkspace();
+  const { ws, route, setRoute, goHome, createAssessment, current, openAssessment, saveStatus, panel, openPanel, closePanel, role } = useWorkspace();
   const [q, setQ] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -89,7 +87,6 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
               <input id="product-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-[var(--card)] py-2 pl-9 pr-3 text-sm" role="combobox" aria-autocomplete="list" aria-controls="product-search-results" aria-expanded={results.length > 0} />
               {results.length > 0 && <ul id="product-search-results" role="listbox" aria-label="Matching products" className="card absolute z-50 mt-1 w-full overflow-hidden shadow-lg">{results.map((a) => <li key={a.id} role="option" aria-selected="false"><button className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--card-3)]" onClick={() => { openAssessment(a.id); setQ(''); }}><span>{a.config.name || 'Untitled assessment'}</span><Badge tone={a.status === 'published' ? 'ok' : 'neutral'}>{a.status}</Badge></button></li>)}</ul>}
             </div>
-            {(route === 'author' || route === 'calibration') && current && <><Tooltip label="Undo" hint={canUndo ? 'Reverse your last change to this assessment' : 'Nothing to undo yet'}><button className="icon-btn" onClick={() => canUndo && undo()} aria-disabled={!canUndo} aria-label="Undo"><Icon d={I.undo} size={16} /></button></Tooltip><Tooltip label="Redo" hint={canRedo ? 'Bring back the change you just undid' : 'Nothing to redo'}><button className="icon-btn" onClick={() => canRedo && redo()} aria-disabled={!canRedo} aria-label="Redo"><Icon d={I.redo} size={16} /></button></Tooltip></>}
             <Tooltip label="Home" hint="Back to All your products"><button className="icon-btn" onClick={goHome} aria-label="Home"><Icon d={I.home} size={16} /></button></Tooltip>
             <Tooltip label={saveStatus?.ok === false ? 'Not saved' : 'All changes saved'} hint={saveStatus?.ok === false ? (saveStatus.reason === 'quota' ? 'Browser storage is full. Export your workspace from Workspace settings.' : saveStatus.reason === 'unavailable' ? 'This window does not allow saving. Export your workspace from Workspace settings to keep a copy.' : 'Your latest change could not be saved. Keep this tab open and try again.') : 'Your work saves automatically as you go'} align="end"><span className="icon-btn" role="status" aria-live="polite" tabIndex={0} style={{ color: saveStatus?.ok === false ? 'var(--block)' : 'var(--ok)' }}><Icon d={I.cloud} size={16} /><span className="sr-only">{saveStatus?.ok === false ? (saveStatus.reason === 'quota' ? 'Storage full, work not saved. Export your workspace.' : 'Not saved') : 'All changes saved'}</span></span></Tooltip>
             <div className="relative" ref={menuRef}>
