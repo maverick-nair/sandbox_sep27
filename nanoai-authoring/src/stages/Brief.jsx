@@ -3,13 +3,14 @@ import { Button, Panel, Input, Badge, Confidence, Source, Modal, Progress } from
 import { PURPOSES, RULES, purposeById } from '../content/rules.js';
 import { Select } from '../components/ui.jsx';
 import { getSkill, SKILLS } from '../content/ontology.js';
-import { extractText, extractSituations, ACCEPTED } from '../engine/documents.js';
+import { extractText, ACCEPTED } from '../engine/documents.js';
 import { detectPII, anonymize, PII_LABELS } from '../engine/pii.js';
-import { llmExtractIntent, llmRankSkills } from '../engine/generator.js';
+import { llmExtractIntent, llmRankSkills, notConnectedReason } from '../engine/generator.js';
 import { proposeSkills, mapClientSkill, searchSkills } from '../engine/mapping.js';
 import { planBlueprint } from '../engine/blueprint.js';
 import { buildScenarios } from '../engine/build.js';
 import { llmAvailable } from '../engine/llm.js';
+import { useWorkspace } from '../engine/WorkspaceContext.jsx';
 import { uid } from '../engine/text.js';
 
 const Mic = ({ live }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill={live ? 'currentColor' : 'none'} /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8" /></svg>;
@@ -42,6 +43,8 @@ function useDictation(onText) {
 
 export default function Brief({ asm, update, go, readOnly, toast }) {
   const intent = asm.intent;
+  const { openPanel } = useWorkspace();
+  const ai = llmAvailable();
   // Live typing and dictation update without an undo step; the blur or action commit records one.
   const set = (patch, action) => update((a) => ({ ...a, intent: { ...a.intent, ...patch } }), action ? { action, after: patch } : { undoable: false });
   const briefPii = useMemo(() => detectPII(intent.situationsText || ''), [intent.situationsText]);
@@ -90,14 +93,18 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
         if (findings.length) toast(`${f.name}: personal data found. Confirm anonymization below before building.`);
         else {
           // Clean document: read it now, fill the fields it answers, and propose the Skills straight away.
-          setBusy(`Reading ${f.name} and filling in the brief`);
-          const material = `${intent.situationsText}\n\nDocument: ${f.name}\n${doc.anonymizedText}`;
-          let extracted = llmAvailable() ? await llmExtractIntent(material) : null;
-          if (!extracted) { const p = extractSituations(doc.anonymizedText, f.name); extracted = { ...p, mode: 'scripted' }; } else extracted.mode = 'llm';
-          set({ extracted }, 'intent.analyzed');
-          const filled = prefillFrom(extracted, f.name);
-          toast(filled.length ? `Filled in ${filled.join(', ')} from ${f.name}. Check and adjust.` : `${f.name} added. No usable situations found in it.`, filled.length ? 'ok' : 'info');
-          if ((filled.includes('audience') || intent.audience.trim()) && !asm.skills.length) setTimeout(() => proposeRef.current?.(), 50);
+          if (!ai) { toast(`${f.name} added. Connect AI to read it and fill in the brief.`); }
+          else {
+            setBusy(`Reading ${f.name} and filling in the brief`);
+            const extracted = await llmExtractIntent(`${intent.situationsText}\n\nDocument: ${f.name}\n${doc.anonymizedText}`);
+            if (!extracted) toast(`${f.name} added, but the AI could not read it just now. Use "Read documents again" to retry.`, 'error');
+            else {
+              set({ extracted }, 'intent.analyzed');
+              const filled = prefillFrom(extracted, f.name);
+              toast(filled.length ? `Filled in ${filled.join(', ')} from ${f.name}. Check and adjust.` : `${f.name} added. No usable situations found in it.`, filled.length ? 'ok' : 'info');
+              if ((filled.includes('audience') || intent.audience.trim()) && !asm.skills.length) setTimeout(() => proposeRef.current?.(), 50);
+            }
+          }
         }
       } catch (err) { toast(`${f.name}: ${err.message}`, 'error'); }
     }
@@ -108,9 +115,10 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
     update((a) => ({ ...a, intent: { ...a.intent, documents: a.intent.documents.map((d) => (d.id === id ? { ...d, confirmed: true } : d)) } }), { action: 'document.anonymization_confirmed', after: id });
     const doc = intent.documents.find((d) => d.id === id);
     if (!doc) return;
+    if (!ai) return;
     setBusy(`Reading ${doc.name} and filling in the brief`);
-    let extracted = llmAvailable() ? await llmExtractIntent(doc.anonymizedText) : null;
-    if (!extracted) extracted = { ...extractSituations(doc.anonymizedText, doc.name), mode: 'scripted' }; else extracted.mode = 'llm';
+    const extracted = await llmExtractIntent(doc.anonymizedText);
+    if (!extracted) { toast('The AI could not read the document just now. Use "Read documents again" to retry.', 'error'); setBusy(''); return; }
     set({ extracted }, 'intent.analyzed');
     const filled = prefillFrom(extracted, doc.name);
     if (filled.length) toast(`Filled in ${filled.join(', ')} from ${doc.name}. Check and adjust.`, 'ok');
@@ -121,26 +129,23 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
 
   const analyze = async () => {
     const material = [intent.situationsText, ...intent.documents.filter((d) => d.confirmed).map((d) => `Document: ${d.name}\n${d.anonymizedText}`)].filter(Boolean).join('\n\n');
-    if (!material.trim()) return null;
-    let extracted = llmAvailable() ? await llmExtractIntent(material) : null;
-    if (!extracted) {
-      const parts = [];
-      if (intent.situationsText.trim()) parts.push(extractSituations(intent.situationsText, 'your brief'));
-      for (const d of intent.documents.filter((x) => x.confirmed)) parts.push(extractSituations(d.anonymizedText, d.name));
-      extracted = { situations: parts.flatMap((p) => p.situations).slice(0, 12), roles: [...new Set(parts.flatMap((p) => p.roles))], terms: [...new Set(parts.flatMap((p) => p.terms))].slice(0, 12), decisions: parts.flatMap((p) => p.decisions).slice(0, 6), noUsableSituations: parts.length > 0 && parts.every((p) => p.situations.length === 0), mode: 'scripted' };
-    } else extracted.mode = 'llm';
+    if (!material.trim() || !ai) return null;
+    const extracted = await llmExtractIntent(material);
+    if (!extracted) return null;
     set({ extracted }, 'intent.analyzed');
     return extracted;
   };
 
   const propose = async () => {
     if (!asm.intent.audience.trim()) return;
+    if (!ai) { toast(notConnectedReason(), 'error'); return; }
     setBusy('Reading your brief and matching it to the Skills Ontology');
     await analyze();
+    // Ontology retrieval narrows the candidates; the model ranks them and explains each choice.
     const local = proposeSkills(intentText({ ...asm, intent: { ...intent } }) + '\n' + text);
-    let proposed = local.proposed.map((p) => ({ id: p.id, confidence: p.confidence, evidence: p.evidence, source: p.defaulted ? 'Default suggestion: no matching signal in your brief' : `Matched on: ${p.evidence.slice(0, 4).join(', ')}` }));
     const ranked = await llmRankSkills(text, local.ranked.slice(0, 10));
-    if (ranked) proposed = ranked.map((r) => ({ id: r.id, confidence: r.confidence, evidence: r.evidence, source: `AI mapped from your brief: ${r.evidence[0] || ''}` }));
+    if (!ranked) { setBusy(''); toast('The AI could not rank the Skills just now. Try again, or add Skills by hand on the right.', 'error'); return; }
+    const proposed = ranked.map((r) => ({ id: r.id, confidence: r.confidence, evidence: r.evidence, source: `AI mapped from your brief: ${r.evidence[0] || ''}` }));
     update((a) => ({ ...a, skills: proposed, skillsConfirmed: false, blueprint: null, scenarios: [] }), { action: 'skills.proposed', after: proposed.map((p) => `${p.id}:${p.confidence}`) });
     setBusy('');
   };
@@ -157,6 +162,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
 
   // Build: plan the blueprint and generate every scenario, then land the author on the Scenarios stage.
   const buildNow = async () => {
+    if (!ai) { toast(notConnectedReason(), 'error'); return; }
     update({ skillsConfirmed: true }, { action: 'skills.confirmed', after: asm.skills.map((s) => s.id) });
     const seeds = intent.extracted?.situations || [];
     const bp = asm.blueprint || planBlueprint(asm.skills.map((s) => s.id), { seeds, purpose: intent.purpose });
@@ -180,6 +186,12 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
       <div className="space-y-5">
+        {!ai && (
+          <section role="status" className="card flex flex-wrap items-center justify-between gap-3 border-[var(--warn)] bg-[var(--warn-soft)]/60 p-4">
+            <div><h2 className="text-sm font-semibold">Connect AI to author</h2><p className="muted mt-0.5 text-sm">NanoAI reads your brief, proposes Skills and drafts every scenario with the model. Nothing is generated until it is connected.</p></div>
+            <Button onClick={() => openPanel('settings')}>Connect AI</Button>
+          </section>
+        )}
         {/* Capture */}
         <section className="card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -208,7 +220,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           </div>
           <button className="mt-3 text-xs text-[var(--brand)]" onClick={() => setMore(!more)}>{more ? 'Fewer options' : 'More options: your company and product names'}</button>
           {more && <label className="mt-2 block"><span className="faint mb-1 flex items-center gap-2 text-xs"><Prefilled field="company and product names" />Names to use in scenarios. The first becomes the company, the second a product. Comma separated.</span><Input value={intent.terminology} onChange={(e) => set({ terminology: e.target.value })} onBlur={() => set({}, 'intent.terminology')} placeholder="Northwind Retail, Store Connect" disabled={readOnly} /></label>}
-          {n === 0 && <div className="mt-4 flex items-center justify-between gap-3"><p className={`text-sm ${needAudience || unconfirmed.length ? 'muted' : 'muted'}`}>{needAudience ? 'Add who is being assessed, then we propose the Skills.' : briefPii.length ? 'Anonymize the personal data in your brief first.' : unconfirmed.length ? 'Confirm anonymization, then we propose the Skills.' : 'Next: the platform proposes 3 to 5 Skills from your brief.'}</p><Button size="lg" disabled={needAudience || unconfirmed.length > 0 || briefPii.length > 0 || readOnly} busy={Boolean(busy)} onClick={propose}>Propose Skills</Button></div>}
+          {n === 0 && <div className="mt-4 flex items-center justify-between gap-3"><p className={`text-sm ${needAudience || unconfirmed.length ? 'muted' : 'muted'}`}>{needAudience ? 'Add who is being assessed, then we propose the Skills.' : briefPii.length ? 'Anonymize the personal data in your brief first.' : unconfirmed.length ? 'Confirm anonymization, then we propose the Skills.' : 'Next: the platform proposes 3 to 5 Skills from your brief.'}</p><Button size="lg" disabled={!ai || needAudience || unconfirmed.length > 0 || briefPii.length > 0 || readOnly} busy={Boolean(busy)} onClick={propose}>Propose Skills</Button></div>}
         </section>
 
         {/* Skills */}
@@ -230,10 +242,10 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
                   {entry.confidence === 'Low' && !readOnly && <label className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--warn)] bg-[var(--warn-soft)]/50 p-2 text-xs"><input type="checkbox" checked={Boolean(confirmedLow[entry.id])} onChange={(e) => setConfirmedLow({ ...confirmedLow, [entry.id]: e.target.checked })} />Your brief did not clearly point here. I confirm this is the Skill to measure.</label>}
                 </li>); })}
             </ul>
-            {build && <div className="mt-4 rounded-xl bg-[var(--brand-soft)] p-4"><div className="flex items-center justify-between text-sm"><span className="pulse font-medium">{build.status}</span><span className="muted">{Math.min(build.i + 1, build.total)} of {build.total}</span></div><div className="mt-2"><Progress value={build.i + 1} max={build.total} /></div><p className="faint mt-2 text-xs">{llmAvailable() ? 'The AI writes each situation, then reads it to derive the scoring questions and limits.' : 'Scripted mode: drafting from the scenario library. Everything is editable next.'}</p></div>}
+            {build && <div className="mt-4 rounded-xl bg-[var(--brand-soft)] p-4"><div className="flex items-center justify-between text-sm"><span className="pulse font-medium">{build.status}</span><span className="muted">{Math.min(build.i + 1, build.total)} of {build.total}</span></div><div className="mt-2"><Progress value={build.i + 1} max={build.total} /></div><p className="faint mt-2 text-xs">The AI writes each situation, then reads it to derive the scoring questions and limits.</p></div>}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className={`text-sm ${blockReason ? 'text-[var(--block)]' : 'muted'}`}>{blockReason || (alreadyBuilt ? 'Scenarios already exist for these Skills.' : `${n} Skills. Next: the platform plans the scenarios, response types and time, writes them all, and you review.`)}</p>
-              {alreadyBuilt && !readOnly ? <Button size="lg" onClick={() => go(2)}>Go to scenarios</Button> : <Button size="lg" disabled={Boolean(blockReason) || readOnly} busy={Boolean(build)} onClick={buildNow}>Build my assessment</Button>}
+              {alreadyBuilt && !readOnly ? <Button size="lg" onClick={() => go(2)}>Go to scenarios</Button> : <Button size="lg" disabled={!ai || Boolean(blockReason) || readOnly} busy={Boolean(build)} onClick={buildNow}>Build my assessment</Button>}
             </div>
           </section>
         )}
@@ -249,10 +261,10 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
             </div>
           </Panel>
         )}
-        <Panel title={intent.extracted ? 'What we found in your brief' : 'How this works'} padding="p-4">
+        <Panel title={intent.extracted ? 'What we found in your brief' : 'How this works'} padding="p-4" right={ai && !readOnly && hasMaterial ? <Button size="sm" variant="ghost" onClick={async () => { setBusy('Reading your material'); const e = await analyze(); setBusy(''); if (!e) toast('The AI could not read the material just now. Try again.', 'error'); else { const filled = prefillFrom(e, 'your material'); toast(filled.length ? `Filled in ${filled.join(', ')}.` : 'Read again.', 'ok'); } }}>Read documents again</Button> : null}>
           {!intent.extracted && <ol className="muted list-decimal space-y-1.5 pl-4 text-xs"><li>Speak, upload or type what people face at work.</li><li>We propose 3 to 5 Skills from the Skills Ontology. You confirm.</li><li>We plan and write every scenario with its scoring questions and limits.</li><li>You review, preview as a participant, and publish.</li></ol>}
           {intent.extracted?.noUsableSituations && <p className="rounded-lg border border-[var(--warn)] bg-[var(--warn-soft)]/60 p-2 text-xs">No usable situations in this material{intent.extracted.summary ? ` (${intent.extracted.summary})` : ''}. Scenarios will be generated from the role and the Skills instead.</p>}
-          {intent.extracted && !intent.extracted.noUsableSituations && <div className="space-y-2 text-xs"><div className="flex items-center gap-2 font-semibold uppercase tracking-wide text-[var(--ink-2)]">Situations <Badge>{intent.extracted.situations.length}</Badge></div><ul className="space-y-1.5">{intent.extracted.situations.slice(0, 5).map((s) => <li key={s.id} className="rounded-lg bg-slate-50 p-2">{s.text.length > 160 ? `${s.text.slice(0, 160)}…` : s.text}<div className="mt-0.5"><Source>From {s.source}</Source></div></li>)}</ul>{intent.extracted.terms?.length > 0 && <div className="flex flex-wrap gap-1">{intent.extracted.terms.slice(0, 8).map((t) => <span key={t} className="chip">{t}</span>)}</div>}<Source>{intent.extracted.mode === 'llm' ? 'Extracted by the AI' : 'Extracted by pattern matching; connect AI for richer extraction'}</Source></div>}
+          {intent.extracted && !intent.extracted.noUsableSituations && <div className="space-y-2 text-xs"><div className="flex items-center gap-2 font-semibold uppercase tracking-wide text-[var(--ink-2)]">Situations <Badge>{intent.extracted.situations.length}</Badge></div><ul className="space-y-1.5">{intent.extracted.situations.slice(0, 5).map((s) => <li key={s.id} className="rounded-lg bg-slate-50 p-2">{s.text.length > 160 ? `${s.text.slice(0, 160)}…` : s.text}<div className="mt-0.5"><Source>From {s.source}</Source></div></li>)}</ul>{intent.extracted.terms?.length > 0 && <div className="flex flex-wrap gap-1">{intent.extracted.terms.slice(0, 8).map((t) => <span key={t} className="chip">{t}</span>)}</div>}<Source>Extracted by the AI from your material</Source></div>}
         </Panel>
       </aside>
       <Modal open={Boolean(swapFor)} title={`Swap ${getSkill(swapFor)?.name || ''} for`} onClose={() => setSwapFor(null)}>

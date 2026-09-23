@@ -38,24 +38,6 @@ export function aggregate(observationsBySkill) {
   return { skills: skills.map((s) => ({ ...s, weightShare: totalObs ? Math.round((s.observations / totalObs) * 100) : 0 })), overall, overallBand: overall != null ? bandFor(overall).name : null };
 }
 
-// Scripted contextual scoring for preview only: level per scoring question from keyword coverage of the
-// anchors and the ideal element, with a quoted passage. The real scorer is a two pass LLM in delivery.
-export function scriptedScore(scenario, responseText) {
-  const text = (responseText || '').toLowerCase();
-  const sentences = (responseText || '').split(/(?<=[.!?])\s+/).filter(Boolean);
-  const results = [];
-  for (const q of scenario.scoringQuestions || []) {
-    const terms = [...new Set(`${q.text} ${q.anchors?.L3 || ''} ${q.anchors?.L2 || ''}`.toLowerCase().match(/[a-z]{5,}/g) || [])].filter((t) => !['response', 'answer', 'would', 'their', 'should', 'about', 'which', 'there', 'these', 'those', 'specific', 'situation', 'participant'].includes(t));
-    const hits = terms.filter((t) => text.includes(t));
-    const coverage = terms.length ? hits.length / terms.length : 0;
-    const level = text.trim().length < 150 ? 0 : coverage >= 0.45 ? 3 : coverage >= 0.3 ? 2 : coverage >= 0.15 ? 1 : 0;
-    const quoteSentence = sentences.find((s) => hits.some((h) => s.toLowerCase().includes(h))) || sentences[0] || '';
-    const quote = quoteSentence.split(' ').slice(0, 30).join(' ');
-    results.push({ questionId: q.id, level, score: observationScoreFromLevel(level), quote, confidence: Math.min(0.95, 0.55 + coverage), matched: hits.slice(0, 4) });
-  }
-  return results;
-}
-
 export function scoreMcq(scenario, selections) {
   return (scenario.mcq || []).map((q) => {
     const opt = q.options.find((o) => o.id === selections?.[q.id]);

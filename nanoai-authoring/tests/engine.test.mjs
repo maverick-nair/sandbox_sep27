@@ -6,7 +6,8 @@ import { SEEDS } from '../src/content/seeds.js';
 import { planBlueprint, setRowType, addRow, removeRow, applyReductionOrder, recompute } from '../src/engine/blueprint.js';
 import { estimateScenarioMinutes, recommendCap, observationsFor } from '../src/engine/duration.js';
 import { runQualityGate } from '../src/engine/qualityGate.js';
-import { scriptedScenario, parseSubstitution, buildContext } from '../src/engine/generator.js';
+import { buildContext } from '../src/engine/generator.js';
+import { scriptedScenario, parseSubstitution } from '../src/engine/library.js';
 import { detectPII, anonymize } from '../src/engine/pii.js';
 import { biasScreen } from '../src/engine/bias.js';
 import { proposeSkills, mapClientSkill, searchSkills } from '../src/engine/mapping.js';
@@ -95,7 +96,7 @@ test('duration: scenario estimates stay within 5 to 15 minutes and caps within r
   assert.deepEqual(recommendCap('MCQ', 'anything'), {});
 });
 
-test('generator: scripted scenarios carry 4 or 5 scoring questions with indicators, four distinct anchors, a model answer, and MCQ keys that discriminate', () => {
+test('library fixtures: scenarios carry 4 or 5 scoring questions with indicators, four distinct anchors, a model answer, and MCQ keys that discriminate', () => {
   const asm = build(SKILLS.slice(0, 5).map((s) => s.id), true, { terminology: 'Helios Works, Helios Assist' });
   assert.ok(asm.scenarios.some((s) => s.situation.includes('Helios Works')), 'client terminology used');
   for (const sc of asm.scenarios) {
@@ -223,7 +224,7 @@ test('text: similarity flags near duplicates and not distinct situations; readin
   assert.ok(readingGrade(a) > 5);
 });
 
-test('regeneration: plain instructions of the form "about X, not Y" parse into substitutions', () => {
+test('library: plain substitution instructions parse', () => {
   assert.deepEqual(parseSubstitution('make this about a distributor, not a retailer'), { from: 'retailer', to: 'distributor' });
   assert.deepEqual(parseSubstitution('replace Northwind with Acme'), { from: 'Northwind', to: 'Acme' });
   assert.equal(parseSubstitution('make it more dramatic'), null);
@@ -249,7 +250,7 @@ test('form order: shuffled per participant, stable per seed, Skills interleaved,
 
 import { icc1, computeAgreement, practiceResponses, parseResponses, emptyCalibration } from '../src/engine/calibration.js';
 import { snapshot, undo, pushHistory, isEmptyDraft, newAssessment, HISTORY_LIMIT } from '../src/engine/store.js';
-import { scriptedAnalysisFromText } from '../src/engine/generator.js';
+import { scriptedAnalysisFromText } from '../src/engine/library.js';
 
 test('calibration: ICC(1) agrees for identical raters, falls for noise, and gates activation on both thresholds', () => {
   assert.equal(icc1([[0, 0], [1, 1], [2, 2], [3, 3], [1, 1]]), 1);
@@ -290,7 +291,7 @@ test('store: snapshots exclude document bodies, history is capped, undo keeps do
   assert.equal(u.intent.audience, 'Audience 38');
 });
 
-test('scripted re-analysis reads facts, constraints and stakeholders from the edited situation', () => {
+test('library: text analysis helper reads facts, constraints and stakeholders from an edited situation', () => {
   const asm = build(['SK-COACH', 'SK-FEEDBK', 'SK-PRIOR']);
   const sc = asm.scenarios.find((s) => s.responseType !== 'MCQ');
   const edited = { ...sc, situation: 'You manage a store. Ravi says his delivery is two weeks late and a refund was promised. The policy says refunds above 50 need head office approval within two days. Two staff are absent and the weekend rota is unfilled. You have twenty minutes before the evening rush.' };

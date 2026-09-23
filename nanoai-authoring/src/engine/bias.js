@@ -27,7 +27,7 @@ export function biasScreen(text = '', allowedTerms = []) {
   return findings;
 }
 
-// Balanced name lists used by scripted generation so scenarios draw on varied, neutral names.
+// Balanced name lists used by the sample library so scenarios draw on varied, neutral names.
 export const NAMES = ['Priya', 'Daniel', 'Aisha', 'Rohan', 'Mei', 'Tomas', 'Fatima', 'Arjun', 'Grace', 'Kwame', 'Elena', 'Sanjay', 'Noor', 'Lucas', 'Ananya', 'Omar', 'Hana', 'Vikram', 'Sofia', 'Ibrahim'];
 export function pickNames(seed, n) {
   const out = [];

@@ -30,8 +30,9 @@ export default function Calibration({ asm, update, toast }) {
     let responses = cal.responses;
     for (let i = 0; i < responses.length; i++) {
       if (sc.scoringQuestions.every((q) => Number.isFinite(responses[i].ai?.[q.id]))) continue;
-      const { results } = await scorePreviewResponse(sc, responses[i].text);
-      const ai = {}; results.forEach((r) => { ai[r.questionId] = r.level; });
+      const scored = await scorePreviewResponse(sc, responses[i].text);
+      if (!scored.ok) { toast(scored.note, 'error'); break; }
+      const ai = {}; scored.results.forEach((r) => { ai[r.questionId] = r.level; });
       responses = responses.map((r, j) => (j === i ? { ...r, ai } : r));
       setBusy(`AI scoring ${i + 1} of ${responses.length}`);
     }

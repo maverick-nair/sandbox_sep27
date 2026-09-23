@@ -3,7 +3,6 @@ import { Button, Panel, Badge, Select, Progress, Severity } from '../components/
 import { RULES, RESPONSE_TYPES, DIFFICULTIES } from '../content/rules.js';
 import { getSkill, SITUATION_TAGS } from '../content/ontology.js';
 import { planBlueprint, setRowType, setRowQuestions, toggleRowMedia, addRow, removeRow, blueprintFindings, rowObservations } from '../engine/blueprint.js';
-import { generationMode } from '../engine/generator.js';
 import { planIsStale } from '../engine/build.js';
 
 const KIND_TEXT = { trim: 'Trimmed the plan', media: 'Removed planned media to save reading time', convert: 'Converted an open response scenario to MCQ (3 questions) where the Skill stays well covered', drop: 'Removed a scenario the Skill could spare', simplify: 'Reduced difficulty from High to Medium to shorten the scenario' };

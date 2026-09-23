@@ -1,7 +1,7 @@
 // Turns a blueprint into scenarios, reusing what already exists. Shared by the automatic build after the
 // brief and by "Adjust plan" in the Scenarios stage.
 import { getSkill } from '../content/ontology.js';
-import { generateScenario, switchResponseType, generationMode } from './generator.js';
+import { generateScenario, switchResponseType, currentModelVersion } from './generator.js';
 
 export async function buildScenarios({ asm, update, onProgress }) {
   const rows = asm.blueprint?.rows || [];
@@ -16,7 +16,8 @@ export async function buildScenarios({ asm, update, onProgress }) {
       if (have.responseType !== row.responseType) {
         onProgress?.({ i, total, status: `${name}: switching to ${row.responseType}` });
         const sw = await switchResponseType(have, working, row.responseType);
-        scenarios = scenarios.map((s) => (s.id === have.id ? sw : s)); working = { ...working, scenarios };
+        const next = sw.ok ? sw.scenario : { ...have, responseType: row.responseType, scoringQuestions: [], mcq: [], analysisStale: true, approved: false, generationError: sw.note };
+        scenarios = scenarios.map((s) => (s.id === have.id ? next : s)); working = { ...working, scenarios };
       }
       continue;
     }
@@ -26,7 +27,8 @@ export async function buildScenarios({ asm, update, onProgress }) {
     update?.((a) => ({ ...a, scenarios }), { undoable: false });
   }
   const ordered = rows.map((r) => scenarios.find((s) => s.blueprintRowId === r.id)).filter(Boolean);
-  update?.((a) => ({ ...a, scenarios: ordered, generation: { at: Date.now(), mode: generationMode(), count: ordered.length } }), { action: 'scenarios.generated', after: { count: ordered.length, mode: generationMode() } });
+  const failed = ordered.filter((s) => s.generationError).length;
+  update?.((a) => ({ ...a, scenarios: ordered, generation: { at: Date.now(), model: currentModelVersion(), count: ordered.length, failed } }), { action: 'scenarios.generated', after: { count: ordered.length, failed, model: currentModelVersion() } });
   return ordered;
 }
 

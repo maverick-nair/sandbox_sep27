@@ -1,12 +1,14 @@
 // Browser verification of the authoring flow. Requires `npm i -D playwright`, `npm run preview` on port 4174
-// and, for AI mode, `node scripts/mock-anthropic.mjs 8787`. Run: node scripts/e2e-verify.mjs [scripted|llm]
+// and the stand-in Messages API `node scripts/mock-anthropic.mjs 8787` (set MOCK_PORT to use another port).
+// Run: node scripts/e2e-verify.mjs
 // Expects a brief.txt fixture in the working directory (any text with a name, an email and a phone number).
 import { chromium } from 'playwright';
 const base = 'http://localhost:4174/';
-const mode = process.argv[2] || 'scripted';
+const mode = 'llm';
+const mockPort = process.env.MOCK_PORT || '8787';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, permissions: ['microphone'] });
-if (mode === 'llm') await ctx.addInitScript(() => { if (!localStorage.getItem('nanoai.authoring.settings')) localStorage.setItem('nanoai.authoring.settings', JSON.stringify({ apiKey: 'sk-mock', baseURL: 'http://localhost:8787', model: 'claude-sonnet-5' })); });
+await ctx.addInitScript((port) => { if (!localStorage.getItem('nanoai.authoring.settings')) localStorage.setItem('nanoai.authoring.settings', JSON.stringify({ apiKey: 'sk-mock', baseURL: `http://localhost:${port}`, model: 'claude-sonnet-5' })); }, mockPort);
 const page = await ctx.newPage();
 const errors = []; const results = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));

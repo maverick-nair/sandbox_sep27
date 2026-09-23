@@ -78,22 +78,3 @@ export async function extractText(file) {
   const truncated = text.length > MAX_CHARS;
   return { text: truncated ? text.slice(0, MAX_CHARS) : text, truncated, chars: text.length, type: ext };
 }
-
-// Scripted situation extraction: paragraphs that describe an event or a decision. The LLM path in
-// generator.js does this properly; this keeps the flow working offline.
-const CUES = /\b(customer|client|complain|escalat|deadline|miss|delay|refus|dispute|conflict|error|incident|late|fail|angry|frustrat|request|approve|budget|target|behind|ahead|report|manager|team|decid|risk|policy|breach|discount|churn|refund|handover|resign|absent|feedback|priorit|urgent)\w*/gi;
-export function extractSituations(text = '', source = 'upload') {
-  const paras = text.split(/\n{1,}|(?<=[.!?])\s{2,}/).map((p) => p.trim()).filter((p) => p.split(/\s+/).length >= 25);
-  const scored = paras.map((p, i) => ({ id: `sit_${i}`, text: p.length > 700 ? `${p.slice(0, 700)}…` : p, cues: (p.match(CUES) || []).length, source })).filter((p) => p.cues >= 3).sort((a, b) => b.cues - a.cues).slice(0, 12);
-  const roleCounts = {};
-  for (const m of text.match(/\b(?:account manager|team lead|team leader|regional manager|store manager|branch manager|sales manager|area manager|line manager|first line manager|department head|shift supervisor|supervisor|analyst|engineer|nurse|agent|consultant|head of \w+|director|officer|associate|account executive|sales executive|executive|representative|relationship manager|project manager|product manager|customer service (?:agent|advisor|representative))s?\b/gi) || []) { const r = m.toLowerCase().replace(/s$/, ''); roleCounts[r] = (roleCounts[r] || 0) + 1; }
-  const roles = Object.entries(roleCounts).sort((a, b) => b[1] - a[1]).map(([r]) => r).slice(0, 8);
-  const TERM_STOP = /^(The|This|That|These|Those|Page|Slide|Sheet|When|What|Where|Who|How|Why|And|But|For|With|From|Our|Your|They|Their|There|Then|Store|Team|Managers?|Customers?|Employees?|Staff|Case|Notes|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December|Also|After|Before|Because|Since|While|Each|Every|Some|Many|Most|Both|Either|Neither|Here|Now|Today|Yesterday|Tomorrow|Please|Thanks|Regards|Dear|Hello|Yes|No|One|Two|Three|First|Second|Third|New|Old|Last|Next)$/;
-  const counts = {};
-  const PLACEHOLDER = /^(?:Person|Email|Phone|Redacted|Card|Address|Employee ID|Profile link|Date of birth|ID)(?: \d+)?$/;
-  const stripped = text.replace(/\[[^\]]{1,30}\]/g, ' ');
-  for (const t of stripped.match(/\b[A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+){0,2}\b/g) || []) { if (t.length > 3 && !TERM_STOP.test(t.split(' ')[0]) && !TERM_STOP.test(t) && !PLACEHOLDER.test(t)) counts[t] = (counts[t] || 0) + 1; }
-  const terms = Object.entries(counts).filter(([t, c]) => c >= 2 || t.includes(' ')).sort((a, b) => b[1] - a[1]).map(([t]) => t).slice(0, 12);
-  const decisions = paras.filter((p) => /\b(should|decide|whether|option|choose|either|or not|trade.?off)\b/i.test(p)).slice(0, 5).map((p) => p.slice(0, 200));
-  return { situations: scored, roles, terms, decisions, noUsableSituations: scored.length === 0 && text.trim().length > 0 };
-}

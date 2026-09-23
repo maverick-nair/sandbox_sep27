@@ -1,6 +1,5 @@
 // Anthropic Messages API wrapper for authoring time AI: structured JSON only (PRD 15.3 rule 1).
-// Never blocks the author: on any failure the caller receives { ok: false } and falls back to the
-// scripted generator so the blueprint always renders with content or placeholders (PRD 15.5).
+// On any failure the caller gets { ok: false } and shows a placeholder with a retry (PRD 15.5).
 import Anthropic from '@anthropic-ai/sdk';
 
 const PRICES = {

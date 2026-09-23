@@ -5,6 +5,8 @@ import { getSkill } from '../content/ontology.js';
 import { planBlueprint, applyReductionOrder } from '../engine/blueprint.js';
 import { buildScenarios, planIsStale } from '../engine/build.js';
 import { observationsFor } from '../engine/duration.js';
+import { llmAvailable } from '../engine/llm.js';
+import { useWorkspace } from '../engine/WorkspaceContext.jsx';
 import Step3Blueprint from '../steps/Step3Blueprint.jsx';
 import Step4Review from '../steps/Step4Review.jsx';
 
@@ -16,6 +18,8 @@ export default function Scenarios(props) {
   const [planOpen, setPlanOpen] = useState(Boolean(focus?.plan));
   const [build, setBuild] = useState(null);
   const [focusId, setFocusId] = useState(focus?.scenarioId || null);
+  const { openPanel } = useWorkspace();
+  const ai = llmAvailable();
   useEffect(() => { if (focus) { setPlanOpen(Boolean(focus.plan)); setFocusId(focus.scenarioId || null); setFocus(null); } }, [focus]); // eslint-disable-line
 
   const runBuild = async (a) => {
@@ -24,7 +28,7 @@ export default function Scenarios(props) {
     setBuild(null);
   };
   useEffect(() => {
-    if (readOnly || build) return;
+    if (readOnly || build || !ai) return;
     if (!asm.blueprint) { const bp = planBlueprint(asm.skills.map((s) => s.id), { seeds: asm.intent.extracted?.situations || [], purpose: asm.intent.purpose }); update((a) => ({ ...a, blueprint: bp }), { action: 'blueprint.planned' }); runBuild({ ...asm, blueprint: bp }); }
     else if (!asm.scenarios?.length) runBuild(asm);
   }, []); // eslint-disable-line
@@ -37,6 +41,9 @@ export default function Scenarios(props) {
   const order = asm.config.scenarioOrder || 'shuffled';
   const setOrder = (v) => update((a) => ({ ...a, config: { ...a.config, scenarioOrder: v } }), { action: 'config.scenario_order', before: order, after: v });
 
+  if (!scenarios.length && !ai) return (
+    <div className="card mx-auto max-w-xl p-8 text-center"><h2 className="text-base font-semibold">Connect AI to build the scenarios</h2><p className="muted mt-1 text-sm">NanoAI drafts every scenario with the model. Connect it and the build starts here.</p><Button className="mt-3" onClick={() => openPanel('settings')}>Connect AI</Button></div>
+  );
   if (build || !scenarios.length) return (
     <div className="card mx-auto max-w-xl p-8 text-center">
       <div className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)]"><span className="pulse text-lg">+</span></div>

@@ -22,20 +22,20 @@ export default function Settings() {
     saveSettings(s); setGen({ busy: true });
     const row = makeRow('SK-COACH', 'Text', 'Medium', 'T2');
     const sc = await generateScenario(row, { intent: { audience: 'team leads', purpose: 'baseline', terminology: '', documents: [] }, skills: [{ id: 'SK-COACH' }], scenarios: [] }, 0, { onStatus: (st) => setGen({ busy: true, status: st }) });
-    setGen({ busy: false, ok: sc.generatedBy === 'llm', by: sc.generatedBy, title: sc.title, sq: sc.scoringQuestions?.length, words: sc.situation.split(/\s+/).length, reason: sc.generatedBy === 'llm' ? '' : (lastError?.reason || 'The model call failed or returned an invalid shape, so the library fallback was used.') });
+    setGen({ busy: false, ok: !sc.generationError, title: sc.title, sq: sc.scoringQuestions?.length, words: sc.situation.split(/\s+/).filter(Boolean).length, reason: sc.generationError || '' });
   };
   const save = () => { saveSettings(s); toast('Settings saved', 'ok'); };
   const run = async () => { saveSettings(s); setBusy(true); setTest(await testConnection()); setBusy(false); };
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <Panel title="AI generation" subtitle="Calls go from this browser to the Anthropic Messages API. Without a key the platform runs in scripted mode from its scenario library.">
+      <Panel title="AI generation" subtitle="Required. NanoAI drafts, analyses and scores with the model; nothing is generated until it is connected. Calls go from this browser, or through the base URL proxy, to the Anthropic Messages API.">
         <div className="space-y-3">
           <Field label="API key"><Input type="password" value={s.apiKey || ''} onChange={(e) => setS({ ...s, apiKey: e.target.value })} placeholder="sk-ant-..." autoComplete="off" /></Field>
           <Field label="Model"><Select value={s.model} onChange={(e) => setS({ ...s, model: e.target.value })}>{MODEL_OPTIONS.map((m) => <option key={m} value={m}>{m}</option>)}</Select></Field>
           <Field label="Base URL" hint="optional; point at a server side proxy so keys never sit in the browser"><Input value={s.baseURL || ''} onChange={(e) => setS({ ...s, baseURL: e.target.value })} placeholder="https://proxy.example.com/anthropic" /></Field>
           <div className="flex flex-wrap gap-2"><Button onClick={save}>Save</Button><Button variant="secondary" onClick={run} busy={busy}>Test connection</Button><Button variant="secondary" onClick={selfTest} busy={gen?.busy} disabled={!s.apiKey}>Test generation</Button></div>
           {test && <p className={`text-sm ${test.ok ? 'text-[var(--ok)]' : 'text-[var(--block)]'}`}>{test.message}</p>}
-          {gen && !gen.busy && <p className={`text-sm ${gen.ok ? 'text-[var(--ok)]' : 'text-[var(--block)]'}`}>{gen.ok ? `Generation works: "${gen.title}", ${gen.words} words, ${gen.sq} scoring questions, drafted by the model and validated.` : `Generation fell back to the library (${gen.by}). ${gen.reason}`}</p>}
+          {gen && !gen.busy && <p className={`text-sm ${gen.ok ? 'text-[var(--ok)]' : 'text-[var(--block)]'}`}>{gen.ok ? `Generation works: "${gen.title}", ${gen.words} words, ${gen.sq} scoring questions, drafted by the model and validated.` : `Generation failed. ${gen.reason}`}</p>}
           {gen?.busy && <p className="muted pulse text-sm">{gen.status || 'Generating one test scenario'}</p>}
           <p className="rounded-lg bg-[var(--warn-soft)]/60 p-2 text-xs"><strong>Security.</strong> A key entered here is stored in this browser only and calls go from the browser. For a shared or client facing deployment, set the base URL to a server side proxy that holds the key and applies workspace permissions, and leave the key field empty.</p>
           {lastError && <p className="faint text-xs">Last error: {lastError.reason}</p>}

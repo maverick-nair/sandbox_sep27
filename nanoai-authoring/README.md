@@ -14,9 +14,9 @@ npm test           # deterministic engine tests (planner, gate fixtures, scoring
 
 ## AI configuration
 
-Open Settings and enter an Anthropic API key. Calls go from the browser to the Anthropic Messages API for intent extraction, Skill re-ranking, scenario writing, contextual analysis, scoring question and MCQ generation, scoped regeneration, re-keying, and the preview scorer. Every call requests a JSON schema and fails closed on malformed output. A base URL can point at a server side proxy so keys never sit in the browser.
+Open the account menu, AI and workspace settings, and enter an Anthropic API key or a base URL for a server side proxy. Calls go from the browser to the Anthropic Messages API for intent extraction, Skill re-ranking, scenario writing, contextual analysis, scoring question and MCQ generation, scoped regeneration, re-keying, and the preview scorer. Every call requests a JSON schema and fails closed on malformed output. A base URL can point at a server side proxy so keys never sit in the browser.
 
-Without a key the platform runs in scripted mode: a library of 48 hand written scenarios (3 per Skill) with contextual analyses, scoring questions, keyed MCQ options and model answers, filled with the author's client terminology and balanced names. Every screen and every rule works identically in both modes; scripted mode says so on each generated element.
+A connected model is required. NanoAI reads briefs, proposes Skills, drafts scenarios, derives scoring questions and MCQ keys, regenerates, re-keys and scores with it; without a connection the product shows a "Connect AI" notice and generates nothing. When a call fails or returns an invalid shape, the author sees the PRD's placeholder in place with a Retry, and any previous instrument is kept and marked stale. The 48 scenario library in `src/engine/library.js` exists only to build the sample assessment and as deterministic test fixtures.
 
 ## The authoring flow
 
@@ -33,13 +33,13 @@ Four stages, all reachable from the sidebar.
 
 **Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, undo is capped at 25 steps and excludes document bodies, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
 
-**Verification without a key.** `scripts/mock-anthropic.mjs` is a stand in Messages API that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (calls, parsing, validation, fallback, UI) can be run with `baseURL` pointed at it. It says nothing about model quality; that needs a real key and the "Test generation" button in Settings.
+**Verification without a key.** `scripts/mock-anthropic.mjs` is a stand in Messages API that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (calls, parsing, validation, fallback, UI) can be run with `baseURL` pointed at it. It says nothing about model quality; that needs a real key and the "Test generation" button in AI and workspace settings.
 
 **Not in this build.** Sign in, tenancy and a server: the API key is held in the browser unless the base URL points at a proxy. Participant delivery, real response scoring and reports are the delivery platform's scope.
 
 ## Structure
 
 - `src/content/` the frozen ontology subset (16 atomic Skills with indicators, L0 to L3 levels and situation tags), the PRD rules as constants, the 48 scenario seeds, and the sample assessment.
-- `src/engine/` blueprint planner and reduction order, per participant form ordering, duration and cap planner, quality gate, bias screen, PII shield, Skill mapper, generator (LLM with validation, scripted fallback, scoped regeneration, re-analysis, re-key), scoring formulas, document ingestion, workspace store with versions, undo and audit.
+- `src/engine/` blueprint planner and reduction order, per participant form ordering, duration and cap planner, quality gate, bias screen, PII shield, Skill mapper, generator (AI only, with schema validation, placeholders and retry on failure, scoped regeneration, re-analysis, re-key; `library.js` holds the seed based builder used only by the sample and tests), scoring formulas, document ingestion, workspace store with versions, undo and audit.
 - `src/stages/` the Brief, Scenarios and Publish stages; `src/steps/` the review, blueprint, gate, preview and configuration components they compose. `src/screens/` dashboard, settings, help and the stage router. `src/components/` UI primitives, media renderers and editor, shell.
 - `tests/` node test suite over the engine.

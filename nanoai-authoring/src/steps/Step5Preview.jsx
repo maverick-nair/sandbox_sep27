@@ -37,7 +37,8 @@ export default function Step5Preview({ asm, update, go, readOnly, toast }) {
       if (s.responseType === 'MCQ') { const res = scoreMcq(s, r.selections); res.forEach((o) => list.push({ score: o.score, unscored: o.unscored })); evidence.push({ scenario: s, type: 'MCQ', items: res.map((o) => { const q = s.mcq.find((x) => x.id === o.questionId); const opt = q.options.find((x) => x.id === o.optionId); return { question: q.text, chosen: opt?.text || 'No option chosen', key: o.key, rationale: o.rationale, indicator: opt?.indicatorId }; }) }); }
       else {
         const anon = anonymize(r.text, detectPII(r.text, { allowNames: s.allowedTerms || [] }));
-        const { results, mode, injectionFlag } = await scorePreviewResponse(s, anon.text);
+        const { ok, results, mode, injectionFlag, note } = await scorePreviewResponse(s, anon.text);
+        if (!ok) { s.scoringQuestions.forEach(() => list.push({ score: 0, unscored: true })); evidence.push({ scenario: s, type: s.responseType, mode: 'none', note, items: [] }); continue; }
         results.forEach((q) => list.push({ score: q.score, thirdPass: q.thirdPass, integrityFlag: injectionFlag || r.pasted }));
         evidence.push({ scenario: s, type: s.responseType, mode, injectionFlag, pasted: r.pasted, redactions: anon.redactions.length, items: results.map((q) => { const sq = s.scoringQuestions.find((x) => x.id === q.questionId); return { question: sq?.text, level: q.level, quote: q.quote, anchor: sq?.anchors?.[`L${q.level}`], indicator: sq?.indicatorId, passes: q.passes }; }) });
       }
@@ -68,7 +69,7 @@ export default function Step5Preview({ asm, update, go, readOnly, toast }) {
           </div>
         </Frame>
       </div>
-      <p className="faint text-center text-xs">This preview scores with {typeof window !== 'undefined' && localStorage.getItem('nanoai.authoring.settings')?.includes('apiKey') ? 'the AI two pass scorer' : 'a scripted stand in for the AI scorer'}. In delivery, AI scoring activates only after calibration against two human scorers. Skill names and scoring questions are never shown during the assessment.</p>
+      <p className="faint text-center text-xs">This preview scores with the AI two pass scorer. In delivery, AI scoring activates only after calibration against two human scorers. Skill names and scoring questions are never shown during the assessment.</p>
     </div>
   );
 }
@@ -213,7 +214,7 @@ function SampleReport({ asm, report }) {
         <ul className="space-y-3">{evidence.map((e) => <li key={e.scenario.id} className="card p-3"><div className="flex items-center justify-between"><span className="font-medium">{e.scenario.title}</span><Badge>{e.type}</Badge></div><p className="muted text-xs">{e.scenario.contextHeader}</p>
           <ul className="mt-2 space-y-2 text-xs">{e.items.map((it, i) => <li key={i} className="rounded bg-slate-50 p-2"><div className="font-medium">{it.question}</div>{e.type === 'MCQ' ? <><div className="mt-0.5">You chose: <em>{it.chosen}</em> (value {it.key ?? '–'} of 5)</div><div className="muted mt-0.5">{it.rationale}</div></> : <><div className="mt-0.5">Level: <strong>{LEVEL_LABELS[`L${it.level}`]}</strong> ({it.level} of 3){it.passes && <span className="faint"> · passes {it.passes.join(' and ')}</span>}</div>{it.quote && <div className="mt-0.5 border-l-2 border-[var(--brand)] pl-2 italic">"{it.quote}"</div>}<div className="muted mt-0.5">What the situation required: {it.anchor}</div></>}<div className="faint mt-0.5">Behavior: {it.indicator}</div></li>)}</ul>
           {(e.redactions > 0 || e.injectionFlag || e.pasted) && <p className="faint mt-2 text-[11px]">{e.redactions > 0 ? `${e.redactions} personal detail${e.redactions === 1 ? '' : 's'} anonymized before analysis. ` : ''}{e.injectionFlag ? 'Instructions to the scorer were ignored and flagged. ' : ''}{e.pasted ? 'Pasted text recorded as an integrity signal (visible to the org viewer only).' : ''}</p>}
-          {e.mode && <p className="faint mt-1 text-[11px]">Scored by {e.mode === 'llm' ? 'the AI contextual scorer, two passes' : 'a scripted stand in for the AI scorer'}.</p>}
+          {e.mode === 'llm' && <p className="faint mt-1 text-[11px]">Scored by the AI contextual scorer, two passes.</p>}{e.mode === 'none' && <p className="mt-1 text-[11px] text-[var(--block)]">Not scored: {e.note}</p>}
         </li>)}</ul></section>
       <section className="card p-3"><div className="faint text-[11px] uppercase tracking-wider">6 to 9. Strengths, development areas, deeper evaluation, recommendations</div><p className="muted mt-1 text-xs">In the delivered report these sections are written by the narrator from the evidence above only: 2 to 3 strengths and development areas each tied to a Skill, a scenario and a quote or choice; cross Skill patterns; and 3 to 5 recommended actions ordered by impact. Every sentence traces to an evidence id. Nothing about grammar, accent or fluency.</p></section>
       <p className="faint text-xs">Report language follows the participant's assessment language. PDF download and email delivery follow the KNOLSKAPE report design used by Conversation AI.</p>

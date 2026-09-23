@@ -1,5 +1,6 @@
 // WCAG 2.2 AA scan with axe-core over every screen and dialog, while exercising template and document prefill.
-// Requires `npm i -D playwright axe-core` and `npm run preview` on port 4174. Run: node scripts/a11y-scan.mjs
+// Requires `npm i -D playwright axe-core`, `npm run preview` on port 4174 and `node scripts/mock-anthropic.mjs 8787`
+// (set MOCK_PORT to use another port). Run: node scripts/a11y-scan.mjs
 import { chromium } from 'playwright';
 import fs from 'fs';
 import { createRequire } from 'module';
@@ -7,6 +8,7 @@ const axe = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe
 const base = 'http://localhost:4174/';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, permissions: ['microphone'] });
+await ctx.addInitScript((port) => { localStorage.setItem('nanoai.authoring.settings', JSON.stringify({ apiKey: 'sk-mock', baseURL: `http://localhost:${port}`, model: 'claude-sonnet-5' })); }, process.env.MOCK_PORT || '8787');
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
 const report = {};

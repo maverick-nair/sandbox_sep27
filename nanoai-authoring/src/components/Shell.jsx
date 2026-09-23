@@ -71,9 +71,9 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
         <button className="side-item" onClick={nav(() => openPanel('settings'))}><Icon d={I.gear} size={16} />AI and workspace settings</button>
         <button className="side-item" onClick={nav(() => openPanel('help'))}><Icon d={I.help} size={16} />Help and support</button>
       </div>
-      <div className={`mt-auto rounded-xl p-3.5 text-white ${ai ? 'bg-[#1f2a37]' : 'bg-[#0f2a55]'}`}>
-        <div className="flex items-center gap-2 text-sm font-semibold"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px]" aria-hidden="true">+</span>{ai ? 'AI assisted' : 'Scripted mode'}</div>
-        <p className="mt-1 text-[12px] text-white/85">{ai ? `Drafting with ${loadSettings().model || DEFAULT_MODEL}.` : 'Connect AI to draft scenarios from your own documents.'}</p>
+      <div className={`mt-auto rounded-xl p-3.5 text-white ${ai ? 'bg-[#1f2a37]' : 'bg-[#7a2e0e]'}`} role="status">
+        <div className="flex items-center gap-2 text-sm font-semibold"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px]" aria-hidden="true">+</span>{ai ? 'AI connected' : 'AI not connected'}</div>
+        <p className="mt-1 text-[12px] text-white/85">{ai ? `Drafting with ${loadSettings().model || DEFAULT_MODEL}.` : 'Authoring needs the model. Connect it to read briefs, propose Skills and draft scenarios.'}</p>
         {!ai && <button onClick={nav(() => openPanel('settings'))} className="mt-2.5 w-full rounded-lg bg-white py-1.5 text-xs font-semibold text-[var(--brand-2)] hover:bg-slate-100">Connect AI</button>}
       </div>
     </nav>

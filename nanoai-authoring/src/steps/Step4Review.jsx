@@ -4,7 +4,7 @@ import { MediaView, MediaEditor } from '../components/Media.jsx';
 import { RULES, LEVEL_LABELS, RESPONSE_TYPES } from '../content/rules.js';
 import { getSkill, SITUATION_TAGS, indicatorById } from '../content/ontology.js';
 import { issuesForScenario, scenarioLabel } from '../engine/qualityGate.js';
-import { reanalyze, regenerate, switchResponseType, rekeyOption, splitSentences, mediaSummary } from '../engine/generator.js';
+import { reanalyze, regenerate, switchResponseType, rekeyOption, splitSentences, mediaSummary, retryAnalysis, generateScenario } from '../engine/generator.js';
 import { estimateScenarioMinutes, modelAnswerInCapUnits, formatSeconds } from '../engine/duration.js';
 import { wordCount, readingGrade, uid } from '../engine/text.js';
 import { llmAvailable } from '../engine/llm.js';
@@ -49,7 +49,8 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
   const confirmPending = () => setScenario({ pendingConfirmation: null }, 'scenario.changes_confirmed');
   const revertPending = () => { const b = sc.pendingConfirmation.before; setScenario({ scoringQuestions: b.scoringQuestions, mcq: b.mcq, cap: b.cap, recommendedMinutes: b.recommendedMinutes, pendingConfirmation: null, analysis: { ...sc.analysis, modelAnswer: b.modelAnswer ?? sc.analysis.modelAnswer } }, 'scenario.changes_reverted'); };
 
-  const switchType = async (type) => { setBusy(`Switching to ${type} and rebuilding the scoring instrument`); const next = await switchResponseType(sc, asm, type); replaceScenario(next, 'scenario.response_type', { before: sc.responseType, after: type }); setBusy(''); };
+  const switchType = async (type) => { setBusy(`Switching to ${type} and rebuilding the scoring instrument`); const res = await switchResponseType(sc, asm, type); if (res.ok) replaceScenario(res.scenario, 'scenario.response_type', { before: sc.responseType, after: type }); else toast(res.note, 'error'); setBusy(''); };
+  const retry = async () => { setBusy(sc.situation ? 'Retrying the contextual analysis' : 'Retrying generation'); const row = asm.blueprint?.rows.find((r) => r.id === sc.blueprintRowId) || { id: sc.blueprintRowId, skillId: sc.skillId, responseType: sc.responseType, difficulty: sc.difficulty, tag: sc.tag, plannedQuestions: sc.responseType === 'MCQ' ? 2 : 4 }; const next = sc.situation ? await retryAnalysis(sc) : { ...(await generateScenario(row, asm, index)), id: sc.id }; replaceScenario(next, 'scenario.retry', { after: next.generationError ? 'failed' : 'ok' }); toast(next.generationError ? next.generationError : 'Done.', next.generationError ? 'error' : 'ok'); setBusy(''); };
   const setMinutes = (m) => setScenario({ recommendedMinutes: Math.max(RULES.time.scenarioMin, Math.min(RULES.time.scenarioMax, Number(m))), approved: false }, 'scenario.time', { before: sc.recommendedMinutes, after: m });
   const setCap = (cap) => setScenario({ cap, approved: false }, 'scenario.cap', { before: sc.cap, after: cap });
 
@@ -60,7 +61,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
 
   const editOption = async (qid, oid, patch, rekey) => {
     setScenario((s) => ({ ...s, approved: false, mcq: s.mcq.map((q) => (q.id === qid ? { ...q, options: q.options.map((o) => (o.id === oid ? { ...o, ...patch } : o)) } : q)) }), 'mcq.option_edited', { after: patch });
-    if (rekey) { setBusy('Re-keying the option'); const next = await rekeyOption({ ...sc, mcq: sc.mcq.map((q) => (q.id === qid ? { ...q, options: q.options.map((o) => (o.id === oid ? { ...o, ...patch } : o)) } : q)) }, qid, oid); replaceScenario(next, 'mcq.option_rekeyed'); const o = next.mcq.find((q) => q.id === qid).options.find((x) => x.id === oid); toast(o.rekeyed && o.rekeyed.before !== o.rekeyed.after ? `Re-keyed: value ${o.rekeyed.before} to ${o.rekeyed.after} (${o.level}).` : `Re-keyed: value ${o.key} unchanged (${o.level}).`); setBusy(''); }
+    if (rekey) { setBusy('Re-keying the option'); const res = await rekeyOption({ ...sc, mcq: sc.mcq.map((q) => (q.id === qid ? { ...q, options: q.options.map((o) => (o.id === oid ? { ...o, ...patch } : o)) } : q)) }, qid, oid); if (res.ok) { replaceScenario(res.scenario, 'mcq.option_rekeyed'); const o = res.scenario.mcq.find((q) => q.id === qid).options.find((x) => x.id === oid); toast(o.rekeyed && o.rekeyed.before !== o.rekeyed.after ? `Re-keyed: value ${o.rekeyed.before} to ${o.rekeyed.after} (${o.level}).` : `Re-keyed: value ${o.key} unchanged (${o.level}).`); } else toast(res.note, 'error'); setBusy(''); }
   };
   const setKey = (qid, oid, key) => setScenario((s) => ({ ...s, approved: false, mcq: s.mcq.map((q) => (q.id === qid ? { ...q, options: q.options.map((o) => (o.id === oid ? { ...o, key: Number(key), level: { 5: 'L3', 4: 'L2', 3: 'L1', 2: 'L1', 1: 'L0' }[Number(key)] } : o)) } : q)) }), 'mcq.key_changed', { after: { oid, key } });
   const addMcqQuestion = () => { if (sc.mcq.length >= RULES.mcq.questionsMax) return toast('MCQ scenarios have at most 3 questions.', 'error'); setRegen({ scope: 'mcqQuestion', targetId: 'new', label: 'a new MCQ question' }); };
@@ -74,7 +75,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
     let scope = regen.scope;
     if (regen.targetId === 'new') { const seedQ = sc.mcq[0]; const q = { ...JSON.parse(JSON.stringify(seedQ)), id: uid('mq'), options: seedQ.options.map((o) => ({ ...o, id: uid('opt') })) }; target = { ...sc, mcq: [...sc.mcq, q] }; regen.targetId = q.id; }
     const res = await regenerate(target, asm, { scope, targetId: regen.targetId, optionId: regen.optionId, instruction, sentenceIndex: regen.sentenceIndex });
-    if (res.ok) { replaceScenario({ ...res.scenario, approved: false }, `regenerate.${scope}`, { after: instruction }); toast(res.note || `${regen.label} regenerated${res.mode === 'scripted' ? ' from the library' : ''}.`, 'ok'); } else toast(res.note || 'Nothing changed.', 'error');
+    if (res.ok) { replaceScenario({ ...res.scenario, approved: false }, `regenerate.${scope}`, { after: instruction }); toast(res.note || `${regen.label} regenerated.`, 'ok'); } else toast(res.note || 'Nothing changed.', 'error');
     setBusy(''); setRegen(null); setInstruction('');
   };
 
@@ -96,15 +97,21 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2"><Badge tone="brand">{asm.skills.find((k) => k.id === sc.skillId)?.clientLabel || skill.name}</Badge><Badge>{SITUATION_TAGS.find((t) => t.id === sc.tag)?.name}</Badge><Badge>{sc.difficulty} difficulty</Badge>{sc.approved ? <Badge tone="ok">Approved</Badge> : <Badge>Not yet approved</Badge>}{sc.flaggedForReview && <Badge tone="warn">Flagged for KNOLSKAPE review</Badge>}<Badge title="Every generated element shows its source">{sc.generatedBy === 'llm' ? 'AI drafted' : 'Library drafted'}</Badge></div>
+            <div className="flex flex-wrap items-center gap-2"><Badge tone="brand">{asm.skills.find((k) => k.id === sc.skillId)?.clientLabel || skill.name}</Badge><Badge>{SITUATION_TAGS.find((t) => t.id === sc.tag)?.name}</Badge><Badge>{sc.difficulty} difficulty</Badge>{sc.approved ? <Badge tone="ok">Approved</Badge> : <Badge>Not yet approved</Badge>}{sc.flaggedForReview && <Badge tone="warn">Flagged for KNOLSKAPE review</Badge>}<Badge tone={sc.generationError ? 'block' : 'neutral'} title="Every generated element shows its source">{sc.generationError ? 'Needs retry' : `AI drafted${sc.modelVersion ? ` · ${sc.modelVersion}` : ''}`}</Badge></div>
             <h2 className="mt-1 text-xl font-semibold"><InlineText readOnly={readOnly} value={sc.title} onCommit={(v) => setScenario({ title: v }, 'scenario.title', { after: v })} ariaLabel="scenario title" /></h2>
             <Source>{sc.source?.text}</Source>
           </div>
           {!readOnly && <div className="flex flex-wrap gap-1.5"><Button variant="secondary" size="sm" onClick={() => setRegen({ scope: 'scenario', label: 'the whole scenario' })}>Regenerate scenario</Button><Button variant="secondary" size="sm" onClick={() => setScenario({ flaggedForReview: !sc.flaggedForReview }, 'scenario.flag', { after: !sc.flaggedForReview })}>{sc.flaggedForReview ? 'Unflag' : 'Flag for KNOLSKAPE review'}</Button>{sc.approved ? <Button variant="secondary" size="sm" onClick={() => setScenario({ approved: false }, 'scenario.unapproved')}>Unapprove</Button> : <Button variant="success" size="sm" onClick={approve} disabled={Boolean(busy)}>Mark approved</Button>}</div>}
         </div>
-        {busy && <div className="card pulse p-3 text-sm">{busy}</div>}
+        {busy && <div className="card pulse p-3 text-sm" role="status">{busy}</div>}
+        {(sc.generationError || sc.analysisStale) && !busy && (
+          <section role="alert" className="card flex flex-wrap items-center justify-between gap-3 border-[var(--block)]/40 bg-[var(--block-soft)]/40 p-4">
+            <div><h3 className="text-sm font-semibold">{sc.situation ? 'The scoring instrument needs to be regenerated' : 'This scenario was not generated'}</h3><p className="muted mt-0.5 text-sm">{sc.generationError || 'The situation changed and the analysis could not be re-run.'}</p></div>
+            {!readOnly && <Button onClick={retry}>{sc.situation ? 'Retry analysis' : 'Retry generation'}</Button>}
+          </section>
+        )}
         {sc.pendingConfirmation && (
-          <Panel as="h3" tone="warn" title={sc.pendingConfirmation.mode === 'scripted' ? 'The situation changed: facts re-read, scoring questions kept' : 'The situation or media changed, so the analysis re-ran'} subtitle={sc.pendingConfirmation.mode === 'scripted' ? 'Scripted mode read the key facts, constraints and stakeholders from your new text. The scoring questions were kept and re-traced; check they still fit, or connect AI for a full re-derivation.' : 'Confirm the changed scoring questions or revert to the previous set.'} padding="p-4">
+          <Panel as="h3" tone="warn" title="The situation or media changed, so the analysis re-ran" subtitle="Confirm the changed scoring questions or revert to the previous set." padding="p-4">
             <ul className="space-y-1 text-sm">{sc.pendingConfirmation.changed.map((c) => <li key={c.id} className="flex gap-2"><Badge tone={c.status === 'unchanged' || c.status === 'kept' ? 'neutral' : c.status === 'removed' ? 'block' : 'warn'}>{c.status}</Badge><span>{c.text}{c.status === 'changed' && c.previous && <span className="faint block text-xs">was: {c.previous}</span>}</span></li>)}</ul>
             {sc.pendingConfirmation.before.cap && JSON.stringify(sc.pendingConfirmation.before.cap) !== JSON.stringify(sc.cap) && <p className="muted mt-2 text-xs">Recommended limit changed from {capText(sc.responseType, sc.pendingConfirmation.before.cap)} to {capText(sc.responseType, sc.cap)}.</p>}
             <div className="mt-3 flex gap-2"><Button size="sm" onClick={confirmPending}>Confirm changes</Button><Button size="sm" variant="secondary" onClick={revertPending}>Keep previous questions</Button></div>
@@ -119,7 +126,7 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
             <Panel as="h3" title="What the participant sees" subtitle="Edit any text inline. Editing the situation re-runs the contextual analysis." padding="p-5">
               <div className="space-y-3">
                 <div><div className="faint mb-1 text-[11px] uppercase tracking-wider">Context header <span className="normal-case">({wordCount(sc.contextHeader)} of 30 words)</span></div><InlineText readOnly={readOnly} value={sc.contextHeader} onCommit={(v) => editSituation('contextHeader', v)} multiline className="text-sm font-medium" ariaLabel="context header" /></div>
-                <div><div className="faint mb-1 flex items-center justify-between text-[11px] uppercase tracking-wider"><span>Situation <span className="normal-case">({wordCount(sc.situation)} words, grade {grade} reading level)</span></span>{!readOnly && <button className="normal-case text-[var(--brand)]" onClick={() => setRegen({ scope: 'sentence', sentenceIndex: 0, label: 'one sentence' })}>Regenerate one sentence</button>}</div><InlineText readOnly={readOnly} value={sc.situation} onCommit={(v) => editSituation('situation', v)} multiline className="text-[15px] leading-relaxed" ariaLabel="situation" /></div>
+                <div><div className="faint mb-1 flex items-center justify-between text-[11px] uppercase tracking-wider"><span>Situation <span className="normal-case">({wordCount(sc.situation)} words, grade {grade} reading level)</span></span>{!readOnly && <button className="normal-case text-[var(--brand)]" onClick={() => setRegen({ scope: 'sentence', sentenceIndex: 0, label: 'one sentence' })}>Regenerate one sentence</button>}</div><InlineText readOnly={readOnly} value={sc.situation} onCommit={(v) => editSituation('situation', v)} multiline className="text-[15px] leading-relaxed" ariaLabel="situation" placeholder="Not generated yet. Retry generation above, or write the situation here and the analysis will run on it." /></div>
                 {sc.media && <div><div className="faint mb-1 text-[11px] uppercase tracking-wider">Media <span className="normal-case">· {sc.media.source}</span></div><MediaView media={sc.media} compact /></div>}
                 <div><div className="faint mb-1 text-[11px] uppercase tracking-wider">Prompt</div><InlineText readOnly={readOnly} value={sc.prompt} onCommit={(v) => setScenario({ prompt: v, approved: false }, 'scenario.prompt', { after: v })} className="text-sm font-medium" ariaLabel="prompt" /></div>
                 {!readOnly && <div className="flex flex-wrap gap-2 pt-1"><Button variant="secondary" size="sm" onClick={() => setMediaOpen(true)}>{sc.media ? 'Replace or remove media' : 'Add chart, table, image or extract'}</Button></div>}
@@ -200,10 +207,9 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
       </div>
 
       <Modal open={Boolean(regen)} title={`Regenerate ${regen?.label || ''}`} onClose={() => setRegen(null)} footer={<><Button variant="secondary" onClick={() => setRegen(null)}>Cancel</Button><Button onClick={runRegen} busy={Boolean(busy)}>Regenerate</Button></>}>
-        {!llmAvailable() && <div className="mb-3 flex flex-wrap gap-1.5">{(regen?.scope === 'scenario' ? [['Swap for another library scenario', ''], ['Make it shorter', 'make it shorter'], ['Replace a word', 'replace retailer with distributor']] : [['Swap from the library', ''], ['Replace a word', 'replace X with Y']]).map(([label, text]) => <button key={label} className="pill" onClick={() => setInstruction(text)}>{label}</button>)}</div>}
         {regen?.scope === 'sentence' && <div className="mb-3"><div className="faint mb-1 text-xs uppercase tracking-wider">Which sentence</div><Select value={regen.sentenceIndex} onChange={(e) => setRegen({ ...regen, sentenceIndex: Number(e.target.value) })}>{sentences.map((s, i) => <option key={i} value={i}>{s.slice(0, 90)}</option>)}</Select></div>}
         <Textarea value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder={'Plain instruction, for example: "make this about a distributor, not a retailer" or "raise the stakes: the client is the largest account".'} />
-        <p className="faint mt-2 text-xs">{llmAvailable() ? 'The AI rewrites only what you asked for and re-runs the analysis where the facts change. Undo is available.' : 'Scripted mode understands three things: leave the box empty to swap in another library scenario, "make it shorter", or "replace X with Y" (also "about X, not Y"). Anything else is noted but not applied. Connect AI in Settings for free form rewriting.'}</p>
+        <p className="faint mt-2 text-xs">The AI rewrites only what you asked for and re-runs the analysis where the facts change. Undo is available.</p>
       </Modal>
       <Modal open={mediaOpen} title="Scenario media" onClose={() => setMediaOpen(false)} wide>
         <MediaEditor media={sc.media} onChange={editMedia} onRemove={() => editMedia(null)} onClose={() => setMediaOpen(false)} />
