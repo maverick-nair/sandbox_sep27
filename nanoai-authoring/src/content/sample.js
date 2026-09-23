@@ -19,7 +19,6 @@ export function buildSampleAssessment() {
   const scenarios = [];
   asm.blueprint.rows.forEach((row, i) => { scenarios.push({ ...scriptedScenario(row, { ...asm, scenarios }, i), approved: true }); });
   asm.scenarios = scenarios;
-  asm = publish(asm, { modelVersion: 'sample-library', promptVersion: PROMPT_VERSION, reviewRequired: false });
-  asm.versions[0].reviewStatus = 'published';
+  asm = publish(asm, { modelVersion: 'sample-library', promptVersion: PROMPT_VERSION });
   return asm;
 }

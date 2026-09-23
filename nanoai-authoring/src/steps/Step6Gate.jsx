@@ -11,7 +11,7 @@ const GROUPS = [
   { id: 'purity', label: 'Skill purity and duplicates', rules: ['purity', 'purityText', 'duplicate'] },
   { id: 'fairness', label: 'Bias, sensitivity and readability', rules: ['bias', 'readingLevel', 'situationLength', 'contextHeader'] },
   { id: 'media', label: 'Media', rules: ['mediaAlt', 'mediaTranscript', 'mediaSize', 'mediaAnalysis', 'mediaReference'] },
-  { id: 'approval', label: 'Author approval and calibration', rules: ['approval', 'pending', 'calibration', 'flagged'] },
+  { id: 'approval', label: 'Author approval and calibration', rules: ['approval', 'pending', 'calibration'] },
 ];
 
 // Issues link to the stage that fixes them: a scenario opens in Scenarios, coverage opens the plan, Skills open the Brief.

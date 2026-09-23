@@ -115,7 +115,7 @@ export function scriptedScenario(row, asm, index, { variant = 0 } = {}) {
     contextHeader: fillTemplate(seed.header, ctx, names), situation,
     prompt: fillTemplate(responseType === 'MCQ' ? seed.mcqPrompt : seed.prompt, ctx, names),
     media: row.plannedMedia || seed.media ? mediaFromSeed(seed, names, ctx) : null,
-    analysis: null, scoringQuestions: [], mcq: [], approved: false, flaggedForReview: false, calibration: responseType === 'MCQ' ? 'not_applicable' : 'pending',
+    analysis: null, scoringQuestions: [], mcq: [], approved: false, calibration: responseType === 'MCQ' ? 'not_applicable' : 'pending',
     allowedTerms: names, version: 1, generatedBy: 'library', promptVersion: PROMPT_VERSION, modelVersion: 'sample library',
     source: row.seedSituation ? { kind: 'document', text: `Your document situation was noted (${row.seedSituation.source}). A library scenario was used; regenerate it to ground it in your documents.` } : { kind: 'indicators', text: `Generated from the ${skill.name} Skill indicators` },
     seedTitle: seed.title, pendingConfirmation: null,

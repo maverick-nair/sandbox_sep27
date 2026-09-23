@@ -13,7 +13,6 @@ export const RULES = {
   readingGradeMax: 10,
   similarityThreshold: 0.6,
   calibration: { maxParticipantsBeforeCalibration: 50, responses: 30, aiHumanIcc: 0.75, humanHumanIcc: 0.7 },
-  review: { mandatoryFirstN: 3 },
   publish: { defaultSittings: 2, defaultSittingWindowDays: 7, defaultRetakeDays: 30 },
 };
 

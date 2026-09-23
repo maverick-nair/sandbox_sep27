@@ -23,7 +23,7 @@ export default function Help() {
         </ul>
       </Panel>
       <Panel title="Speaking, uploading and typing" padding="p-5"><p className="muted text-sm">Dictation uses the browser's speech recognition (Chrome, Edge and Safari). Uploads accept PDF, DOCX, PPTX, XLSX and TXT; text is extracted in your browser, screened for personal data, and only the anonymized text goes to the AI. Typing works everywhere, and a single sentence is enough to start.</p></Panel>
-      <Panel title="Support" padding="p-5"><p className="muted text-sm">For KNOLSKAPE review, ontology gaps or calibration, contact the assessment team through GenieKreator support. Export your workspace from Settings before raising an issue so the team can reproduce it.</p></Panel>
+      <Panel title="Support" padding="p-5"><p className="muted text-sm">For help with Skills that are missing from the ontology, or with calibration, contact GenieKreator support. Export your workspace from Settings before raising an issue so the team can reproduce it.</p></Panel>
     </div>
   );
 }

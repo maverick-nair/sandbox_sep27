@@ -155,9 +155,6 @@ export function runQualityGate(assessment) {
   else if (total > RULES.time.totalWarn) out.push(issue('totalDuration', 'soft', `The assessment is estimated at ${total} minutes. Completion rates fall above ${RULES.time.totalWarn}.`, 'Convert a scenario to MCQ or tighten a cap.', { step: 3 }));
   else if (total > RULES.time.totalTarget) out.push(issue('totalDuration', 'soft', `The assessment is estimated at ${total} minutes, a little above the ${RULES.time.totalTarget} minute target.`, 'Optional: tighten a cap or simplify media.', { step: 3 }));
 
-  // Flags for KNOLSKAPE review are informational
-  for (const sc of scenarios) if (sc.flaggedForReview) out.push(issue('flagged', 'soft', `${scenarioLabel(sc, scenarios.indexOf(sc))} is flagged for KNOLSKAPE review.`, 'Publishing sends it to the review queue.', { scenarioId: sc.id, step: 4 }));
-
   const hard = out.filter((i) => i.severity === 'hard');
   const soft = out.filter((i) => i.severity === 'soft');
   return { issues: out, hard, soft, canPublish: hard.length === 0, totalMinutes: total };

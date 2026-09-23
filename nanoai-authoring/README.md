@@ -37,7 +37,9 @@ Four stages, all reachable from the sidebar.
 
 **Calibration.** After publish, the sidebar shows Calibration for every Audio or Text scenario. Responses arrive from delivery (or are pasted, or a practice set is loaded), two calibrators enter a level per scoring question, the AI scores the same responses, and agreement is computed per question as ICC(1). AI scoring activates only when AI to human agreement is 0.75 or above and human to human 0.70 or above on every question. Activation and pausing need the Calibrator role.
 
-**Roles.** Settings assigns Author, Reviewer, Calibrator or Workspace admin. Reviewers complete KNOLSKAPE review of published versions; calibrators activate AI scoring. Without sign in this is self declared, so a deployment must assign roles centrally.
+**Self service.** Authoring needs no KNOLSKAPE review or approval: a version goes live the moment the author publishes it. The only flags are the platform's own checks, raised while authoring as guidance, with blocking checks limited to the PRD's structural rules.
+
+**Roles.** Settings assigns Author, Calibrator or Workspace admin. Calibrators activate AI scoring. Without sign in this is self declared, so a deployment must assign roles centrally.
 
 **Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
 

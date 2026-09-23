@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Panel, Field, Input, Select, Badge } from '../components/ui.jsx';
-import { RULES, PURPOSES, purposeById } from '../content/rules.js';
+import { PURPOSES, purposeById } from '../content/rules.js';
 import { getSkill, ONTOLOGY_VERSION } from '../content/ontology.js';
 import { publish as publishAsm, toCsv } from '../engine/store.js';
 import { currentModelVersion } from '../engine/generator.js';
@@ -11,26 +11,25 @@ import { observationsFor } from '../engine/duration.js';
 function download(name, text, type = 'application/json') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 
 export default function Step7Publish({ asm, update, go, gate, readOnly, toast, embedded }) {
-  const { ws, setWs, role } = useWorkspace();
+  const { ws, setWs } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
   const c = asm.config;
   useEffect(() => { if (!c.name.trim() && !readOnly && asm.intent.audience.trim()) { const p = PURPOSES.find((x) => x.id === asm.intent.purpose)?.label || 'Assessment'; update((a) => ({ ...a, config: { ...a.config, name: `${p}: ${a.intent.audience.trim().slice(0, 60)}` } }), {}); } }, []); // eslint-disable-line
   const set = (patch, action) => update((a) => ({ ...a, config: { ...a.config, ...patch } }), { action: action || 'config.changed', after: patch });
   const setVis = (k, v) => set({ reportVisibility: { ...c.reportVisibility, [k]: v } }, 'config.report_visibility');
-  const reviewRequired = ws.publishedCount < RULES.review.mandatoryFirstN;
   const nameMissing = !c.name.trim();
   const canPublish = gate.canPublish && !nameMissing && !readOnly;
 
   const doPublish = () => {
-    const next = publishAsm(asm, { modelVersion: currentModelVersion(), promptVersion: PROMPT_VERSION, reviewRequired });
-    update(() => next, { action: 'assessment.published', after: { version: next.currentVersion, ontology: ONTOLOGY_VERSION, model: currentModelVersion(), review: reviewRequired ? 'knolskape_review' : 'none' } });
+    const next = publishAsm(asm, { modelVersion: currentModelVersion(), promptVersion: PROMPT_VERSION });
+    update(() => next, { action: 'assessment.published', after: { version: next.currentVersion, ontology: ONTOLOGY_VERSION, model: currentModelVersion() } });
     setWs((w) => ({ ...w, publishedCount: (w.publishedCount || 0) + 1 }));
     setConfirming(false);
-    toast(`Published version ${next.currentVersion}. ${reviewRequired ? 'It goes to KNOLSKAPE review before participants can be invited.' : 'Participants can be invited now.'}`, 'ok');
+    toast(`Published version ${next.currentVersion}. It is live and participants can be invited now.`, 'ok');
   };
 
   const exportPackage = (v) => {
-    const pkg = { product: 'NanoAI', kind: 'assessment-package', exportedAt: new Date().toISOString(), assessmentId: asm.id, version: v.version, ontologyVersion: v.ontologyVersion, modelVersion: v.modelVersion, promptVersion: v.promptVersion, reviewStatus: v.reviewStatus, config: v.config, skills: v.skills.map((s) => ({ ...s, ontology: getSkill(s.id) })), scenarios: v.scenarios, blueprint: v.blueprint };
+    const pkg = { product: 'NanoAI', kind: 'assessment-package', exportedAt: new Date().toISOString(), assessmentId: asm.id, version: v.version, ontologyVersion: v.ontologyVersion, modelVersion: v.modelVersion, promptVersion: v.promptVersion, config: v.config, skills: v.skills.map((s) => ({ ...s, ontology: getSkill(s.id) })), scenarios: v.scenarios, blueprint: v.blueprint };
     download(`nanoai-${(asm.config.name || 'assessment').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-v${v.version}.json`, JSON.stringify(pkg, null, 2));
   };
   const exportBlueprintCsv = () => download('nanoai-blueprint.csv', toCsv(asm.scenarios.map((s, i) => ({ order: i + 1, title: s.title, skill: getSkill(s.skillId)?.name, response_type: s.responseType, difficulty: s.difficulty, situation_tag: s.tag, observations: observationsFor(s), recommended_minutes: s.recommendedMinutes, cap: s.responseType === 'Audio' ? `${s.cap?.audioSeconds}s` : s.responseType === 'Text' ? `${s.cap?.textChars} chars` : '', approved: s.approved, calibration: s.calibration }))), 'text/csv');
@@ -70,12 +69,12 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast, e
           </div>
         </Panel>
         <div className="flex items-center justify-between gap-3">
-          <p className={`text-sm ${canPublish ? 'muted' : 'text-[var(--block)]'}`}>{readOnly ? `Version ${asm.currentVersion} is published. Use "Edit as new version" in the header to change it.` : nameMissing ? 'Give the assessment a name to publish.' : !gate.canPublish ? `${gate.hard.length} item${gate.hard.length === 1 ? '' : 's'} block publish.` : reviewRequired ? `This is one of the first ${RULES.review.mandatoryFirstN} assessments in this workspace, so it goes to KNOLSKAPE review after publish.` : 'Ready to publish.'}</p>
+          <p className={`text-sm ${canPublish ? 'muted' : 'text-[var(--block)]'}`}>{readOnly ? `Version ${asm.currentVersion} is published. Use "Edit as new version" in the header to change it.` : nameMissing ? 'Give the assessment a name to publish.' : !gate.canPublish ? `${gate.hard.length} item${gate.hard.length === 1 ? '' : 's'} block publish.` : 'Ready to publish. It goes live as soon as you publish.'}</p>
           <div className="flex gap-2"><Button variant="secondary" onClick={() => go(3)}>Preview</Button><Button size="lg" disabled={!canPublish} onClick={() => setConfirming(true)}>Publish version {(asm.currentVersion || 0) + 1}</Button></div>
         </div>
         {confirming && (
           <Panel tone="ok" title={`Publish version ${(asm.currentVersion || 0) + 1}?`} padding="p-4">
-            <ul className="muted space-y-1 text-sm"><li>The version is immutable. Further edits create version {(asm.currentVersion || 0) + 2}.</li><li>Pinned: ontology {ONTOLOGY_VERSION}, model {currentModelVersion()}, prompts {PROMPT_VERSION}.</li><li>{asm.scenarios.filter((s) => s.responseType !== 'MCQ').length} open response scenarios start with AI scoring pending calibration: their first 30 responses are scored by two calibrators.</li>{asm.scenarios.some((s) => s.flaggedForReview) && <li>{asm.scenarios.filter((s) => s.flaggedForReview).length} scenario(s) flagged for KNOLSKAPE review go to the review queue.</li>}{reviewRequired && <li>Mandatory KNOLSKAPE review applies to the first {RULES.review.mandatoryFirstN} assessments per workspace.</li>}</ul>
+            <ul className="muted space-y-1 text-sm"><li>The version is immutable. Further edits create version {(asm.currentVersion || 0) + 2}.</li><li>Pinned: ontology {ONTOLOGY_VERSION}, model {currentModelVersion()}, prompts {PROMPT_VERSION}.</li><li>{asm.scenarios.filter((s) => s.responseType !== 'MCQ').length} open response scenarios start with AI scoring pending calibration: their first 30 responses are scored by two calibrators.</li><li>It goes live straight away. There is no separate review or approval step.</li></ul>
             <div className="mt-3 flex gap-2"><Button onClick={doPublish}>Publish</Button><Button variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button></div>
           </Panel>
         )}
@@ -86,9 +85,9 @@ export default function Step7Publish({ asm, update, go, gate, readOnly, toast, e
           <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="secondary" onClick={exportBlueprintCsv}>Export scenario list (CSV)</Button></div>
         </Panel>
         <Panel title="Versions" subtitle="Each version pins ontology, model and prompt versions. Historical scores are never recomputed silently." padding="p-0">
-          {asm.versions.length === 0 ? <p className="muted p-4 text-sm">Not yet published.</p> : <ul className="divide-y divide-[var(--line)]">{[...asm.versions].reverse().map((v) => <li key={v.version} className="p-3 text-sm"><div className="flex items-center justify-between"><span className="font-medium">Version {v.version}</span><Badge tone={v.reviewStatus === 'published' ? 'ok' : 'warn'}>{v.reviewStatus === 'published' ? 'Live' : 'KNOLSKAPE review'}</Badge></div><div className="muted text-xs">{new Date(v.publishedAt).toLocaleString()} · {v.scenarios.length} scenarios · {v.ontologyVersion} · {v.modelVersion}</div><div className="mt-1.5 flex gap-2"><Button size="sm" variant="ghost" onClick={() => exportPackage(v)}>Export package</Button>{v.reviewStatus !== 'published' && (role === 'reviewer' || role === 'admin' ? <Button size="sm" variant="ghost" onClick={() => update((a) => ({ ...a, versions: a.versions.map((x) => (x.version === v.version ? { ...x, reviewStatus: 'published', reviewedBy: ws.author, reviewedAt: Date.now() } : x)) }), { action: 'version.review_completed', after: v.version, allowPublished: true })}>Complete KNOLSKAPE review</Button> : <span className="faint text-xs">Awaiting a KNOLSKAPE reviewer</span>)}</div></li>)}</ul>}
+          {asm.versions.length === 0 ? <p className="muted p-4 text-sm">Not yet published.</p> : <ul className="divide-y divide-[var(--line)]">{[...asm.versions].reverse().map((v) => <li key={v.version} className="p-3 text-sm"><div className="flex items-center justify-between"><span className="font-medium">Version {v.version}</span><Badge tone="ok">Live</Badge></div><div className="muted text-xs">{new Date(v.publishedAt).toLocaleString()} · {v.scenarios.length} scenarios · {v.ontologyVersion} · {v.modelVersion}</div><div className="mt-1.5 flex gap-2"><Button size="sm" variant="ghost" onClick={() => exportPackage(v)}>Export package</Button></div></li>)}</ul>}
         </Panel>
-        <Panel title="What happens after publish" padding="p-4"><ul className="muted list-disc space-y-1 pl-4 text-xs"><li>Participants enter by deep link, SSO or magic link; no account creation.</li><li>Open response scenarios: 30 responses go to two calibrators; AI scoring activates at agreement 0.75 or above per scoring question.</li><li>A 5 percent sample of published scenarios and analyses is reviewed by KNOLSKAPE monthly.</li><li>Item statistics surface here after 30 completions (next release).</li></ul></Panel>
+        <Panel title="What happens after publish" padding="p-4"><ul className="muted list-disc space-y-1 pl-4 text-xs"><li>Participants enter by deep link, SSO or magic link; no account creation.</li><li>Open response scenarios: 30 responses go to two calibrators; AI scoring activates at agreement 0.75 or above per scoring question.</li><li>Item statistics surface here after 30 completions (next release).</li></ul></Panel>
       </aside>
     </div>
   );

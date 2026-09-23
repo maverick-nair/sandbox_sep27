@@ -278,7 +278,7 @@ test('calibration: ICC(1) agrees for identical raters, falls for noise, and gate
   assert.equal(parseResponses('1. I would first ask the person what is going on.\n\n2. Tell them to fix it.\n\nshort').length, 2, 'numbered paragraphs split; fragments under 20 characters are dropped');
 });
 
-test('store: content snapshots exclude document bodies, old undo history is dropped, empty drafts are detected', () => {
+test('store: content snapshots exclude document bodies, old undo history and KNOLSKAPE review state are dropped, empty drafts are detected', () => {
   let a = newAssessment();
   assert.ok(isEmptyDraft(a));
   assert.equal(a.history, undefined, 'new assessments carry no undo history');
@@ -288,6 +288,10 @@ test('store: content snapshots exclude document bodies, old undo history is drop
   const ws = loadWorkspaceFrom({ assessments: [{ ...a, history: ['old'], future: ['old'] }] });
   assert.equal(ws.assessments[0].history, undefined, 'saved undo history is removed on load');
   assert.equal(ws.assessments[0].future, undefined);
+  const old = loadWorkspaceFrom({ role: 'reviewer', assessments: [{ ...a, scenarios: [{ id: 's1', flaggedForReview: true }], versions: [{ version: 1, reviewStatus: 'pending_knolskape_review' }] }] });
+  assert.equal(old.role, 'author', 'the retired Reviewer role becomes Author');
+  assert.equal(old.assessments[0].scenarios[0].flaggedForReview, undefined, 'KNOLSKAPE review flags are removed');
+  assert.equal(old.assessments[0].versions[0].status, 'live', 'versions waiting on KNOLSKAPE review are live');
 });
 
 test('library: text analysis helper reads facts, constraints and stakeholders from an edited situation', () => {

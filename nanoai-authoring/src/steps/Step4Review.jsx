@@ -271,7 +271,6 @@ export default function Step4Review({ asm, update, go, gate, readOnly, focusScen
               <ToolCard disabled={readOnly} title="Regenerate scenario" text="Rewrite the whole scenario with a plain instruction." onClick={() => setRegen({ scope: 'scenario', label: 'the whole scenario' })} d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" />
               <ToolCard disabled={readOnly || !sc.situation} title="Rewrite one sentence" text="Change a single sentence of the situation." onClick={() => setRegen({ scope: 'sentence', sentenceIndex: 0, label: 'one sentence' })} d="M4 7h16M4 12h10M4 17h7" />
               <ToolCard disabled={readOnly} title={sc.media ? 'Replace or remove media' : 'Add media'} text="Chart, table, image or document extract." onClick={() => setMediaOpen(true)} d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
-              <ToolCard disabled={readOnly} title={sc.flaggedForReview ? 'Remove KNOLSKAPE review flag' : 'Flag for KNOLSKAPE review'} text="Ask a KNOLSKAPE reviewer to check it." onClick={() => setScenario({ flaggedForReview: !sc.flaggedForReview }, 'scenario.flag', { after: !sc.flaggedForReview })} d="M5 21V4h11l-2 4 2 4H5" />
               <p className="faint pt-1 text-xs"><Source>{sc.source?.text}</Source></p>
             </div>
           )}

@@ -22,7 +22,7 @@ export function loadWorkspace() {
 }
 function migrate(ws) {
   const stageFor = (a) => a.stage || (a.step >= 7 ? 4 : a.step >= 5 ? 3 : a.step >= 3 && a.scenarios?.length ? 2 : 1);
-  return { ...emptyWorkspace(), ...ws, schemaVersion: SCHEMA_VERSION, assessments: (ws.assessments || []).filter((a) => !isEmptyDraft(a)).map(({ history, future, ...a }) => ({ ...a, stage: stageFor(a), calibration: a.calibration || {}, config: { scenarioOrder: 'shuffled', ...a.config } })) };
+  return { ...emptyWorkspace(), ...ws, role: ws.role === 'reviewer' ? 'author' : ws.role || 'author', schemaVersion: SCHEMA_VERSION, assessments: (ws.assessments || []).filter((a) => !isEmptyDraft(a)).map(({ history, future, ...a }) => ({ ...a, scenarios: (a.scenarios || []).map(({ flaggedForReview, ...s }) => s), versions: (a.versions || []).map(({ reviewStatus, reviewedBy, reviewedAt, ...v }) => ({ ...v, status: 'live' })), stage: stageFor(a), calibration: a.calibration || {}, config: { scenarioOrder: 'shuffled', ...a.config } })) };
 }
 export function saveWorkspace(ws) { try { localStorage.setItem(KEY, JSON.stringify(ws)); } catch (e) { console.warn('save failed', e); } }
 
@@ -58,9 +58,9 @@ export function contentKey(asm) { return snapshot(asm) + JSON.stringify((asm.int
 export function isEmptyDraft(a) { return a.status === 'draft' && !a.sample && !a.currentVersion && !a.intent?.audience?.trim() && !a.intent?.situationsText?.trim() && !(a.intent?.documents || []).length && !(a.skills || []).length; }
 
 // Publish: immutable version snapshot with pinned ontology, model and prompt versions (FR-A10, FR-G2).
-export function publish(asm, { modelVersion, promptVersion, reviewRequired }) {
+export function publish(asm, { modelVersion, promptVersion }) {
   const version = (asm.currentVersion || 0) + 1;
-  const snap = { version, publishedAt: Date.now(), ontologyVersion: ONTOLOGY_VERSION, modelVersion, promptVersion, reviewStatus: reviewRequired ? 'pending_knolskape_review' : 'published', config: JSON.parse(JSON.stringify(asm.config)), skills: JSON.parse(JSON.stringify(asm.skills)), scenarios: JSON.parse(JSON.stringify(asm.scenarios)), blueprint: JSON.parse(JSON.stringify(asm.blueprint)), inFlight: 0 };
+  const snap = { version, publishedAt: Date.now(), ontologyVersion: ONTOLOGY_VERSION, modelVersion, promptVersion, status: 'live', config: JSON.parse(JSON.stringify(asm.config)), skills: JSON.parse(JSON.stringify(asm.skills)), scenarios: JSON.parse(JSON.stringify(asm.scenarios)), blueprint: JSON.parse(JSON.stringify(asm.blueprint)), inFlight: 0 };
   return { ...asm, status: 'published', currentVersion: version, versions: [...asm.versions, snap], publishedAt: snap.publishedAt, updatedAt: Date.now() };
 }
 
