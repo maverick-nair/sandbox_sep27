@@ -76,3 +76,7 @@ input[type=range] { accent-color: var(--brand); }
 .progress > div { height: 100%; background: var(--brand); }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
 @media print { .no-print { display: none !important; } body { background: #fff; } .card { box-shadow: none; } }
+.tooltip { position: absolute; top: calc(100% + 8px); z-index: 60; width: max-content; max-width: 240px; padding: 6px 10px; border-radius: 8px; background: #17233a; color: #fff; font-size: 12px; line-height: 1.35; text-align: left; box-shadow: 0 6px 20px rgba(23, 35, 58, .25); }
+.tooltip::before { content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 8px; }
+.icon-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.icon-btn[aria-disabled="true"]:hover { background: #fff; color: var(--ink-2); }

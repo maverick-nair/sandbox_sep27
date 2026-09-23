@@ -20,7 +20,7 @@ async function scan(name) {
   console.log(`${name}: ${r.length} violation types`, r.map((v) => `${v.id}(${v.nodes.length})`).join(', '));
 }
 try {
-  await page.goto(base, { waitUntil: 'networkidle' }); await page.waitForSelector('text=All Your Products');
+  await page.goto(base, { waitUntil: 'networkidle' }); await page.waitForSelector('#products-heading');
   await scan('home');
   await page.getByRole('tab', { name: 'Educate' }).click(); await page.waitForTimeout(150); await scan('home-educate');
   await page.getByRole('tab', { name: 'Evaluate' }).click();

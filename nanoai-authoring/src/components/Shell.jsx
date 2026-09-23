@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Badge, Modal } from './ui.jsx';
+import { Button, Badge, Modal, Tooltip } from './ui.jsx';
 import { useWorkspace } from '../engine/WorkspaceContext.jsx';
 import Settings from '../screens/Settings.jsx';
 import Help from '../screens/Help.jsx';
@@ -78,7 +78,7 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
       <header className="no-print sticky top-0 z-40 border-b border-[var(--line)] bg-white">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 md:px-6">
           <div className="flex items-center gap-2">
-            {sidebar && <button onClick={() => setDrawer(true)} aria-label="Open assessment menu" aria-expanded={drawer} className="icon-btn md:hidden"><Icon d={I.menu} /></button>}
+            {sidebar && <span className="md:hidden"><Tooltip label="Open assessment menu" hint="Stages, calibration and quick actions" align="start"><button onClick={() => setDrawer(true)} aria-label="Open assessment menu" aria-expanded={drawer} className="icon-btn"><Icon d={I.menu} /></button></Tooltip></span>}
             <Logo onClick={goHome} />
             <span className="faint hidden text-xs sm:inline">NanoAI</span>
           </div>
@@ -89,11 +89,11 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
               <input id="product-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-white py-2 pl-9 pr-3 text-sm" role="combobox" aria-autocomplete="list" aria-controls="product-search-results" aria-expanded={results.length > 0} />
               {results.length > 0 && <ul id="product-search-results" role="listbox" aria-label="Matching products" className="card absolute z-50 mt-1 w-full overflow-hidden shadow-lg">{results.map((a) => <li key={a.id} role="option" aria-selected="false"><button className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => { openAssessment(a.id); setQ(''); }}><span>{a.config.name || 'Untitled assessment'}</span><Badge tone={a.status === 'published' ? 'ok' : 'neutral'}>{a.status}</Badge></button></li>)}</ul>}
             </div>
-            {(route === 'author' || route === 'calibration') && current && <><button className="icon-btn" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo"><Icon d={I.undo} size={16} /></button><button className="icon-btn" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo"><Icon d={I.redo} size={16} /></button></>}
-            <button className="icon-btn" onClick={goHome} aria-label="Home"><Icon d={I.home} size={16} /></button>
-            <span className="icon-btn" role="status" aria-live="polite" title={saveStatus?.ok === false ? `Not saved: ${saveStatus.reason}` : 'Saved in this browser'} style={{ color: saveStatus?.ok === false ? 'var(--block)' : 'var(--ok)' }}><Icon d={I.cloud} size={16} /><span className="sr-only">{saveStatus?.ok === false ? (saveStatus.reason === 'quota' ? 'Storage full, work not saved. Export your workspace.' : 'Not saved') : 'All changes saved'}</span></span>
+            {(route === 'author' || route === 'calibration') && current && <><Tooltip label="Undo" hint={canUndo ? 'Reverse your last change to this assessment' : 'Nothing to undo yet'}><button className="icon-btn" onClick={() => canUndo && undo()} aria-disabled={!canUndo} aria-label="Undo"><Icon d={I.undo} size={16} /></button></Tooltip><Tooltip label="Redo" hint={canRedo ? 'Bring back the change you just undid' : 'Nothing to redo'}><button className="icon-btn" onClick={() => canRedo && redo()} aria-disabled={!canRedo} aria-label="Redo"><Icon d={I.redo} size={16} /></button></Tooltip></>}
+            <Tooltip label="Home" hint="Back to All your products"><button className="icon-btn" onClick={goHome} aria-label="Home"><Icon d={I.home} size={16} /></button></Tooltip>
+            <Tooltip label={saveStatus?.ok === false ? 'Not saved' : 'All changes saved'} hint={saveStatus?.ok === false ? (saveStatus.reason === 'quota' ? 'Browser storage is full. Export your workspace from Workspace settings.' : 'Your latest change could not be saved. Keep this tab open and try again.') : 'Your work saves automatically as you go'} align="end"><span className="icon-btn" role="status" aria-live="polite" tabIndex={0} style={{ color: saveStatus?.ok === false ? 'var(--block)' : 'var(--ok)' }}><Icon d={I.cloud} size={16} /><span className="sr-only">{saveStatus?.ok === false ? (saveStatus.reason === 'quota' ? 'Storage full, work not saved. Export your workspace.' : 'Not saved') : 'All changes saved'}</span></span></Tooltip>
             <div className="relative" ref={menuRef}>
-              <button className="icon-btn" onClick={() => setMenu(!menu)} aria-label="Account menu" aria-haspopup="menu" aria-expanded={menu}><Icon d={I.user} size={16} /></button>
+              <Tooltip label="Account menu" hint="Workspace settings, help and your role" align="end" off={menu}><button className="icon-btn" onClick={() => setMenu(!menu)} aria-label="Account menu" aria-haspopup="menu" aria-expanded={menu}><Icon d={I.user} size={16} /></button></Tooltip>
               {menu && (
                 <div role="menu" aria-label="Account" className="card absolute right-0 z-50 mt-1 w-64 overflow-hidden p-1 shadow-lg">
                   <div className="px-3 py-2 text-sm"><div className="font-semibold">{ws.author || 'Author'}</div><div className="faint text-xs">{ws.name} · {role}</div></div>

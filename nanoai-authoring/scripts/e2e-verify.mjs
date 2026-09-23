@@ -17,7 +17,7 @@ const check = (name, ok, extra = '') => { results.push(`${ok ? 'PASS' : 'FAIL'} 
 const shot = (n) => page.screenshot({ path: `${mode}-${n}.png` });
 try {
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.waitForSelector('text=All Your Products');
+  await page.waitForSelector('#products-heading');
   // Empty draft cleanup
   await page.getByRole('button', { name: /Create New Assessment/ }).click(); await page.waitForTimeout(200);
   await page.getByRole('button', { name: 'Home', exact: true }).click(); await page.waitForTimeout(200);

@@ -125,3 +125,32 @@ export function EmptyState({ title, text, action }) { return <div className="car
 export function Stat({ label, value, sub, tone }) { const c = tone === 'block' ? 'text-[var(--block)]' : tone === 'warn' ? 'text-[var(--warn)]' : tone === 'ok' ? 'text-[var(--ok)]' : ''; return <div className="card px-4 py-3"><div className="faint text-[11px] uppercase tracking-wider">{label}</div><div className={`text-xl font-semibold ${c}`}>{value}</div>{sub && <div className="muted text-xs">{sub}</div>}</div>; }
 export function Kbd({ children }) { return <kbd className="rounded border border-[var(--line)] bg-slate-50 px-1 text-[10px]">{children}</kbd>; }
 export function Progress({ value, max = 100, tone }) { const pct = Math.max(0, Math.min(100, (value / max) * 100)); const c = tone === 'block' ? 'bg-[var(--block)]' : tone === 'warn' ? 'bg-[var(--warn)]' : 'bg-[var(--brand)]'; return <div className="h-1.5 w-full rounded bg-slate-200"><div className={`h-1.5 rounded ${c}`} style={{ width: `${pct}%` }} /></div>; }
+
+// Tooltip for icon controls (WCAG 2.2 SC 1.4.13): shows on hover and keyboard focus, stays while the pointer is
+// over it, closes on Escape, blur or pointer leave. `label` repeats the control's accessible name; `hint` is
+// extra help announced through aria-describedby. `align` keeps the bubble inside the viewport at the edges.
+export function Tooltip({ label, hint, align = 'center', off = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const id = React.useId();
+  const timer = React.useRef(null);
+  const show = () => { clearTimeout(timer.current); setOpen(true); };
+  const hide = () => { clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(false), 120); };
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+  React.useEffect(() => () => clearTimeout(timer.current), []);
+  const child = React.Children.only(children);
+  const pos = align === 'end' ? 'right-0' : align === 'start' ? 'left-0' : 'left-1/2 -translate-x-1/2';
+  return (
+    <span className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={() => setOpen(false)}>
+      {hint ? React.cloneElement(child, { 'aria-describedby': `${id}-hint` }) : child}
+      <span role="tooltip" id={id} className={`tooltip ${pos} ${open && !off ? '' : 'hidden'}`} onMouseEnter={show} onMouseLeave={hide}>
+        <span className="block font-semibold" aria-hidden="true">{label}</span>
+        {hint && <span id={`${id}-hint`} className="block opacity-90">{hint}</span>}
+      </span>
+    </span>
+  );
+}
