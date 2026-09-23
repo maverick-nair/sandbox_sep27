@@ -4,6 +4,7 @@
 // It does not judge quality. Run: node scripts/mock-anthropic.mjs [port]
 import http from 'http';
 const port = Number(process.argv[2] || 8787);
+const delayMs = Number(process.env.MOCK_DELAY_MS || 0); // simulate model latency
 const words = (n, seed) => Array.from({ length: n }, (_, i) => ['the', 'team', 'customer', 'deadline', 'report', 'manager', 'decision', 'week', 'store', 'client', 'budget', 'plan', 'call', 'meeting', 'issue', 'delivery', 'refund', 'shift', 'review', 'target'][(seed * 7 + i * 3) % 20]).join(' ');
 function ids(text, re) { return [...new Set([...text.matchAll(re)].map((m) => m[1]))]; }
 let calls = 0;
@@ -54,8 +55,9 @@ http.createServer((req, res) => {
       const j = JSON.parse(body || '{}');
       const user = j.messages?.[0]?.content || '';
       const text = JSON.stringify(reply(typeof user === 'string' ? user : user.map((p) => p.text || '').join('\n')));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ id: 'msg_mock', type: 'message', role: 'assistant', model: j.model || 'claude-sonnet-5', content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: Math.round(body.length / 4), output_tokens: Math.round(text.length / 4) } }));
+      const send = () => { res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ id: 'msg_mock', type: 'message', role: 'assistant', model: j.model || 'claude-sonnet-5', content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: Math.round(body.length / 4), output_tokens: Math.round(text.length / 4) } })); };
+      if (delayMs) setTimeout(send, delayMs); else send();
     } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: e.message })); }
   });
 }).listen(port, () => console.log(`mock anthropic on ${port}`));

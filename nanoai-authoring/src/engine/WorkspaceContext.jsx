@@ -40,6 +40,7 @@ export function WorkspaceProvider({ children }) {
       if (ui.currentId && loaded.assessments.some((a) => a.id === ui.currentId) && (ui.route === 'author' || ui.route === 'calibration')) { setCurrentId(ui.currentId); setRoute(ui.route); }
       else if (ui.route === 'templates') setRoute('templates');
       setLoading(false);
+      if (b === 'memory') setTimeout(() => toast('This window does not allow saving, so your work lasts until you close it. Export the workspace from Workspace settings to keep a copy.', 'error'), 300);
     })();
     return () => { alive = false; };
   }, []);

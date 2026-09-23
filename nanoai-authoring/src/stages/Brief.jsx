@@ -8,7 +8,7 @@ import { detectPII, anonymize, PII_LABELS } from '../engine/pii.js';
 import { llmExtractIntent, llmRankSkills } from '../engine/generator.js';
 import { proposeSkills, mapClientSkill, searchSkills } from '../engine/mapping.js';
 import { planBlueprint } from '../engine/blueprint.js';
-import { buildScenarios } from '../engine/build.js';
+import { isBuilding } from '../engine/build.js';
 import { uid } from '../engine/text.js';
 
 const Mic = ({ live }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill={live ? 'currentColor' : 'none'} /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8" /></svg>;
@@ -19,24 +19,52 @@ function summarizePii(findings) { const s = {}; for (const f of findings) s[f.ty
 
 // Dictation into the brief. Browser speech recognition where available; the author sees words appear
 // as they speak and can edit them like typed text.
-function useDictation(onText) {
+// How to dictate with the operating system's own voice typing, which types into the focused box and so works
+// even where the page itself may not use the microphone.
+function deviceDictationTip() {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  if (/iPhone|iPad|iPod|Android/i.test(ua)) return 'tap the microphone on your keyboard';
+  if (/Mac/i.test(ua)) return 'press the Fn (Globe) key twice';
+  if (/Windows/i.test(ua)) return 'press the Windows key and H together';
+  return "use your device's voice typing";
+}
+// True when the page is embedded somewhere that does not let it use the microphone (Permissions Policy).
+function micBlockedByPage() {
+  try { const pp = document.permissionsPolicy || document.featurePolicy; return pp?.allowsFeature ? !pp.allowsFeature('microphone') : false; } catch { return false; }
+}
+const embedded = () => { try { return window.self !== window.top; } catch { return true; } };
+
+function useDictation(onText, focusBox) {
   const [live, setLive] = useState(false);
   const [supported] = useState(() => typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
-  const recRef = useRef(null); const baseRef = useRef('');
-  const [error, setError] = useState('');
+  const recRef = useRef(null); const baseRef = useRef(''); const heardRef = useRef(false);
+  const [notice, setNotice] = useState(null); // { tone: 'info' | 'error', text }
+  const fallback = (lead) => { setLive(false); setNotice({ tone: 'info', text: `${lead} Click in the box below and ${deviceDictationTip()} to dictate instead, or type or upload.` }); focusBox?.(); };
   const start = (current) => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
-    setError('');
-    const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
-    baseRef.current = current ? `${current.trim()} ` : '';
-    r.onresult = (e) => { let t = ''; for (const res of e.results) t += res[0].transcript + ' '; onText(baseRef.current + t.trim()); };
+    setNotice(null);
+    if (micBlockedByPage()) return fallback('This window does not give the page access to your microphone.');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return fallback('Speak needs Chrome, Edge or Safari.');
+    const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = navigator.language || 'en-US';
+    baseRef.current = current ? `${current.trim()} ` : ''; heardRef.current = false;
+    r.onresult = (e) => { heardRef.current = true; let t = ''; for (const res of e.results) t += res[0].transcript + ' '; onText(baseRef.current + t.trim()); };
     r.onend = () => setLive(false);
-    r.onerror = (e) => { setLive(false); setError(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Microphone access was blocked. Allow it in the browser, or type or upload instead.' : e.error === 'network' ? 'Speech recognition needs a network connection.' : 'Dictation stopped. Type or upload instead.'); };
-    try { r.start(); recRef.current = r; setLive(true); } catch { setError('Dictation could not start in this browser. Type or upload instead.'); }
+    r.onerror = (e) => {
+      setLive(false);
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        if (embedded()) return fallback('The microphone is blocked for this embedded window.');
+        return setNotice({ tone: 'error', text: 'Microphone access is blocked for this site. Allow it from the icon in the address bar, then press Speak again.' });
+      }
+      if (e.error === 'no-speech') return setNotice({ tone: 'info', text: 'No speech was heard. Press Speak and start talking.' });
+      if (e.error === 'audio-capture') return fallback('No microphone was found.');
+      if (e.error === 'network') return fallback('Speech recognition could not reach its service.');
+      if (e.error === 'aborted') return;
+      fallback('Dictation stopped.');
+    };
+    try { r.start(); recRef.current = r; setLive(true); } catch { fallback('Dictation could not start in this browser.'); }
   };
   const stop = () => { try { recRef.current?.stop(); } catch {} setLive(false); };
   useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
-  return { live, supported, start, stop, error };
+  return { live, supported, start, stop, notice };
 }
 
 export default function Brief({ asm, update, go, readOnly, toast }) {
@@ -46,7 +74,6 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const briefPii = useMemo(() => detectPII(intent.situationsText || ''), [intent.situationsText]);
   const anonymizeBrief = () => { const out = anonymize(intent.situationsText, briefPii); set({ situationsText: out.text }, 'intent.brief_anonymized'); toast(`Replaced ${briefPii.length} personal detail${briefPii.length === 1 ? '' : 's'} with placeholders.`, 'ok'); };
   const [busy, setBusy] = useState('');
-  const [build, setBuild] = useState(null);
   const [query, setQuery] = useState('');
   const [clientName, setClientName] = useState('');
   const [mapping, setMapping] = useState(null);
@@ -54,8 +81,8 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const [confirmedLow, setConfirmedLow] = useState({});
   const [more, setMore] = useState(Boolean(intent.terminology));
   useEffect(() => { if (intent.terminology && !more) setMore(true); }, [intent.terminology]); // eslint-disable-line
-  const dictation = useDictation((t) => set({ situationsText: t }));
-  const dictationError = dictation.error;
+  const briefRef = useRef(null);
+  const dictation = useDictation((t) => set({ situationsText: t }), () => briefRef.current?.focus());
   const text = useMemo(() => intentText(asm), [asm.intent]);
 
   // Prefill every field from what the document says: audience from roles, purpose from cue words, company and
@@ -159,10 +186,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
     const seeds = intent.extracted?.situations || [];
     const bp = asm.blueprint || planBlueprint(asm.skills.map((s) => s.id), { seeds, purpose: intent.purpose });
     update((a) => ({ ...a, blueprint: bp, skillsConfirmed: true, config: { ...a.config, name: a.config.name.trim() || `${PURPOSES.find((x) => x.id === a.intent.purpose)?.label || 'Assessment'}: ${a.intent.audience.trim().slice(0, 60)}` } }), { action: 'blueprint.planned' });
-    setBuild({ i: 0, total: bp.rows.length, status: 'Planning scenarios, response types and time' });
-    await buildScenarios({ asm: { ...asm, blueprint: bp, skillsConfirmed: true }, update, onProgress: setBuild });
-    setBuild(null);
-    toast(`${bp.rows.length} scenarios ready to review.`, 'ok');
+    // Move on at once: the Scenarios stage writes the scenarios in the background and shows each one as it lands.
     go(2);
   };
 
@@ -173,7 +197,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
   const needAudience = !intent.audience.trim();
   const blockReason = needAudience ? 'Add who is being assessed.' : briefPii.length ? 'Anonymize the personal data in your brief.' : unconfirmed.length ? `Confirm anonymization on ${unconfirmed.length} document${unconfirmed.length === 1 ? '' : 's'}.` : n === 0 ? '' : n < RULES.skills.min ? `Choose at least ${RULES.skills.min} Skills: fewer cannot separate strengths from gaps.` : n > RULES.skills.max ? `Choose at most ${RULES.skills.max} Skills so the assessment stays short form.` : lowUnconfirmed.length ? `Confirm the ${lowUnconfirmed.length} Low confidence mapping${lowUnconfirmed.length === 1 ? '' : 's'}.` : '';
   const results = useMemo(() => searchSkills(query).filter((r) => !asm.skills.some((s) => s.id === r.id)).slice(0, 6), [query, asm.skills]);
-  const alreadyBuilt = asm.scenarios?.length > 0 && asm.skillsConfirmed;
+  const alreadyBuilt = asm.skillsConfirmed && (asm.scenarios?.length > 0 || isBuilding(asm.id));
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
@@ -183,15 +207,15 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold">What do you want to assess?</h2>
             <div className="flex items-center gap-1.5">
-              {dictation.supported ? <button disabled={readOnly} onClick={() => (dictation.live ? dictation.stop() : dictation.start(intent.situationsText))} aria-pressed={dictation.live} className={`pill ${dictation.live ? 'mic-live' : ''}`}><Mic live={dictation.live} />{dictation.live ? 'Listening, tap to stop' : 'Speak'}</button> : <span className="pill opacity-60" title="Dictation uses the browser's speech recognition, available in Chrome, Edge and Safari. In other browsers, type or upload.">Speak needs Chrome, Edge or Safari</span>}
+              <button disabled={readOnly} onClick={() => (dictation.live ? dictation.stop() : dictation.start(intent.situationsText))} aria-pressed={dictation.live} className={`pill ${dictation.live ? 'mic-live' : ''}`}><Mic live={dictation.live} />{dictation.live ? 'Listening, tap to stop' : 'Speak'}</button>
               <label className={`pill cursor-pointer ${readOnly ? 'pointer-events-none opacity-50' : ''}`}><Up />Upload brief<input type="file" multiple accept={ACCEPTED} className="hidden" onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} disabled={readOnly} /></label>
             </div>
           </div>
           <p className="muted mt-0.5 text-xs">Describe the situations people face, in your words. Or drop in SOPs, case notes, incident logs, a programme outline or a call transcript: the platform fills in the brief, audience, purpose and names from it. One line is enough to start.</p>
           {intent.prefilled && <p className="mt-1 text-xs"><Badge tone="brand">Filled from {intent.prefilled.from}</Badge> <span className="muted">{intent.prefilled.fields.join(', ')}. Everything is editable.</span></p>}
-          {dictationError && <p className="mt-1 text-xs text-[var(--block)]">{dictationError}</p>}
+          {dictation.notice && <p role="status" className={`mt-2 rounded-lg px-3 py-2 text-xs ${dictation.notice.tone === 'error' ? 'bg-[var(--block-soft)] text-[var(--block)]' : 'bg-[var(--brand-soft)] text-[var(--ink)]'}`}>{dictation.notice.text}</p>}
           <div className={`mt-3 rounded-xl border ${dictation.live ? 'border-[var(--brand)] ring-2 ring-[var(--brand-ring)]' : 'border-[var(--line)]'} bg-white`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFiles([...e.dataTransfer.files]); }}>
-            <textarea value={intent.situationsText} onChange={(e) => set({ situationsText: e.target.value })} onBlur={() => set({}, 'intent.situations')} disabled={readOnly} rows={5} aria-label="Brief" placeholder={dictation.live ? 'Listening. Start talking about the situations your people face.' : 'Store managers handle escalations when a delivery is late, decide who covers a shift at short notice, and give feedback after a mystery shopper visit...'} className="w-full resize-none rounded-xl border-0 bg-transparent p-4 text-[15px] leading-relaxed focus:outline-none" />
+            <textarea ref={briefRef} value={intent.situationsText} onChange={(e) => set({ situationsText: e.target.value })} onBlur={() => set({}, 'intent.situations')} disabled={readOnly} rows={5} aria-label="Brief" placeholder={dictation.live ? 'Listening. Start talking about the situations your people face.' : 'Store managers handle escalations when a delivery is late, decide who covers a shift at short notice, and give feedback after a mystery shopper visit...'} className="w-full resize-none rounded-xl border-0 bg-transparent p-4 text-[15px] leading-relaxed focus:outline-none" />
             <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] px-3 py-2">
               {intent.documents.map((d) => <span key={d.id} className={`chip ${d.confirmed ? '' : 'border-[var(--warn)] bg-[var(--warn-soft)]'}`}>{d.name}<span className="faint">{d.type.toUpperCase()}</span>{!readOnly && <button className="faint hover:text-[var(--block)]" onClick={() => removeDoc(d.id)} aria-label={`Remove ${d.name}`}>×</button>}</span>)}
               <span className="faint ml-auto text-[11px]">{busy || 'PDF, DOCX, PPTX, XLSX, TXT, or drag files here. Text stays in your workspace.'}</span>
@@ -214,7 +238,7 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
           <section className="card p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div><h2 className="text-[15px] font-semibold">Skills to measure <span className="faint font-normal">({n} of 3 to 5)</span></h2><p className="muted mt-0.5 text-xs">Proposed from your brief. Remove, swap, or add your own on the right. Each Skill is scored on the behaviors shown.</p></div>
-              {!readOnly && <Button variant="secondary" size="sm" onClick={propose} busy={Boolean(busy)}>Propose again</Button>}
+              {!readOnly && <Button variant="secondary" size="sm" onClick={propose} busy={Boolean(busy)}>Regenerate Skills</Button>}
             </div>
             <ul className="mt-3 grid gap-3 md:grid-cols-2">
               {asm.skills.map((entry) => { const s = getSkill(entry.id); if (!s) return null; return (
@@ -228,10 +252,9 @@ export default function Brief({ asm, update, go, readOnly, toast }) {
                   {entry.confidence === 'Low' && !readOnly && <label className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--warn)] bg-[var(--warn-soft)]/50 p-2 text-xs"><input type="checkbox" checked={Boolean(confirmedLow[entry.id])} onChange={(e) => setConfirmedLow({ ...confirmedLow, [entry.id]: e.target.checked })} />Your brief did not clearly point here. I confirm this is the Skill to measure.</label>}
                 </li>); })}
             </ul>
-            {build && <div className="mt-4 rounded-xl bg-[var(--brand-soft)] p-4"><div className="flex items-center justify-between text-sm"><span className="pulse font-medium">{build.status}</span><span className="muted">{Math.min(build.i + 1, build.total)} of {build.total}</span></div><div className="mt-2"><Progress value={build.i + 1} max={build.total} /></div><p className="faint mt-2 text-xs">The AI writes each situation, then reads it to derive the scoring questions and limits.</p></div>}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className={`text-sm ${blockReason ? 'text-[var(--block)]' : 'muted'}`}>{blockReason || (alreadyBuilt ? 'Scenarios already exist for these Skills.' : `${n} Skills. Next: the platform plans the scenarios, response types and time, writes them all, and you review.`)}</p>
-              {alreadyBuilt && !readOnly ? <Button size="lg" onClick={() => go(2)}>Go to scenarios</Button> : <Button size="lg" disabled={Boolean(blockReason) || readOnly} busy={Boolean(build)} onClick={buildNow}>Build my assessment</Button>}
+              {alreadyBuilt && !readOnly ? <Button size="lg" onClick={() => go(2)}>Go to scenarios</Button> : <Button size="lg" disabled={Boolean(blockReason) || readOnly} onClick={buildNow}>Build my assessment</Button>}
             </div>
           </section>
         )}

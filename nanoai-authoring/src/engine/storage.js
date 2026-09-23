@@ -4,19 +4,30 @@ const DB = 'nanoai-authoring', STORE = 'kv', KEY = 'workspace';
 const LEGACY = 'nanoai.authoring.workspace.v1';
 
 function openDb() {
+  // Some embedded or private contexts never answer an open request; give up after a few seconds and fall back.
   return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') return reject(new Error('no indexeddb'));
-    const req = indexedDB.open(DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    const timer = setTimeout(() => reject(new Error('indexeddb timeout')), 2500);
+    const done = (fn) => (v) => { clearTimeout(timer); fn(v); };
+    try {
+      if (typeof indexedDB === 'undefined') return done(reject)(new Error('no indexeddb'));
+      const req = indexedDB.open(DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+      req.onsuccess = () => done(resolve)(req.result);
+      req.onerror = () => done(reject)(req.error || new Error('indexeddb error'));
+      req.onblocked = () => done(reject)(new Error('indexeddb blocked'));
+    } catch (e) { done(reject)(e); }
   });
 }
 function idbGet(db, key) { return new Promise((res, rej) => { const tx = db.transaction(STORE, 'readonly'); const r = tx.objectStore(STORE).get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 function idbSet(db, key, value) { return new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).put(value, key); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error || new Error('aborted')); }); }
 
 let dbPromise = null;
-function db() { if (!dbPromise) dbPromise = openDb().catch((e) => { dbPromise = null; throw e; }); return dbPromise; }
+let dbUnavailable = false; // a timeout or denial means this context has no database; stop retrying
+function db() {
+  if (dbUnavailable) return Promise.reject(new Error('indexeddb unavailable'));
+  if (!dbPromise) dbPromise = openDb().catch((e) => { dbPromise = null; if (/timeout|denied|blocked|no indexeddb/i.test(String(e?.message || e))) dbUnavailable = true; throw e; });
+  return dbPromise;
+}
 
 export async function loadPersisted() {
   try {
@@ -43,7 +54,7 @@ export function savePersisted(ws) {
     try { const d = await db(); await idbSet(d, KEY, value); emit({ ok: true, at: Date.now(), bytes: approxBytes(value) }); }
     catch (e) {
       try { localStorage.setItem(LEGACY, JSON.stringify(value)); emit({ ok: true, at: Date.now(), fallback: true, bytes: approxBytes(value) }); }
-      catch (e2) { emit({ ok: false, at: Date.now(), reason: /quota/i.test(String(e2?.name || e2)) ? 'quota' : String(e2?.message || e2) }); }
+      catch (e2) { emit({ ok: false, at: Date.now(), reason: /quota/i.test(String(e2?.name || e2)) ? 'quota' : /SecurityError|denied/i.test(String(e2?.name || e2)) ? 'unavailable' : String(e2?.message || e2) }); }
     }
   }, 300);
 }
