@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Badge, Modal } from './ui.jsx';
 import { useWorkspace } from '../engine/WorkspaceContext.jsx';
-import { llmAvailable, loadSettings, DEFAULT_MODEL } from '../engine/llm.js';
 import Settings from '../screens/Settings.jsx';
 import Help from '../screens/Help.jsx';
 
@@ -42,7 +41,6 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
   const [drawer, setDrawer] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
-  const ai = llmAvailable();
   const sample = ws.assessments.find((a) => a.sample);
   const results = q.trim() ? ws.assessments.filter((a) => (a.config.name || 'Untitled').toLowerCase().includes(q.toLowerCase())).slice(0, 6) : [];
   const nav = (fn) => () => { setDrawer(false); setMenu(false); fn(); };
@@ -68,13 +66,8 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
         <button className="side-item" onClick={nav(() => createAssessment())}><Icon d={I.plus} size={16} />New assessment</button>
         <button className="side-item" onClick={nav(() => setRoute('templates'))}><Icon d={I.template} size={16} />Templates</button>
         {sample && <button className="side-item" onClick={nav(() => openAssessment(sample.id))}><Icon d={I.star} size={16} />Sample assessment</button>}
-        <button className="side-item" onClick={nav(() => openPanel('settings'))}><Icon d={I.gear} size={16} />AI and workspace settings</button>
+        <button className="side-item" onClick={nav(() => openPanel('settings'))}><Icon d={I.gear} size={16} />Workspace settings</button>
         <button className="side-item" onClick={nav(() => openPanel('help'))}><Icon d={I.help} size={16} />Help and support</button>
-      </div>
-      <div className={`mt-auto rounded-xl p-3.5 text-white ${ai ? 'bg-[#1f2a37]' : 'bg-[#7a2e0e]'}`} role="status">
-        <div className="flex items-center gap-2 text-sm font-semibold"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px]" aria-hidden="true">+</span>{ai ? 'AI connected' : 'AI not connected'}</div>
-        <p className="mt-1 text-[12px] text-white/85">{ai ? `Drafting with ${loadSettings().model || DEFAULT_MODEL}.` : 'Authoring needs the model. Connect it to read briefs, propose Skills and draft scenarios.'}</p>
-        {!ai && <button onClick={nav(() => openPanel('settings'))} className="mt-2.5 w-full rounded-lg bg-white py-1.5 text-xs font-semibold text-[var(--brand-2)] hover:bg-slate-100">Connect AI</button>}
       </div>
     </nav>
   );
@@ -104,7 +97,7 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
               {menu && (
                 <div role="menu" aria-label="Account" className="card absolute right-0 z-50 mt-1 w-64 overflow-hidden p-1 shadow-lg">
                   <div className="px-3 py-2 text-sm"><div className="font-semibold">{ws.author || 'Author'}</div><div className="faint text-xs">{ws.name} · {role}</div></div>
-                  <button role="menuitem" className="side-item" onClick={nav(() => openPanel('settings'))}><Icon d={I.gear} size={16} />AI and workspace settings</button>
+                  <button role="menuitem" className="side-item" onClick={nav(() => openPanel('settings'))}><Icon d={I.gear} size={16} />Workspace settings</button>
                   <button role="menuitem" className="side-item" onClick={nav(() => openPanel('help'))}><Icon d={I.help} size={16} />Help and support</button>
                   <button role="menuitem" className="side-item" onClick={nav(() => setRoute('templates'))}><Icon d={I.template} size={16} />Templates</button>
                 </div>
@@ -140,7 +133,7 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
           </div>
         </main>
       </div>
-      <Modal open={panel === 'settings'} title="AI and workspace settings" onClose={closePanel} wide><Settings /></Modal>
+      <Modal open={panel === 'settings'} title="Workspace settings" onClose={closePanel} wide><Settings /></Modal>
       <Modal open={panel === 'help'} title="Help and support" onClose={closePanel} wide><Help /></Modal>
     </div>
   );

@@ -7,7 +7,6 @@ import { issuesForScenario, scenarioLabel } from '../engine/qualityGate.js';
 import { reanalyze, regenerate, switchResponseType, rekeyOption, splitSentences, mediaSummary, retryAnalysis, generateScenario } from '../engine/generator.js';
 import { estimateScenarioMinutes, modelAnswerInCapUnits, formatSeconds } from '../engine/duration.js';
 import { wordCount, readingGrade, uid } from '../engine/text.js';
-import { llmAvailable } from '../engine/llm.js';
 
 export default function Step4Review({ asm, update, go, gate, readOnly, focusScenarioId, setFocusScenarioId, toast }) {
   const scenarios = asm.scenarios || [];

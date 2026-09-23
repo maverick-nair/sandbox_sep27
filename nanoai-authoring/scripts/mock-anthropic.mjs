@@ -1,5 +1,6 @@
-// A stand in for the Anthropic Messages API that returns schema shaped JSON for every NanoAI prompt, so the
-// AI code path (calls, parsing, validation, fallbacks, UI wiring) can be exercised without a real key.
+// A stand in for the GenieKreator AI gateway (Messages API shaped) that returns schema shaped JSON for every
+// NanoAI prompt, so the AI code path (calls, parsing, validation, placeholders, UI wiring) can be exercised
+// locally. The real gateway holds the model keys on the platform side and picks the model.
 // It does not judge quality. Run: node scripts/mock-anthropic.mjs [port]
 import http from 'http';
 const port = Number(process.argv[2] || 8787);
@@ -54,7 +55,7 @@ http.createServer((req, res) => {
       const user = j.messages?.[0]?.content || '';
       const text = JSON.stringify(reply(typeof user === 'string' ? user : user.map((p) => p.text || '').join('\n')));
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ id: 'msg_mock', type: 'message', role: 'assistant', model: j.model, content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: Math.round(body.length / 4), output_tokens: Math.round(text.length / 4) } }));
+      res.end(JSON.stringify({ id: 'msg_mock', type: 'message', role: 'assistant', model: j.model || 'claude-sonnet-5', content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: Math.round(body.length / 4), output_tokens: Math.round(text.length / 4) } }));
     } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: e.message })); }
   });
 }).listen(port, () => console.log(`mock anthropic on ${port}`));

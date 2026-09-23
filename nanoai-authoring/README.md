@@ -12,11 +12,19 @@ npm run preview    # serve the production build on port 4174
 npm test           # deterministic engine tests (planner, gate fixtures, scoring formulas, PII, mapping)
 ```
 
-## AI configuration
+## AI
 
-Open the account menu, AI and workspace settings, and enter an Anthropic API key or a base URL for a server side proxy. Calls go from the browser to the Anthropic Messages API for intent extraction, Skill re-ranking, scenario writing, contextual analysis, scoring question and MCQ generation, scoped regeneration, re-keying, and the preview scorer. Every call requests a JSON schema and fails closed on malformed output. A base URL can point at a server side proxy so keys never sit in the browser.
+AI is part of GenieKreator. Clients never supply API keys, tokens or model subscriptions, and the product has no screen for them. NanoAI sends every AI request (intent extraction, Skill ranking, scenario writing, contextual analysis, scoring questions and MCQ keys, scoped regeneration, re-keying, preview scoring) to the GenieKreator AI gateway. The gateway holds the model keys, picks the model and applies workspace permissions on the platform side.
 
-A connected model is required. NanoAI reads briefs, proposes Skills, drafts scenarios, derives scoring questions and MCQ keys, regenerates, re-keys and scores with it; without a connection the product shows a "Connect AI" notice and generates nothing. When a call fails or returns an invalid shape, the author sees the PRD's placeholder in place with a Retry, and any previous instrument is kept and marked stale. The 48 scenario library in `src/engine/library.js` exists only to build the sample assessment and as deterministic test fixtures.
+The GenieKreator host tells NanoAI where the gateway is before the app loads:
+
+```html
+<script>window.GENIE_AI = { gateway: 'https://kreator.example.com/ai' };</script>
+```
+
+`VITE_GENIE_AI_GATEWAY` sets the same value at build time. The gateway accepts Messages API shaped requests at `POST {gateway}/v1/messages`, authenticated by the GenieKreator session; NanoAI never sends a key. When NanoAI runs as a hosted claude.ai preview with no gateway, it uses the preview page's built in Claude access instead.
+
+Every request asks for a JSON schema and fails closed on malformed output. When a request fails, the author sees the PRD's placeholder in place with a Retry, and any previous instrument is kept and marked stale. The 48 scenario library in `src/engine/library.js` exists only to build the sample assessment and as deterministic test fixtures.
 
 ## The authoring flow
 
@@ -33,9 +41,9 @@ Four stages, all reachable from the sidebar.
 
 **Data.** Personal data is screened in uploads and in the typed or dictated brief; the author anonymizes before anything is proposed. Published versions are immutable: content changes are refused until "Edit as new version". The workspace lives in IndexedDB with a localStorage fallback and cross tab sync, undo is capped at 25 steps and excludes document bodies, and the open assessment is restored on reload. The audit log records every change with actor and before and after state.
 
-**Verification without a key.** `scripts/mock-anthropic.mjs` is a stand in Messages API that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (calls, parsing, validation, fallback, UI) can be run with `baseURL` pointed at it. It says nothing about model quality; that needs a real key and the "Test generation" button in AI and workspace settings.
+**Local verification.** `scripts/mock-anthropic.mjs` is a stand in for the GenieKreator AI gateway that returns schema shaped JSON for every NanoAI prompt, so the whole AI code path (requests, parsing, validation, placeholders, UI) can be run by setting `window.GENIE_AI.gateway` to it. It says nothing about model quality; that is checked against the real gateway.
 
-**Not in this build.** Sign in, tenancy and a server: the API key is held in the browser unless the base URL points at a proxy. Participant delivery, real response scoring and reports are the delivery platform's scope.
+**Not in this build.** Sign in, tenancy and the AI gateway itself are GenieKreator platform services. Participant delivery, real response scoring and reports are the delivery platform's scope.
 
 ## Structure
 

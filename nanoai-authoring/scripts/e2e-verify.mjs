@@ -1,5 +1,5 @@
 // Browser verification of the authoring flow. Requires `npm i -D playwright`, `npm run preview` on port 4174
-// and the stand-in Messages API `node scripts/mock-anthropic.mjs 8787` (set MOCK_PORT to use another port).
+// and the stand-in GenieKreator AI gateway `node scripts/mock-anthropic.mjs 8787` (set MOCK_PORT to use another port).
 // Run: node scripts/e2e-verify.mjs
 // Expects a brief.txt fixture in the working directory (any text with a name, an email and a phone number).
 import { chromium } from 'playwright';
@@ -8,7 +8,7 @@ const mode = 'llm';
 const mockPort = process.env.MOCK_PORT || '8787';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, permissions: ['microphone'] });
-await ctx.addInitScript((port) => { if (!localStorage.getItem('nanoai.authoring.settings')) localStorage.setItem('nanoai.authoring.settings', JSON.stringify({ apiKey: 'sk-mock', baseURL: `http://localhost:${port}`, model: 'claude-sonnet-5' })); }, mockPort);
+await ctx.addInitScript((port) => { window.GENIE_AI = { gateway: `http://localhost:${port}` }; }, mockPort);
 const page = await ctx.newPage();
 const errors = []; const results = [];
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -86,7 +86,7 @@ try {
   check('published: no inline edit affordance', (await page.getByRole('button', { name: 'Edit situation' }).count()) === 0);
   check('published: no approve or regenerate buttons', (await page.getByRole('button', { name: 'Regenerate scenario' }).count()) === 0);
   // Calibration flow as calibrator
-  await page.getByRole('button', { name: 'Account menu' }).click(); await page.getByRole('menuitem', { name: 'AI and workspace settings' }).click(); await page.waitForTimeout(300);
+  await page.getByRole('button', { name: 'Account menu' }).click(); await page.getByRole('menuitem', { name: 'Workspace settings' }).click(); await page.waitForTimeout(300);
   await page.getByRole('dialog').locator('select').filter({ hasText: 'Calibrator' }).selectOption('calibrator'); await page.waitForTimeout(200);
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click(); await page.waitForTimeout(200);
   await page.locator('aside button.side-item:has-text("Calibration")').click(); await page.waitForTimeout(300);
@@ -105,7 +105,7 @@ try {
   // Mobile drawer
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200);
   await page.getByRole('button', { name: 'Open assessment menu' }).click(); await page.waitForTimeout(200);
-  check('mobile drawer shows settings', await page.getByRole('button', { name: 'AI and workspace settings' }).isVisible());
+  check('mobile drawer shows settings', await page.getByRole('button', { name: 'Workspace settings' }).isVisible());
   await shot('mobile-drawer');
 } catch (e) { errors.push(`script: ${e.message}`); await shot('99-error'); }
 console.log(results.join('\n'));

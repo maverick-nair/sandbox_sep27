@@ -117,10 +117,10 @@ export function scriptedScenario(row, asm, index, { variant = 0 } = {}) {
     media: row.plannedMedia || seed.media ? mediaFromSeed(seed, names, ctx) : null,
     analysis: null, scoringQuestions: [], mcq: [], approved: false, flaggedForReview: false, calibration: responseType === 'MCQ' ? 'not_applicable' : 'pending',
     allowedTerms: names, version: 1, generatedBy: 'scripted', promptVersion: PROMPT_VERSION, modelVersion: 'scripted-library',
-    source: row.seedSituation ? { kind: 'document', text: `Your document situation was noted (${row.seedSituation.source}). Scripted mode used a library scenario; connect an API key in Settings to ground scenarios in your documents.` } : { kind: 'indicators', text: `Generated from the ${skill.name} Skill indicators` },
+    source: row.seedSituation ? { kind: 'document', text: `Your document situation was noted (${row.seedSituation.source}). A library scenario was used; regenerate it to ground it in your documents.` } : { kind: 'indicators', text: `Generated from the ${skill.name} Skill indicators` },
     seedTitle: seed.title, pendingConfirmation: null,
   };
-  if (isVariant) sc.source = { kind: 'variant', text: `Variant of a library scenario. Regenerate with an API key or edit the situation so it is not a near duplicate.` };
+  if (isVariant) sc.source = { kind: 'variant', text: `Variant of a library scenario. Regenerate it or edit the situation so it is not a near duplicate.` };
   return analyzeScripted(sc, { seed, names, ctx, seedNum: index, plannedQuestions: row.plannedQuestions });
 }
 
@@ -192,12 +192,12 @@ function scriptedRegenerate(sc, asm, { scope, targetId, optionId, instruction, s
       return { ok: true, scenario: rebuilt, mode: 'scripted' };
     }
     const next = { ...sc, situation: applyText(sc.situation), contextHeader: applyText(sc.contextHeader), prompt: applyText(sc.prompt), approved: false, version: (sc.version || 1) + 1 };
-    return { ok: Boolean(subst), scenario: subst ? next : sc, mode: 'scripted', note: subst ? `Applied "${subst.from}" to "${subst.to}" across the scenario.` : 'Scripted mode can apply instructions of the form "make this about X, not Y" or "replace X with Y". Connect an API key for free form regeneration.' };
+    return { ok: Boolean(subst), scenario: subst ? next : sc, mode: 'scripted', note: subst ? `Applied "${subst.from}" to "${subst.to}" across the scenario.` : 'Scripted mode can apply instructions of the form "make this about X, not Y" or "replace X with Y". Use AI regeneration for free form instructions.' };
   }
   if (scope === 'sentence') {
     const sentences = splitSentences(sc.situation);
     if (subst) { sentences[sentenceIndex] = applyText(sentences[sentenceIndex]); return { ok: true, scenario: { ...sc, situation: sentences.join(' '), approved: false }, mode: 'scripted', note: 'Applied the substitution to the sentence. Re-run the analysis if the facts changed.' }; }
-    return { ok: false, scenario: sc, mode: 'scripted', note: 'Scripted mode can apply "replace X with Y" to a sentence. Edit the sentence inline or connect an API key.' };
+    return { ok: false, scenario: sc, mode: 'scripted', note: 'Scripted mode can apply "replace X with Y" to a sentence. Edit the sentence inline or use AI regeneration.' };
   }
   if (scope === 'question') {
     const q = sc.scoringQuestions.find((x) => x.id === targetId);
@@ -245,4 +245,4 @@ export function parseSubstitution(instruction = '') {
   return null;
 }
 
-// Re-key after an option or anchor edit (Step 4). With an API key the model re-evaluates the level and value.
+// Re-key after an option or anchor edit (Step 4). The AI re-evaluates the level and value.

@@ -63,8 +63,8 @@ export function WorkspaceProvider({ children }) {
   }, []); // eslint-disable-line
 
   useEffect(() => {
-    onUsage(({ inputTokens, outputTokens, costUsd, error }) => {
-      setWs((w) => (w ? { ...w, usage: { inputTokens: w.usage.inputTokens + inputTokens, outputTokens: w.usage.outputTokens + outputTokens, costUsd: w.usage.costUsd + costUsd, calls: w.usage.calls + 1, errors: w.usage.errors + (error ? 1 : 0) } } : w));
+    onUsage(({ inputTokens, outputTokens, error }) => {
+      setWs((w) => (w ? { ...w, usage: { inputTokens: w.usage.inputTokens + inputTokens, outputTokens: w.usage.outputTokens + outputTokens, calls: w.usage.calls + 1, errors: w.usage.errors + (error ? 1 : 0) } } : w));
     });
   }, []);
 

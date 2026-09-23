@@ -8,7 +8,7 @@ const axe = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe
 const base = 'http://localhost:4174/';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 960 }, permissions: ['microphone'] });
-await ctx.addInitScript((port) => { localStorage.setItem('nanoai.authoring.settings', JSON.stringify({ apiKey: 'sk-mock', baseURL: `http://localhost:${port}`, model: 'claude-sonnet-5' })); }, process.env.MOCK_PORT || '8787');
+await ctx.addInitScript((port) => { window.GENIE_AI = { gateway: `http://localhost:${port}` }; }, process.env.MOCK_PORT || '8787');
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
 const report = {};
@@ -58,7 +58,7 @@ try {
   await page.locator('aside button.side-item:has-text("Calibration")').click(); await page.waitForTimeout(300);
   await page.getByRole('button', { name: 'Load 30 practice responses' }).click(); await page.waitForTimeout(300); await scan('calibration');
   await page.getByRole('button', { name: 'Account menu' }).click(); await page.waitForTimeout(150); await scan('account-menu');
-  await page.getByRole('menuitem', { name: 'AI and workspace settings' }).click(); await page.waitForTimeout(300); await scan('settings-dialog');
+  await page.getByRole('menuitem', { name: 'Workspace settings' }).click(); await page.waitForTimeout(300); await scan('settings-dialog');
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
   await page.getByRole('button', { name: 'Account menu' }).click(); await page.getByRole('menuitem', { name: 'Help and support' }).click(); await page.waitForTimeout(200); await scan('help-dialog');
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
