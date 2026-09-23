@@ -35,19 +35,19 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <h1 className="sr-only">GenieKreator: Evaluate products</h1>
-      <div role="tablist" aria-label="Product lines" className="mx-auto flex w-fit flex-wrap gap-1 rounded-xl bg-[#e6edf7] p-1">
+      <div role="tablist" aria-label="Product lines" className="mx-auto flex w-fit flex-wrap gap-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] p-1">
         {LINES.map((l) => <button key={l.id} role="tab" id={`tab-${l.id}`} aria-selected={line === l.id} aria-controls={`panel-${l.id}`} tabIndex={line === l.id ? 0 : -1} className="tab" onClick={() => setLine(l.id)} onKeyDown={(e) => { const i = LINES.findIndex((x) => x.id === line); if (e.key === 'ArrowRight') setLine(LINES[(i + 1) % LINES.length].id); if (e.key === 'ArrowLeft') setLine(LINES[(i + LINES.length - 1) % LINES.length].id); }}><Icon d={I.check} size={14} />{l.label}</button>)}
       </div>
       <section id={`panel-${line}`} role="tabpanel" aria-labelledby={`tab-${line}`}>
         {line === 'evaluate' ? (
           <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
             <button className="hero-card" onClick={() => createAssessment()}>
-              <div className="hero-art" aria-hidden="true"><svg width="120" height="80" viewBox="0 0 120 80" fill="none"><rect x="10" y="14" width="100" height="56" rx="8" fill="#fff" stroke="#1b5fc7" strokeWidth="2" /><rect x="22" y="28" width="52" height="6" rx="3" fill="#1b5fc7" /><rect x="22" y="42" width="76" height="6" rx="3" fill="#9dc0ee" /><rect x="22" y="54" width="40" height="6" rx="3" fill="#9dc0ee" /><circle cx="94" cy="30" r="8" fill="#0f8f8a" /></svg></div>
-              <div className="flex items-start justify-between gap-2 p-4"><div><div className="text-sm font-semibold">Create New Assessment</div><p className="muted mt-0.5 text-xs">Speak, upload a brief or type a few lines and NanoAI builds a Skills assessment tailored to your people.</p></div><span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white" aria-hidden="true">→</span></div>
+              <div className="hero-art" aria-hidden="true"><svg width="120" height="80" viewBox="0 0 120 80" fill="none"><rect x="10" y="14" width="100" height="56" rx="8" fill="rgba(255,255,255,.12)" stroke="#86f0a8" strokeWidth="2" /><rect x="22" y="28" width="52" height="6" rx="3" fill="#86f0a8" /><rect x="22" y="42" width="76" height="6" rx="3" fill="rgba(255,255,255,.5)" /><rect x="22" y="54" width="40" height="6" rx="3" fill="rgba(255,255,255,.5)" /><circle cx="94" cy="30" r="8" fill="#3ddc6f" /></svg></div>
+              <div className="flex items-start justify-between gap-2 p-4"><div><div className="text-sm font-semibold">Create New Assessment</div><p className="muted mt-0.5 text-xs">Speak, upload a brief or type a few lines and NanoAI builds a Skills assessment tailored to your people.</p></div><span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-[var(--on-brand)]" aria-hidden="true">→</span></div>
             </button>
             <button className="hero-card" onClick={() => setRoute('templates')}>
-              <div className="hero-art" aria-hidden="true"><svg width="120" height="80" viewBox="0 0 120 80" fill="none"><rect x="12" y="12" width="42" height="26" rx="6" fill="#fff" stroke="#1b5fc7" strokeWidth="2" /><rect x="66" y="12" width="42" height="26" rx="6" fill="#fff" stroke="#1b5fc7" strokeWidth="2" /><rect x="12" y="44" width="42" height="26" rx="6" fill="#fff" stroke="#1b5fc7" strokeWidth="2" /><rect x="66" y="44" width="42" height="26" rx="6" fill="#0f8f8a" /></svg></div>
-              <div className="flex items-start justify-between gap-2 p-4"><div><div className="text-sm font-semibold">Use a Template</div><p className="muted mt-0.5 text-xs">Choose from professionally designed NanoAI templates for common enterprise scenarios.</p></div><span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white" aria-hidden="true">→</span></div>
+              <div className="hero-art" aria-hidden="true"><svg width="120" height="80" viewBox="0 0 120 80" fill="none"><rect x="12" y="12" width="42" height="26" rx="6" fill="rgba(255,255,255,.12)" stroke="#86f0a8" strokeWidth="2" /><rect x="66" y="12" width="42" height="26" rx="6" fill="rgba(255,255,255,.12)" stroke="#86f0a8" strokeWidth="2" /><rect x="12" y="44" width="42" height="26" rx="6" fill="rgba(255,255,255,.12)" stroke="#86f0a8" strokeWidth="2" /><rect x="66" y="44" width="42" height="26" rx="6" fill="#3ddc6f" /></svg></div>
+              <div className="flex items-start justify-between gap-2 p-4"><div><div className="text-sm font-semibold">Use a Template</div><p className="muted mt-0.5 text-xs">Choose from professionally designed NanoAI templates for common enterprise scenarios.</p></div><span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-[var(--on-brand)]" aria-hidden="true">→</span></div>
             </button>
           </div>
         ) : (
@@ -58,7 +58,7 @@ export default function Home() {
       <section aria-labelledby="products-heading">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 id="products-heading" className="text-sm font-semibold text-[var(--brand-2)]">All Your Products</h2>
-          <div className="relative w-64"><label htmlFor="list-search" className="sr-only">Search your products</label><span className="pointer-events-none absolute left-3 top-2.5 text-[var(--ink-3)]"><Icon d={I.search} size={14} /></span><input id="list-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-white py-1.5 pl-8 pr-3 text-sm" /></div>
+          <div className="relative w-64"><label htmlFor="list-search" className="sr-only">Search your products</label><span className="pointer-events-none absolute left-3 top-2.5 text-[var(--ink-3)]"><Icon d={I.search} size={14} /></span><input id="list-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm" /></div>
         </div>
         <ul className="space-y-3">
           {sample && !q && <ProductRow a={sample} onOpen={() => openAssessment(sample.id)} onDuplicate={() => duplicateAssessment(sample.id)} sample />}

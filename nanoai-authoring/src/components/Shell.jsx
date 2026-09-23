@@ -30,7 +30,7 @@ export const STAGES = [
 ];
 
 export function Logo({ onClick }) {
-  return <button onClick={onClick} className="flex items-baseline gap-1 rounded-lg px-1" aria-label="GenieKreator home"><span className="logo-word text-xl">Genie</span><span className="text-sm font-semibold text-[var(--teal)]">Kreator</span></button>;
+  return <button onClick={onClick} className="flex items-center gap-2 rounded-lg px-1" aria-label="GenieKreator home"><span className="logo-mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12a7 7 0 1 0 7-7" /><path d="M12 12h7" /></svg></span><span className="flex items-baseline gap-1"><span className="logo-word text-xl">Genie</span><span className="text-sm font-semibold text-[var(--brand)]">Kreator</span></span></button>;
 }
 
 // The GenieKreator frame: full width header (search, home, save state, profile) and, inside an
@@ -75,7 +75,7 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
   return (
     <div className="flex min-h-full flex-col">
       <a href="#main" className="skip-link">Skip to main content</a>
-      <header className="no-print sticky top-0 z-40 border-b border-[var(--line)] bg-white">
+      <header className="no-print sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--panel)]/95 backdrop-blur">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 md:px-6">
           <div className="flex items-center gap-2">
             {sidebar && <span className="md:hidden"><Tooltip label="Open assessment menu" hint="Stages, calibration and quick actions" align="start"><button onClick={() => setDrawer(true)} aria-label="Open assessment menu" aria-expanded={drawer} className="icon-btn"><Icon d={I.menu} /></button></Tooltip></span>}
@@ -86,8 +86,8 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
             <div className="relative hidden w-64 md:block lg:w-80">
               <label htmlFor="product-search" className="sr-only">Search products</label>
               <span className="pointer-events-none absolute left-3 top-2.5 text-[var(--ink-3)]"><Icon d={I.search} size={16} /></span>
-              <input id="product-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-white py-2 pl-9 pr-3 text-sm" role="combobox" aria-autocomplete="list" aria-controls="product-search-results" aria-expanded={results.length > 0} />
-              {results.length > 0 && <ul id="product-search-results" role="listbox" aria-label="Matching products" className="card absolute z-50 mt-1 w-full overflow-hidden shadow-lg">{results.map((a) => <li key={a.id} role="option" aria-selected="false"><button className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => { openAssessment(a.id); setQ(''); }}><span>{a.config.name || 'Untitled assessment'}</span><Badge tone={a.status === 'published' ? 'ok' : 'neutral'}>{a.status}</Badge></button></li>)}</ul>}
+              <input id="product-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="w-full rounded-full border border-[var(--line)] bg-[var(--card)] py-2 pl-9 pr-3 text-sm" role="combobox" aria-autocomplete="list" aria-controls="product-search-results" aria-expanded={results.length > 0} />
+              {results.length > 0 && <ul id="product-search-results" role="listbox" aria-label="Matching products" className="card absolute z-50 mt-1 w-full overflow-hidden shadow-lg">{results.map((a) => <li key={a.id} role="option" aria-selected="false"><button className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--card-3)]" onClick={() => { openAssessment(a.id); setQ(''); }}><span>{a.config.name || 'Untitled assessment'}</span><Badge tone={a.status === 'published' ? 'ok' : 'neutral'}>{a.status}</Badge></button></li>)}</ul>}
             </div>
             {(route === 'author' || route === 'calibration') && current && <><Tooltip label="Undo" hint={canUndo ? 'Reverse your last change to this assessment' : 'Nothing to undo yet'}><button className="icon-btn" onClick={() => canUndo && undo()} aria-disabled={!canUndo} aria-label="Undo"><Icon d={I.undo} size={16} /></button></Tooltip><Tooltip label="Redo" hint={canRedo ? 'Bring back the change you just undid' : 'Nothing to redo'}><button className="icon-btn" onClick={() => canRedo && redo()} aria-disabled={!canRedo} aria-label="Redo"><Icon d={I.redo} size={16} /></button></Tooltip></>}
             <Tooltip label="Home" hint="Back to All your products"><button className="icon-btn" onClick={goHome} aria-label="Home"><Icon d={I.home} size={16} /></button></Tooltip>
@@ -109,8 +109,8 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
       <div className="flex flex-1">
         {sidebar && (
           <>
-            {drawer && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setDrawer(false)} aria-hidden="true" />}
-            <aside aria-label="Assessment sidebar" className={`no-print ${drawer ? 'fixed inset-y-0 left-0 z-50 flex w-72 shadow-2xl' : 'sticky top-[57px] hidden md:flex'} h-[calc(100vh-57px)] w-64 shrink-0 flex-col border-r border-[var(--line)] bg-white px-4 py-5`}>
+            {drawer && <div className="fixed inset-0 z-40 bg-black/70 md:hidden" onClick={() => setDrawer(false)} aria-hidden="true" />}
+            <aside aria-label="Assessment sidebar" className={`no-print ${drawer ? 'fixed inset-y-0 left-0 z-50 flex w-72 shadow-2xl' : 'sticky top-[57px] hidden md:flex'} h-[calc(100vh-57px)] w-64 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--panel)] px-4 py-5`}>
               {drawer && <button className="mb-3 self-end text-sm text-[var(--ink-2)] underline" onClick={() => setDrawer(false)}>Close menu</button>}
               {sideNav}
             </aside>
@@ -121,7 +121,7 @@ export default function Shell({ children, crumbs = [], title, subtitle, actions,
             {(back || crumbs.length > 0 || title) && (
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  {back && <button onClick={back.onClick} className="mb-2 inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink-2)] hover:text-[var(--ink)]"><Icon d={I.back} size={14} />{back.label || 'Back'}</button>}
+                  {back && <button onClick={back.onClick} className="mb-2 inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--card)] px-3 text-sm text-[var(--ink-2)] hover:text-[var(--ink)]"><Icon d={I.back} size={14} />{back.label || 'Back'}</button>}
                   {crumbs.length > 0 && <nav aria-label="Breadcrumb" className="faint mb-1 text-xs"><ol className="flex flex-wrap items-center gap-1.5">{crumbs.map((c, i) => <li key={i} className="flex items-center gap-1.5">{i > 0 && <span aria-hidden="true">/</span>}{c.onClick ? <button className="underline-offset-2 hover:text-[var(--ink)] hover:underline" onClick={c.onClick}>{c.label}</button> : <span aria-current={i === crumbs.length - 1 ? 'page' : undefined} className={i === crumbs.length - 1 ? 'font-medium text-[var(--ink)]' : ''}>{c.label}</span>}</li>)}</ol></nav>}
                   {title && <h1 className="text-xl font-semibold">{title}</h1>}
                   {subtitle && <p className="muted mt-0.5 max-w-3xl text-sm">{subtitle}</p>}

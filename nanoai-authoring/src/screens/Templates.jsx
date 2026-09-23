@@ -11,7 +11,7 @@ export default function Templates() {
   const { createFromTemplate, goHome } = useWorkspace();
   return (
     <div className="space-y-6">
-      <button onClick={goHome} className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink-2)] hover:text-[var(--ink)]"><Icon d={I.back} size={14} />Back</button>
+      <button onClick={goHome} className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--card)] px-3 text-sm text-[var(--ink-2)] hover:text-[var(--ink)]"><Icon d={I.back} size={14} />Back</button>
       <div className="text-center"><h1 className="text-3xl font-semibold">Choose a <span className="text-[var(--brand)]">Template</span></h1><p className="muted mt-1 text-sm">Pick a ready made NanoAI template to get started quickly. Everything stays editable.</p></div>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TEMPLATES.map((t) => (

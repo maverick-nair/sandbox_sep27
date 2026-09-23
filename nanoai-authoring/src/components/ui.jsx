@@ -4,11 +4,11 @@ export function Button({ variant = 'primary', size = 'md', className = '', disab
   const base = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-50';
   const sizes = { sm: 'px-2.5 py-1 text-xs', md: 'px-3.5 py-2 text-sm', lg: 'px-5 py-2.5 text-base' };
   const variants = {
-    primary: 'bg-[var(--brand)] text-white hover:bg-[var(--brand-2)]',
-    secondary: 'border border-[var(--line)] bg-white text-[var(--ink)] hover:bg-slate-50',
-    ghost: 'text-[var(--ink-2)] hover:bg-slate-100',
-    danger: 'border border-[var(--block)] text-[var(--block)] bg-white hover:bg-[var(--block-soft)]',
-    success: 'bg-[var(--ok)] text-white hover:brightness-95',
+    primary: 'bg-[var(--brand)] text-[var(--on-brand)] hover:bg-[var(--brand-2)]',
+    secondary: 'border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] hover:bg-[var(--card-3)]',
+    ghost: 'text-[var(--ink-2)] hover:bg-[var(--card-3)]',
+    danger: 'border border-[var(--block)] text-[var(--block)] bg-[var(--card)] hover:bg-[var(--block-soft)]',
+    success: 'bg-[var(--ok)] text-[var(--on-brand)] hover:brightness-95',
   };
   return <button className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} disabled={disabled || busy} {...rest}>{busy && <Spinner size={14} />}{children}</button>;
 }
@@ -39,13 +39,13 @@ export function Field({ label, hint, required, children, className = '' }) {
     </label>
   );
 }
-const inputCls = 'w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20';
+const inputCls = 'w-full rounded-lg border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20';
 export function Input({ className = '', ...props }) { return <input className={`${inputCls} ${className}`} {...props} />; }
 export function Textarea({ className = '', ...props }) { return <textarea className={`${inputCls} min-h-[90px] ${className}`} {...props} />; }
 export function Select({ children, className = '', ...rest }) { return <select className={`${inputCls} ${className}`} {...rest}>{children}</select>; }
 
 export function Badge({ tone = 'neutral', children, className = '', title }) {
-  const tones = { neutral: 'bg-slate-100 text-slate-700', brand: 'bg-[var(--brand-soft)] text-[var(--brand)]', ok: 'bg-[var(--ok-soft)] text-[var(--ok)]', warn: 'bg-[var(--warn-soft)] text-[var(--warn)]', block: 'bg-[var(--block-soft)] text-[var(--block)]', dark: 'bg-slate-800 text-white' };
+  const tones = { neutral: 'bg-[var(--card-2)] text-[var(--ink-2)]', brand: 'bg-[var(--brand-soft)] text-[var(--brand)]', ok: 'bg-[var(--ok-soft)] text-[var(--ok)]', warn: 'bg-[var(--warn-soft)] text-[var(--warn)]', block: 'bg-[var(--block-soft)] text-[var(--block)]', dark: 'bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line-2)]' };
   return <span title={title} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tones[tone]} ${className}`}>{children}</span>;
 }
 export function Confidence({ level }) { const tone = level === 'High' ? 'ok' : level === 'Medium' ? 'warn' : 'block'; return <Badge tone={tone} title={`Mapping confidence ${level}`}>{level} confidence</Badge>; }
@@ -68,7 +68,7 @@ export function Modal({ open, title, onClose, children, footer, wide }) {
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={`card max-h-[90vh] w-full ${wide ? 'max-w-6xl' : 'max-w-lg'} overflow-auto`}>
         <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3"><h2 className="text-sm font-semibold">{title}</h2><Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">Close</Button></div>
         <div className="p-5">{children}</div>
@@ -110,8 +110,8 @@ export function Steps({ steps, current, onGo, canGo }) {
         const n = i + 1; const active = n === current; const done = n < current; const enabled = canGo ? canGo(n) : true;
         return (
           <li key={s.id} className="flex items-center">
-            <button disabled={!enabled} onClick={() => onGo(n)} aria-current={active ? 'step' : undefined} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'bg-[var(--brand)] text-white' : done ? 'bg-[var(--ok-soft)] text-[var(--ok)] hover:brightness-95' : 'text-[var(--ink-2)] hover:bg-slate-100'}`}>
-              <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold ${active ? 'bg-white/20' : done ? 'bg-[var(--ok)] text-white' : 'bg-slate-200'}`}>{done ? '✓' : n}</span>{s.label}
+            <button disabled={!enabled} onClick={() => onGo(n)} aria-current={active ? 'step' : undefined} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'bg-[var(--brand)] text-[var(--on-brand)]' : done ? 'bg-[var(--ok-soft)] text-[var(--ok)] hover:brightness-95' : 'text-[var(--ink-2)] hover:bg-[var(--card-3)]'}`}>
+              <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold ${active ? 'bg-white/20' : done ? 'bg-[var(--ok)] text-[var(--on-brand)]' : 'bg-[var(--card-3)]'}`}>{done ? '✓' : n}</span>{s.label}
             </button>
             {i < steps.length - 1 && <span className="faint mx-0.5">›</span>}
           </li>
@@ -123,8 +123,8 @@ export function Steps({ steps, current, onGo, canGo }) {
 
 export function EmptyState({ title, text, action }) { return <div className="card flex flex-col items-center gap-2 p-10 text-center"><h2 className="text-base font-semibold">{title}</h2><p className="muted max-w-md text-sm">{text}</p>{action}</div>; }
 export function Stat({ label, value, sub, tone }) { const c = tone === 'block' ? 'text-[var(--block)]' : tone === 'warn' ? 'text-[var(--warn)]' : tone === 'ok' ? 'text-[var(--ok)]' : ''; return <div className="card px-4 py-3"><div className="faint text-[11px] uppercase tracking-wider">{label}</div><div className={`text-xl font-semibold ${c}`}>{value}</div>{sub && <div className="muted text-xs">{sub}</div>}</div>; }
-export function Kbd({ children }) { return <kbd className="rounded border border-[var(--line)] bg-slate-50 px-1 text-[10px]">{children}</kbd>; }
-export function Progress({ value, max = 100, tone }) { const pct = Math.max(0, Math.min(100, (value / max) * 100)); const c = tone === 'block' ? 'bg-[var(--block)]' : tone === 'warn' ? 'bg-[var(--warn)]' : 'bg-[var(--brand)]'; return <div className="h-1.5 w-full rounded bg-slate-200"><div className={`h-1.5 rounded ${c}`} style={{ width: `${pct}%` }} /></div>; }
+export function Kbd({ children }) { return <kbd className="rounded border border-[var(--line)] bg-[var(--card-2)] px-1 text-[10px]">{children}</kbd>; }
+export function Progress({ value, max = 100, tone }) { const pct = Math.max(0, Math.min(100, (value / max) * 100)); const c = tone === 'block' ? 'bg-[var(--block)]' : tone === 'warn' ? 'bg-[var(--warn)]' : 'bg-[var(--brand)]'; return <div className="h-1.5 w-full rounded bg-[var(--card-3)]"><div className={`h-1.5 rounded ${c}`} style={{ width: `${pct}%` }} /></div>; }
 
 // Tooltip for icon controls (WCAG 2.2 SC 1.4.13): shows on hover and keyboard focus, stays while the pointer is
 // over it, closes on Escape, blur or pointer leave. `label` repeats the control's accessible name; `hint` is

@@ -10,13 +10,13 @@ export default function Publish(props) {
   const { asm, gate, go } = props;
   const [open, setOpen] = useState(!gate.canPublish);
   const scenarios = asm.scenarios || [];
-  const tone = gate.hard.length ? 'border-[var(--block)]/40' : 'border-[var(--ok)]/40';
+  const tone = gate.hard.length ? 'border-[var(--block)]/40' : 'glow';
   return (
     <div className="space-y-5">
       <section className={`card ${tone}`}>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${gate.hard.length ? 'bg-[var(--block-soft)] text-[var(--block)]' : 'bg-[var(--ok-soft)] text-[var(--ok)]'}`}>{gate.hard.length ? gate.hard.length : '✓'}</span>
+            <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${gate.hard.length ? 'bg-[var(--block-soft)] text-[var(--block)]' : 'bg-white/15 text-white'}`}>{gate.hard.length ? gate.hard.length : '✓'}</span>
             <div><div className="text-sm font-semibold">{gate.hard.length ? `${gate.hard.length} item${gate.hard.length === 1 ? '' : 's'} block publish` : 'Passes the quality gate'}</div><div className="faint text-xs">{gate.soft.length} suggestion{gate.soft.length === 1 ? '' : 's'} · {scenarios.filter((s) => s.approved).length}/{scenarios.length} approved · {gate.totalMinutes} min estimated{gate.totalMinutes > RULES.time.totalWarn ? ' (long)' : ''}</div></div>
           </div>
           <div className="ml-auto flex items-center gap-2">

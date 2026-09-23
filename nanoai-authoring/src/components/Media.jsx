@@ -3,7 +3,7 @@ import { Button, Field, Input, Textarea, Select } from './ui.jsx';
 import { RULES } from '../content/rules.js';
 import { wordCount } from '../engine/text.js';
 
-const COLORS = ['#1650b8', '#c2620a'];
+const COLORS = ['#3ddc6f', '#38bdf8'];
 
 export function Chart({ media, compact }) {
   const { points = [], series = [] } = media.data || {};
@@ -20,12 +20,12 @@ export function Chart({ media, compact }) {
     <figure className="card overflow-hidden p-3">
       <figcaption className="mb-1 text-sm font-medium">{media.title}</figcaption>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={media.alt}>
-        {ticks.map((t, i) => <g key={i}><line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#e5e9ef" /><text x={padL - 6} y={y(t) + 4} fontSize="10" textAnchor="end" fill="#7b8794">{Math.round(t * 10) / 10}</text></g>)}
-        {points.map((p, i) => <text key={p} x={bar ? padL + (i + 0.5) * ((W - padL - padR) / points.length) : x(i)} y={H - 12} fontSize="11" textAnchor="middle" fill="#4a5866">{p}</text>)}
+        {ticks.map((t, i) => <g key={i}><line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#2c2f32" /><text x={padL - 6} y={y(t) + 4} fontSize="10" textAnchor="end" fill="#949b97">{Math.round(t * 10) / 10}</text></g>)}
+        {points.map((p, i) => <text key={p} x={bar ? padL + (i + 0.5) * ((W - padL - padR) / points.length) : x(i)} y={H - 12} fontSize="11" textAnchor="middle" fill="#bac1bd">{p}</text>)}
         {series.map((s, si) => bar
-          ? s.values.map((v, i) => { const cx = padL + (i + 0.5) * ((W - padL - padR) / points.length); return <g key={i}><rect x={cx - bw / 2} y={y(Math.max(v, 0))} width={bw} height={Math.abs(y(v) - y(0))} fill={COLORS[si]} rx="3" /><text x={cx} y={y(Math.max(v, 0)) - 4} fontSize="10" textAnchor="middle" fill="#16202b">{v}</text></g>; })
-          : <g key={s.name}><polyline fill="none" stroke={COLORS[si]} strokeWidth="2.5" points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} />{s.values.map((v, i) => <g key={i}><circle cx={x(i)} cy={y(v)} r="3.5" fill={COLORS[si]} /><text x={x(i)} y={y(v) - 7} fontSize="10" textAnchor="middle" fill="#16202b">{v}</text></g>)}</g>)}
-        {series.length > 1 && series.map((s, si) => <g key={s.name}><rect x={padL + si * 150} y={2} width="10" height="10" fill={COLORS[si]} /><text x={padL + si * 150 + 14} y={11} fontSize="10" fill="#4a5866">{s.name}</text></g>)}
+          ? s.values.map((v, i) => { const cx = padL + (i + 0.5) * ((W - padL - padR) / points.length); return <g key={i}><rect x={cx - bw / 2} y={y(Math.max(v, 0))} width={bw} height={Math.abs(y(v) - y(0))} fill={COLORS[si]} rx="3" /><text x={cx} y={y(Math.max(v, 0)) - 4} fontSize="10" textAnchor="middle" fill="#f3f5f4">{v}</text></g>; })
+          : <g key={s.name}><polyline fill="none" stroke={COLORS[si]} strokeWidth="2.5" points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} />{s.values.map((v, i) => <g key={i}><circle cx={x(i)} cy={y(v)} r="3.5" fill={COLORS[si]} /><text x={x(i)} y={y(v) - 7} fontSize="10" textAnchor="middle" fill="#f3f5f4">{v}</text></g>)}</g>)}
+        {series.length > 1 && series.map((s, si) => <g key={s.name}><rect x={padL + si * 150} y={2} width="10" height="10" fill={COLORS[si]} /><text x={padL + si * 150 + 14} y={11} fontSize="10" fill="#bac1bd">{s.name}</text></g>)}
       </svg>
       <details className="mt-1"><summary className="faint cursor-pointer text-xs">Data table alternative</summary><Table media={{ data: { columns: ['Point', ...series.map((s) => s.name)], rows: points.map((p, i) => [p, ...series.map((s) => String(s.values[i]))]) } }} /></details>
     </figure>
@@ -39,7 +39,7 @@ export function Table({ media }) {
       {media.title && <figcaption className="mb-2 text-sm font-medium">{media.title}</figcaption>}
       <table className="w-full text-sm" aria-label={media.alt || media.title}>
         <thead><tr>{columns.map((c) => <th key={c} className="border-b border-[var(--line)] px-2 py-1 text-left text-xs font-semibold uppercase tracking-wide text-[var(--ink-2)]">{c}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i} className="odd:bg-slate-50">{r.map((c, j) => <td key={j} className="px-2 py-1.5 align-top">{c}</td>)}</tr>)}</tbody>
+        <tbody>{rows.map((r, i) => <tr key={i} className="odd:bg-[var(--card-2)]">{r.map((c, j) => <td key={j} className="px-2 py-1.5 align-top">{c}</td>)}</tr>)}</tbody>
       </table>
     </figure>
   );
