@@ -49,6 +49,9 @@ try {
   await scan('scenarios');
   await page.getByRole('button', { name: 'Adjust plan' }).click(); await page.waitForTimeout(200); await scan('plan-dialog');
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).first().click();
+  for (const t of ['Analysis', 'Checks']) { await page.getByRole('tab', { name: new RegExp(`^${t}`) }).click(); await page.waitForTimeout(150); await scan(`scenario-tab-${t.toLowerCase()}`); }
+  await page.getByRole('tab', { name: 'Tools' }).click(); await page.waitForTimeout(150); await scan('scenario-tab-tools');
+  await page.locator('[data-scenario-row]').first().click(); await page.waitForTimeout(200); await scan('scenario-second-card');
   await page.getByRole('button', { name: 'Regenerate scenario' }).click(); await page.waitForTimeout(200); await scan('regen-dialog');
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   await page.locator('aside button.side-item:has-text("Preview")').click(); await page.waitForTimeout(300); await scan('preview-welcome');

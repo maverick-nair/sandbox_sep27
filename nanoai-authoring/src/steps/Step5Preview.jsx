@@ -124,10 +124,15 @@ function ScenarioScreen({ sc, index, count, remaining, onSubmit, onPause }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="sticky top-0 z-10 border-b border-[var(--line)] bg-[var(--card)]/95 px-5 py-2 text-xs backdrop-blur"><div className="flex items-center justify-between"><span className="font-medium">Scenario {index + 1} of {count}</span><span className="muted">About {remaining} min remaining</span></div><div className="mt-1 flex items-center gap-2"><Progress value={index} max={count} /><span className={`whitespace-nowrap font-mono ${left < 0 ? 'text-[var(--warn)]' : 'muted'}`} aria-live="polite">{left >= 0 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} suggested` : 'Over the suggested time'}</span></div></div>
-      <div className="flex-1 space-y-4 p-5">
-        <div className="rounded-lg bg-[var(--card-2)] p-3 text-sm"><span className="faint mr-1 text-[11px] uppercase tracking-wider">Your situation</span>{sc.contextHeader}</div>
-        <p className="whitespace-pre-wrap">{sc.situation}</p>
-        {sc.media && <MediaView media={sc.media} compact />}
+      {/* Situation and answer on the same screen: two columns in a wide frame, a scrollable situation above the answer in a narrow one. */}
+      <div className="@container flex-1">
+        <div className="grid gap-0 @2xl:h-[620px] @2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <section aria-label="Your situation" className="max-h-[42vh] overflow-y-auto border-b border-[var(--line)] p-5 @2xl:max-h-none @2xl:border-b-0 @2xl:border-r" tabIndex={0}>
+            <div className="rounded-lg bg-[var(--card-2)] p-3 text-sm"><span className="faint mr-1 text-[11px] uppercase tracking-wider">Your situation</span>{sc.contextHeader}</div>
+            <p className="mt-3 whitespace-pre-wrap">{sc.situation}</p>
+            {sc.media && <div className="mt-3"><MediaView media={sc.media} compact /></div>}
+          </section>
+          <section aria-label="Your answer" className="space-y-4 overflow-y-auto p-5">
         <p className="font-semibold">{sc.prompt}</p>
         {prompted && <div role="status" className="rounded-lg border border-[var(--warn)] bg-[var(--warn-soft)]/60 p-2 text-sm">You have passed the suggested time for this situation. Submit when you are ready; there is no cutoff.</div>}
         {mode === 'Audio' && <div><Recorder capSeconds={sc.cap?.audioSeconds || RULES.caps.audioMaxSeconds} onSubmit={(t) => onSubmit({ text: t, audio: true })} /><button className="mt-2 text-xs text-[var(--brand)]" onClick={() => setMode('Text')}>I cannot record: switch to text for this situation</button></div>}
@@ -145,6 +150,10 @@ function ScenarioScreen({ sc, index, count, remaining, onSubmit, onPause }) {
             <Button size="lg" className="w-full" disabled={!allChosen} onClick={() => onSubmit({ selections })}>Submit</Button>
           </div>
         )}
+          </section>
+        </div>
+      </div>
+      <div className="space-y-4 px-5 pb-5">
         <div className="flex justify-between text-xs"><button className="muted" onClick={onPause}>Pause after this scenario</button><button className="muted">Report a problem with this scenario</button></div>
       </div>
     </div>

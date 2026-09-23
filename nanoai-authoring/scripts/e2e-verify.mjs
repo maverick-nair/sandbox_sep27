@@ -57,6 +57,7 @@ try {
   await ta.fill('You manage a store. Ravi says his delivery is two weeks late and a refund was promised but never came. Two staff are absent and the weekend rota is unfilled, and head office wants complaints handled locally. Refunds above fifty need head office approval within two days, and the last two approvals took a week each. Other customers are waiting and the evening rush starts in twenty minutes. You have to decide what to say to Ravi and what to do about the refund and the rota, knowing the regional manager reads every escalation. The team is stretched and the courier, not your staff, caused the delay. Ravi does not care whose fault it is and wants an answer now.');
   await ta.press('Control+Enter');
   await page.waitForSelector('text=Confirm changes', { timeout: 15000 });
+  await page.getByRole('tab', { name: 'Analysis' }).click(); await page.waitForTimeout(150);
   const facts = await page.locator('div.faint:has-text("Key facts")').locator('..').textContent();
   check('analysis follows the edited text', /refund|two weeks late|approval/i.test(facts), facts.slice(0, 100));
   const bannerTitle = await page.locator('section.card h3').filter({ hasText: /situation changed|analysis re-ran/ }).first().textContent();
@@ -64,8 +65,9 @@ try {
   await shot('reanalysis');
   await page.getByRole('button', { name: 'Confirm changes' }).click();
   // Approve all and publish
-  const n = await page.locator('aside[aria-label="Scenario list"] ol li button').count();
-  for (let i = 0; i < n; i++) { await page.locator('aside[aria-label="Scenario list"] ol li button').nth(i).click(); await page.waitForTimeout(100); const b = page.getByRole('button', { name: /^Mark approved/ }).first(); if (await b.count()) { await b.click(); await page.waitForTimeout(120); } }
+  // Approve every scenario: approving opens the next card in the canvas.
+  for (let i = 0; i < 20; i++) { const b = page.getByRole('button', { name: /^Mark approved/ }).first(); if (!(await b.count())) { const row = page.locator('[data-scenario-row]').filter({ hasNot: page.locator('text=Approved') }).first(); if (!(await row.count())) break; await row.click(); await page.waitForTimeout(120); continue; } await b.click(); await page.waitForTimeout(150); }
+  check('canvas groups scenarios by Skill', (await page.locator('h2', { hasText: /^Skill \d+:/ }).count()) >= 3);
   await page.locator('aside button.side-item:has-text("Publish")').click(); await page.waitForTimeout(400);
   await shot('publish');
   const gateRows = await page.locator('text=not yet approved').count();
