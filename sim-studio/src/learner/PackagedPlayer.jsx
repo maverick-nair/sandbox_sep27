@@ -6,7 +6,7 @@ import { findScormApi, scormAdapter } from '../delivery/scorm.js';
 
 export default function PackagedPlayer({ pkg }) {
   const scorm = useMemo(() => scormAdapter(findScormApi(), { passScore: pkg.passScore }), [pkg.passScore]);
-  const name = useMemo(() => { try { return scorm ? window.API?.LMSGetValue?.('cmi.core.student_name') || '' : ''; } catch { return ''; } }, [scorm]);
+  const name = useMemo(() => scorm?.learnerName() || '', [scorm]);
   return (
     <>
       {!scorm && <div className="pkg-note" role="status">Not connected to a learning platform. You can play, and your result stays in this browser.</div>}

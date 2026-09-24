@@ -153,11 +153,20 @@ export function scormAdapter(api, { passScore = 65 } = {}) {
   let started = false;
   const set = (k, v) => { try { api.LMSSetValue(k, String(v)); } catch { /* LMS refused */ } };
   const commit = () => { try { api.LMSCommit(''); } catch { /* ignore */ } };
+  const init = () => { if (!started) { try { api.LMSInitialize(''); } catch { /* ignore */ } started = true; } };
+  // SCORM 1.2 gives the name as "Last, First".
+  const learnerName = () => {
+    init();
+    const raw = (() => { try { return String(api.LMSGetValue('cmi.core.student_name') || ''); } catch { return ''; } })();
+    const [last, first] = raw.split(',').map((x) => x.trim());
+    return first ? `${first} ${last}` : raw.trim();
+  };
   return {
     connected: true,
+    learnerName,
     start(identity) {
-      if (!started) { try { api.LMSInitialize(''); } catch { /* ignore */ } started = true; }
-      const name = (() => { try { return api.LMSGetValue('cmi.core.student_name'); } catch { return ''; } })();
+      init();
+      const name = learnerName();
       set('cmi.core.lesson_status', 'incomplete');
       commit();
       return name || identity?.name;

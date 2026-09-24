@@ -46,13 +46,17 @@ GenieKreator
 Experience > Simulations
 ├── Template gallery (iLead + storylines, planned templates)
 ├── Your simulations (status, health, version)
-├── Create with Genie (Your brief → Context → Story → People and events → Learning design → Review)
-└── Studio (per simulation)
-    ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
-    ├── Build: Story and context (Your organization · Context fields · Rewrite list · letters · tour) · Funnel and target · Team · Leadership model · Actions · Events · Report
-    ├── Ship:  Settings and delivery (length, difficulty, channels, languages, definition file)
-    └── Test:  Balance check · Play as learner
-    Always available: Health check · Publish (versions, restore)
+├── Create (Describe it → Check the basics, incl. interaction mix → Review the draft, incl. Decisions)
+├── Studio (per simulation)
+│   ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
+│   ├── Build: Story and context · Funnel and target · Team · Leadership model · Actions · Events ·
+│   │          Decision moments (moments, mix, scoring and KPIs, learning design) · Report
+│   ├── Ship:  Settings and delivery (length, difficulty, play modes, pass mark, leaderboard, LTI 1.3,
+│   │          SCORM 1.2, languages, definition file) · Learners and results (group report, cohorts,
+│   │          learners, leaderboard, LMS scores)
+│   └── Test:  Balance check (bots + synthetic learners) · Play as learner
+│   Always available: Health check (with suggested fixes) · Publish (go-live checklist, versions, restore)
+└── Learner experience (#/play/<simulation>): welcome → weekly plan → workspace → Friday wrap-up → debrief
 ```
 
 ## 5. Key workflows
@@ -91,7 +95,7 @@ Health check lists "Missing copy: Style insight, Low use / High accuracy" for al
 
 ### 5.4 Ship a new language
 
-Settings → Languages → Add. Every string is keyed, so a language is a translation layer with a coverage count, not a new deployment. (Production: Genie drafts, a reviewer approves.)
+Settings → Languages → Add a language. Every learner-facing text is keyed, so a language is a translation layer with a coverage count, not a new deployment. Genie translates in batches of 30 (keeping every {{token}}), or the author exports a CSV for translators and imports it back. Each translation records the English it came from, so when the English changes it is flagged as out of date; reviewed and draft translations are counted separately. Learners pick the language on the welcome screen; anything not translated shows in English. The learner screens' own buttons and labels stay in English in this version.
 
 ## 6. How complexity is hidden
 
@@ -145,6 +149,65 @@ Every health check issue comes with a suggested fix, so no author is left with a
 *Fix all with the suggestions* applies every suggestion as it is and repeats until nothing more can be fixed (switching actions back on can reveal their missing responses). The Publish dialog offers *Fix them with the suggestions* for blocking issues. Every fix goes through the Studio's undo. Informational items are collapsed by default.
 
 Coverage: all 37 checks have a suggestion (empty or duplicate names and text, empty stages, conversion rates, style mapping, targets and deal value, team size and style mix, hiring pool, option styles, waits and durations, missing responses, firing cost, wrong styles that help, events and triggers outside the calendar, legacy placeholders, unknown fields, old-industry wording, migration assumptions). Tests apply the suggestions to 30 broken simulations and require a clean health check afterwards.
+
+## 6d. Decision moments and open responses
+
+Decision moments are the situations a learner meets inside the quarter. Each has a channel (email, chat, meeting, call, business update), a sender, a person it is about (whose live skill and morale decide which style fits), a week and day, a difficulty level (intro, core, stretch), a key concept, a situation with optional variants, and one of five interaction types:
+
+| Type | Scored on |
+|---|---|
+| Single choice | The option's quality, or for style options the fit with the person's skill and morale at that moment |
+| Multiple select | Precision and recall against the options marked right |
+| Ranking | Distance from the right order |
+| Scenario decision | The option's quality; each option has its own reaction and consequences |
+| Open response | Weighted criteria (relevance, reasoning, application of concepts, completeness, judgment, decision quality) and key ideas |
+
+Every answer lands in a band (strong 70+, mixed 40 to 69, weak) with a stakeholder reaction, a coach's note and consequences: skill, morale and performance for the person, a second person or the whole team; business KPIs (team trust and CEO confidence by default, author-defined); "remember as" flags; and later consequences that arrive weeks after the decision. Later moments can require a flag, the band of an earlier moment or a KPI threshold; alternative moments share a slot so only one appears; variants rewrite a situation based on what happened before. Moments expire at the end of their week with a "no response" outcome unless the author turns that off.
+
+**Interaction mix.** Default 70:30 structured to open, counted per slot. The author sets the target in the creation flow or the Studio; Rebalance converts the moments that suit it best (richer, higher level first) and keeps their content; moments can be locked to their type.
+
+**Open-response evaluation.** Genie reads each answer against the criteria, key ideas and a strong answer, with a 15-second timeout; the built-in evaluator scores instantly and offline (and inside SCORM packages). Authors can choose built-in only for consistency. Authors edit criteria and weights, draft key ideas from the strong answer, ask Genie to write criteria for the situation, and try any answer in the editor to see its score and feedback. Very short answers are capped at a weak score.
+
+Ten health checks cover moments (outside the calendar, no situation, no question, too few options, multiple select with nothing right, no key ideas, missing coaching notes, broken conditions, people no longer on the team, mix far from the target, scoring weighted zero, reflections after the last week), each with a suggested fix.
+
+## 6e. The learner experience
+
+Publishing turns the definition into a workspace, not a quiz. The learner steps into the role on a welcome screen (name, leaderboard nickname, cohort code, group play, language), then runs the quarter week by week:
+
+- **Monday plan**: choose an approach for each person, with their profile and recent signals.
+- **Workspace**: an inbox of emails, chats, meeting invites and business updates; the conversation or meeting in front of them; their team with performance, mood and trend. Moments arrive as they would at work: a typing indicator in chat, a meeting room with the people present, a dashboard snapshot for business updates. Actions (one-to-ones, training, role changes, hiring) take days from the week.
+- **In the moment**: the learner replies inside the thread. The sender reacts, the numbers move (effect chips), and a short coach's note explains why, collapsed when the answer landed well. Open answers show criterion bars and which key ideas were covered. "Rethink" lets the learner undo a decision that did not land (two per run by default) and try again; retries show in the debrief.
+- **Friday wrap-up**: what happened, who moved, progress against pace, a spaced recall question and, in chosen weeks, a private reflection.
+- **Continuity**: earlier decisions change later situations, which moments appear, the options on offer and the consequences that land weeks later.
+
+Author preview is the same player with x-ray (true skill and morale, best options, model answers) and no result saved.
+
+## 6f. Knowledge retention
+
+| Principle | Where it lives |
+|---|---|
+| Active recall, spaced | One question per Friday on a concept met earlier, favouring the longest ago and those answered wrongly |
+| Contextual application | Every moment is about a real person in the run, whose needs change with their skill and morale |
+| Progressive difficulty | Intro, core and stretch levels; hints only on intro open responses |
+| Immediate and delayed consequences | Effect chips at once; later consequences in the inbox weeks after |
+| Contextual feedback | A two-line coach's note per answer, not a lecture; criterion notes for written answers |
+| Failure and retry | Rethink, with a limited number per run |
+| Reflection | Private prompts at chosen weeks, shown back in the debrief |
+| Reinforcement of critical concepts | Concept scores drive recall choice and the "to reinforce" list in the debrief |
+| Transfer | "Back at work" prompts and recommended next learning in the 4E products |
+
+## 6g. Debrief and game elements
+
+The debrief tells the story of the quarter: a headline, the overall score and tier (Gold 80+, Silver 65+, Bronze 50+), how the score is made (business results, leadership of the team, decision quality, recall; weights set by the author), conversions against pace and target, KPIs start to end, key decisions with what happened, reasoning quality from open responses with the best answer quoted, strengths and growth areas, style use, concepts to reinforce with a recall check, back-at-work prompts, recommended next learning (for example AI Koach for coaching practice, AI RolePlay for difficult conversations), achievements, a benchmark against the synthetic cohort from the balance check and, when on, a leaderboard shown after the learner has seen their own result. Experience points reward decisions weighted by difficulty; achievements reward good habits (reading the room, recovering after a rethink, recall streaks, nobody leaving), never speed or guessing.
+
+## 6h. Delivery and results
+
+- **Play modes**: individual, and group play (a group of 2 to 5 by default plays one run and agrees each open reply).
+- **Cohorts**: a name, a code learners enter, opening and closing dates and a facilitator; changes apply straight away without publishing. Reports and leaderboards filter by cohort.
+- **LTI 1.3**: tool configuration JSON (OIDC login, launch, keyset, scopes for grades and roster, Canvas placements) to copy or download; platform registrations with validation and presets for Moodle, Canvas and Blackboard; a test launch that plays the published version as an LMS learner and prepares the Assignment and Grade Services score message, visible under LMS scores. Signed launches are verified by the GenieKreator LTI service.
+- **SCORM 1.2**: a zip built in the browser (manifest with mastery score, a self-contained player with the simulation baked in, the definition file), checked by reading it back. Inside the LMS it reads the learner's name, reports location, score and passed or failed.
+- **Learners and results**: group report (score spread with pass line, pass rate, reasoning criteria, concepts to reinforce lowest first, every decision with its band split and most common choice, groups), cohorts, a learners table with CSV export and delete, the leaderboard and LMS score messages. Practice learners can be added to preview the report and removed together. Results are shared through the page's shared data when hosted on claude.ai, otherwise kept in the browser; reflections never leave the learner's browser.
+- **Publish** is a go-live checklist (health with one-click fixes, balance, mix, translation coverage, delivery summary), a version note, then a success screen: open the learner experience, copy the learner link, set up a cohort, download the SCORM package, LTI settings. Version history with restore.
 
 ## 6b. Help in context
 
@@ -213,11 +276,15 @@ Four bots each play N full, seeded runs of the exact definition:
 
 Verdicts: *too hard* (adaptive < 110% of target), *too easy* (> 170%), *does not reward adapting* (weaker bots within 80% of the adaptive one). Each comes with a one-click fix. The suggested target puts the adaptive bot at about 130%, because learners have to infer what the bot can see.
 
-Legacy defaults (12 weeks, target 45): adaptive 137%, one-style 44%, guessing 31%, hands-off 18%. About 80 runs take roughly one second in the browser.
+Legacy defaults (12 weeks, target 45): adaptive 140%, one-style 44%, guessing 27%, hands-off 18%.
+
+**Synthetic learners.** After the bots, 30 to 120 practice learners play the simulation, answering every decision moment. Each makes the adaptive choice with a probability (their skill) drawn from an S-shaped spread around a typical first-time manager, and a weak or partial answer otherwise. The check reports their overall score spread with the pass mark, pass rate, share reaching the target, and the average score of each decision moment (hardest first), with findings when the pass rate is above 85% or below 30% or a moment averages below 40. These scores are stored with the balance result and become the benchmark learners see in their debrief.
+
+Charts: conversions week by week for each bot against the target, every run as a share of the target (one dot per run), the synthetic score histogram and per-moment difficulty bars, with the tables kept. 80 bot runs and 60 learners take about three seconds in the browser.
 
 ## 11. Data model
 
-One JSON **Simulation Definition** (`schema: 1`) per simulation: `meta`, `context` (entities, industry, situation words), `story`, `timeline`, `leadership`, `stages`, `funnel`, `team`, `actors`, `actions`, `events`, `triggers`, `randomness`, `report`, `delivery`. A **record** wraps it with status, versions (immutable snapshots with notes) and the last balance result. The runtime plays a definition; a run state is a separate serializable object with a seeded RNG, so any run can be replayed exactly.
+One JSON **Simulation Definition** (`schema: 1`) per simulation: `meta`, `context` (entities, industry, situation words), `story`, `timeline`, `leadership`, `stages`, `funnel`, `team`, `actors`, `actions`, `events`, `triggers`, `randomness`, `report`, `delivery`. Since decision moments: `decisions` (mix, evaluator, KPIs, concepts, points), `learning` (recall, reflection, rewinds, hints, reflections, transfer prompts), `scoring` (weights), `gamification` and `translations` (per language, per text key: text, source English, status). `delivery` holds play modes, pass mark, leaderboard, cohorts, LTI platforms, SCORM and languages. Older definitions are migrated on load. A **record** wraps it with status, versions (immutable snapshots with notes) and the last balance result. The runtime plays a definition; a run state is a separate serializable object with a seeded RNG, so any run can be replayed exactly.
 
 ## 12. Generalizing beyond iLead
 
@@ -227,10 +294,11 @@ The Studio shell (gallery, wizard, sections, health, balance, preview, publish) 
 
 - Backend persistence, roles and review workflow (prototype uses browser storage). Requirements from the QA pass: sign-in; separation between client organizations (tenant isolation); per-simulation saves with version checks instead of one list; an audit log of edits, publishes and Genie calls; retention rules for drafts, briefs and versions; the brief visible to its author and editors only; an AI data notice and an organization-level switch to turn Genie off.
 - Supported browsers: current Chrome, Edge, Firefox and Safari (desktop), Safari on iOS 16 or newer and Chrome on Android. The prototype was tested in Chromium only; Firefox and WebKit runs need a device lab before a pilot.
-- "Translate with Genie" (rewriting with Genie works in the hosted version; translation is not built).
+- Translation of the learner screens' own labels and buttons (authored content is translatable today).
 - More industry and country packs, owned by content teams (the pack format is plain data in `src/templates/ilead/context-packs.js`).
-- Group report, leaderboard and cohort data (settings exist and are labelled *Planned*; no runtime yet).
-- LTI and SCORM packaging.
+- The LTI service that verifies signed launches (OIDC and JWT) and posts scores to gradebooks; the Studio prepares its configuration, registrations and score messages.
+- Server-side results store with per-organization access control; the prototype uses the page's shared data when hosted, otherwise the browser.
+- The other 4E product lines (Evaluate, Educate, Enable and AI RolePlay) are separate products; the debrief links to them as next learning.
 - Migration of the other five legacy storylines (the script in `scripts/extract_ilead.py` handles one workbook; each storyline needs its workbook).
 - GenieTracker integration of competency scores via the ontology codes.
 

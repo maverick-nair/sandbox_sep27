@@ -319,3 +319,12 @@
 .lx-back:hover { color: var(--ink); }
 .lx-back:disabled { opacity: .5; cursor: default; }
 .lx-next { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+@media (max-width: 560px) {
+  .lx-header { row-gap: 6px; }
+  .lx-kpis { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 14px; order: 3; }
+  .lx-kpis::-webkit-scrollbar { display: none; }
+  .lx-kpi { flex: none; }
+  .lx-kpi-label { font-size: 9.5px; }
+  .lx-head-actions .btn { padding: 4px 8px; font-size: 12px; }
+  .lx-when { order: 2; }
+}

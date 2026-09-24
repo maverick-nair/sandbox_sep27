@@ -10,7 +10,9 @@ const css = assets.filter((f) => f.endsWith('.css'));
 if (js.length !== 1) throw new Error(`Expected one JS chunk, found ${js.length}`);
 const script = readFileSync(join(dist, 'assets', js[0]), 'utf8').replace(/<\/script/gi, '<\\/script');
 const style = css.map((f) => readFileSync(join(dist, 'assets', f), 'utf8')).join('\n');
-const html = `<title>GenieKreator Sim Studio</title>
+const html = `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GenieKreator Sim Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">

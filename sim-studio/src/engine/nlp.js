@@ -35,7 +35,7 @@ const SPECIFIC = /\b(\d+|monday|tuesday|wednesday|thursday|friday|tomorrow|today
 
 const has = (text, term) => text.includes(term.toLowerCase());
 const countAny = (text, list) => list.reduce((n, t) => n + (has(text, t) ? 1 : 0), 0);
-const words = (text) => (text.toLowerCase().match(/[a-zÀ-ɏ']+/g) || []);
+const words = (text) => (text.toLowerCase().match(/[a-z\u00C0-\u024F']+/g) || []);
 const clamp100 = (v) => Math.max(0, Math.min(100, Math.round(v)));
 
 export function criteriaFor(dp) {
