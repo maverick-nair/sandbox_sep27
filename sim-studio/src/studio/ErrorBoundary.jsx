@@ -21,7 +21,10 @@ export default class ErrorBoundary extends Component {
   render() {
     const { error, saved } = this.state;
     if (!error) return this.props.children;
-    const backup = () => this.setState({ saved: downloadText(`sim-studio-backup-${new Date().toISOString().slice(0, 10)}.json`, backupText()) ? 'A backup file was downloaded.' : 'Downloads are blocked here. Your work is still saved in this browser.' });
+    const backup = async () => {
+      const r = await downloadText(`sim-studio-backup-${new Date().toISOString().slice(0, 10)}.json`, backupText());
+      this.setState({ saved: r === 'saved' ? 'A backup file was saved.' : r === 'declined' ? 'The backup was not saved.' : 'Downloads are not available here. Your work is still saved in this browser.' });
+    };
     return (
       <div className="page stack" role="alert" style={{ maxWidth: 640, margin: '60px auto', '--gap': '14px' }}>
         <div className="eyebrow">Something went wrong</div>

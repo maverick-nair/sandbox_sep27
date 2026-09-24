@@ -286,7 +286,20 @@ export function clearFlowDraft() {
 export function backupText(sims) {
   return JSON.stringify({ exportedAt: new Date().toISOString(), app: 'GenieKreator Sim Studio', simulations: sims ?? read() ?? [] }, null, 2);
 }
-export function downloadText(name, text) {
+// Resolves 'saved', 'declined' or 'unavailable'. Inside the claude.ai viewer, files go through its
+// downloads capability (the viewer confirms); elsewhere, a normal browser download.
+export async function downloadText(name, text) {
+  const c = typeof window !== 'undefined' ? window.claude : undefined;
+  if (c?.use) {
+    const downloads = await c.use('downloads').catch(() => null);
+    if (!downloads) return 'unavailable';
+    try {
+      await downloads.save({ filename: name, data: text });
+      return 'saved';
+    } catch (e) {
+      return e?.code === 'declined' || e?.code === 'rate_limited' ? 'declined' : 'unavailable';
+    }
+  }
   try {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -296,8 +309,8 @@ export function downloadText(name, text) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return true;
+    return 'saved';
   } catch {
-    return false;
+    return 'unavailable';
   }
 }

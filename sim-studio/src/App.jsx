@@ -58,7 +58,7 @@ export default function App() {
           <span><strong>Not saved.</strong> {store.save.error} Your latest changes exist only in this tab until saving works again.</span>
           <span className="row nowrap">
             <Button size="sm" onClick={store.retrySave}>Try again</Button>
-            <Button size="sm" variant="primary" onClick={() => setToast(downloadText(`sim-studio-backup-${new Date().toISOString().slice(0, 10)}.json`, backupText(store.sims)) ? 'Backup downloaded' : 'Downloads are blocked here: copy the definition from Settings instead')}>Download a backup</Button>
+            <Button size="sm" variant="primary" onClick={async () => { const r = await downloadText(`sim-studio-backup-${new Date().toISOString().slice(0, 10)}.json`, backupText(store.sims)); setToast(r === 'saved' ? 'Backup saved' : r === 'declined' ? 'Backup not saved' : 'Downloads are not available here: copy the definition from Settings instead'); }}>Download a backup</Button>
           </span>
         </div>
       )}
