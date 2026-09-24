@@ -2304,7 +2304,7 @@
  "events": [
   {
    "name": "Tragic accident",
-   "text": "Tragic accident strikes passengers in a {{product}} elevator in a high-rise in New York. This does damage to the brand, making it hard for the sales team to close sales.",
+   "text": "Tragic accident strikes passengers in a {{product}} elevator in a high-rise in {{city}}. This does damage to the brand, making it hard for the sales team to close sales.",
    "week": 9,
    "day": 1,
    "impact": {
@@ -2414,7 +2414,7 @@
   },
   {
    "name": "Sales conference announcement",
-   "text": "CEO announces that this year's sales conference will happen in a local resort, as opposed to the usual exotic destinations. Sales professionals expecting to cool their heels in Hawaii this year are terribly disappointed.",
+   "text": "CEO announces that this year's sales conference will happen in a local resort, as opposed to the usual exotic destinations. Sales professionals expecting to cool their heels in {{destination}} this year are terribly disappointed.",
    "week": 8,
    "day": 1,
    "impact": {

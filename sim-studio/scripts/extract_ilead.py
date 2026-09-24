@@ -46,6 +46,8 @@ ENTITIES = [
     ('Beta Elevators', '{{rival}}'),
     ('Aaron king', '{{board_member}}'),
     ('Westernizza', '{{lunch_venue}}'),
+    ('New York', '{{city}}'),
+    ('Hawaii', '{{destination}}'),
 ]
 PLACEHOLDERS = [
     ('PLACEHOLDER_ANGRY_ACTOR_NAME', '{{top_performer}}'),

@@ -310,8 +310,25 @@ export function createIleadDefinition() {
         { key: 'product_3', label: 'Other product 2', value: 'ArmTech V60', hint: 'Portfolio mention in the welcome letter' },
         { key: 'board_member', label: 'Board member in the news', value: 'Aaron King', hint: 'Insider trading event' },
         { key: 'lunch_venue', label: 'Team lunch venue', value: 'Westernizza', hint: 'Team lunch responses' },
+        { key: 'category', label: 'What the product is', value: 'elevator', hint: 'A common noun, e.g. home loan, cloud platform' },
+        { key: 'city', label: 'Home city', value: 'New York', hint: 'Where the team works; used in events' },
+        { key: 'destination', label: 'Dream conference destination', value: 'Hawaii', hint: 'Used in the sales conference event' },
       ],
-      boundTerms: ['elevator', 'high-rise', 'microprocessor', 'Hawaii', 'tablet PC', 'New York'],
+      boundTerms: ['elevator', 'high-rise', 'microprocessor', 'tablet PC'],
+      profile: {
+        orgName: 'Innov8 Elevators',
+        industry: 'elevators',
+        customIndustry: '',
+        offeringType: 'product',
+        offeringName: 'Levo B10',
+        offeringCategory: 'elevator',
+        customerType: 'b2b',
+        country: 'US',
+        city: 'New York',
+        learnerRole: 'Sales Director',
+        depth: 'standard',
+      },
+      generated: {},
     },
     story: {
       welcome: legacy.story.welcome,
@@ -381,3 +398,16 @@ export const ILEAD_TEMPLATE = {
   ],
   create: createIleadDefinition,
 };
+
+// Brings a definition saved by an earlier Studio version up to date without touching authored content.
+export function migrateDefinition(def) {
+  const fresh = createIleadDefinition();
+  const d = def;
+  for (const e of fresh.context.entities) if (!d.context.entities.some((x) => x.key === e.key)) d.context.entities.push({ ...e });
+  if (!d.context.profile) {
+    const val = (k) => d.context.entities.find((e) => e.key === k)?.value;
+    d.context.profile = { ...fresh.context.profile, orgName: val('company'), offeringName: val('product'), learnerRole: val('learner_role') };
+  }
+  d.context.generated ||= {};
+  return d;
+}

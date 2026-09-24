@@ -47,7 +47,10 @@ function seed() {
 export function useSims() {
   const [sims, setSims] = useState(() => {
     const stored = read();
-    return Array.isArray(stored) && stored.length ? stored.filter((s) => s.def?.schema === 1) : seed();
+    if (!Array.isArray(stored) || !stored.length) return seed();
+    return stored
+      .filter((s) => s.def?.schema === 1 && TEMPLATES[s.def.meta?.templateId])
+      .map((s) => ({ ...s, def: TEMPLATES[s.def.meta.templateId].migrate(s.def) }));
   });
   const timer = useRef(null);
   useEffect(() => {

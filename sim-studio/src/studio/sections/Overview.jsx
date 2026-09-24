@@ -4,6 +4,7 @@ import { styleMix, SESSION_LENGTHS, DIFFICULTY } from '../../engine/authoring.js
 import { healthSummary } from '../../engine/validate.js';
 import { pct } from '../../engine/balance.js';
 import { Button, Pill, TextInput, StylePill } from '../ui.jsx';
+import { profileSummary } from '../Tailoring.jsx';
 
 const LOOP = [
   ['Monday', 'Set a leadership style for each team member. Right reads build skill and morale; wrong ones cost them.'],
@@ -31,8 +32,8 @@ export default function Overview({ def, update, sim, go, issues, openPanel }) {
     {
       label: 'Context',
       state: bound.length ? 'warn' : 'good',
-      text: bound.length ? `${bound.length} situations still come from the original ${def.context.originalIndustry.toLowerCase()} storyline.` : `Set for ${company} (${def.context.industry}).`,
-      action: () => go('story', { field: bound.length ? 'rewrite' : 'context' }),
+      text: `${profileSummary(def.context.profile)}.${bound.length ? ` ${bound.length} situations still come from the original ${def.context.originalIndustry.toLowerCase()} storyline.` : ''}`,
+      action: () => go('story', { field: bound.length ? 'rewrite' : 'profile' }),
       actionLabel: bound.length ? 'Rewrite' : 'Edit',
     },
     {

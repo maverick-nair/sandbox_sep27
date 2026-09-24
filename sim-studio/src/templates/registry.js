@@ -1,8 +1,10 @@
 // Templates available under Experience > Simulations. Each template is an engine (mechanics)
 // plus one or more storylines (content). New legacy simulations join this list as they migrate.
-import { ILEAD_TEMPLATE } from './ilead/index.js';
+import { ILEAD_TEMPLATE, migrateDefinition } from './ilead/index.js';
+import * as ileadContext from './ilead/contextualize.js';
+import * as ileadPacks from './ilead/context-packs.js';
 
-export const TEMPLATES = { ilead: ILEAD_TEMPLATE };
+export const TEMPLATES = { ilead: { ...ILEAD_TEMPLATE, contextualize: ileadContext, packs: ileadPacks, migrate: migrateDefinition } };
 
 // From the KNOLSKAPE storyline catalogue: simulations queued to become templates.
 export const PLANNED_TEMPLATES = [

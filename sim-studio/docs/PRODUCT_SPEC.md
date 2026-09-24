@@ -46,10 +46,10 @@ GenieKreator
 Experience > Simulations
 ├── Template gallery (iLead + storylines, planned templates)
 ├── Your simulations (status, health, version)
-├── Quick start wizard (4 steps)
+├── Quick start wizard (Purpose → Your organization → Tailor → Review)
 └── Studio (per simulation)
     ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
-    ├── Build: Story and context · Funnel and target · Team · Leadership model · Actions · Events · Report
+    ├── Build: Story and context (Your organization · Context fields · Rewrite list · letters · tour) · Funnel and target · Team · Leadership model · Actions · Events · Report
     ├── Ship:  Settings and delivery (length, difficulty, channels, languages, definition file)
     └── Test:  Balance check · Play as learner
     Always available: Health check · Publish (versions, restore)
@@ -57,15 +57,14 @@ Experience > Simulations
 
 ## 5. Key workflows
 
-### 5.1 Re-skin iLead for a client (target: under 15 minutes)
+### 5.1 Tailor iLead to a client (target: under 15 minutes)
 
 1. **Use this template** → Quick start.
 2. **Purpose:** name, audience, session length (45, 60 or 90 minutes), difficulty.
-3. **Context:** pick an industry sample or type names. The welcome letter previews live.
-4. **Funnel:** keep the legacy stages or apply a preset (Inside sales, Key accounts).
-5. **Review** → Create draft. If the industry changed, the Studio opens on the **rewrite list**: the items whose situations only make sense in the original world (an elevator accident, a microprocessor feature). Names are already done.
-6. Run the **balance check**, apply the suggested target if offered.
-7. **Publish** with a change note.
+3. **Your organization** (layer 1): industry, organization name, what the team sells (product or service), who buys it (businesses or consumers), the product or service name and what it is, country and city, the learner's role. Changing industry, offering or country pre-fills the fields that follow from it, but never overwrites a name someone typed. The welcome letter previews live.
+4. **Tailor** (layer 2): pick a depth, then review every proposed change grouped by area, each with its reason ("because Banking", "because Mumbai, India", "because a service sold to businesses"). Untick or edit anything.
+5. **Review** → Create draft. Anything still tied to the original storyline opens in the rewrite list, where Genie can rewrite it.
+6. Run the **balance check**, then **Publish** with a change note.
 
 ### 5.2 Design a harder variant for senior leaders
 
@@ -92,6 +91,31 @@ Settings → Languages → Add. Every string is keyed, so a language is a transl
 | Period and sub-period | Week and day on a drag-and-drop timeline | Same |
 | PLACEHOLDER_ACTOR_NAME, male and female copies | Field chips (`{{actor}}`, `{{company}}`), one string, pronouns from the person's profile (he, she or they) | Token renderer |
 | Conversion formula | Visual funnel with pass-on rates, and "if nobody improves, the team converts about 21 (48% of target)" | `output = input × ratio × (avg performance + buffer) / 100` |
+
+## 6a. Hyper-contextualization
+
+Two layers, so authors describe their world once and the tool does the rewriting.
+
+**Layer 1: the organization profile.** Industry · organization · product or service · businesses or consumers · offering name and category · country and city · learner's role. Stored with the simulation (`context.profile`) and editable at any time under Story and context → Your organization.
+
+**Layer 2: proposals derived from the profile.** Each proposal names what changes, shows before and after, and says why.
+
+| Driver | What it changes |
+|---|---|
+| Industry | Industry label, competitor and rival names, portfolio products, welcome letter vision, product brief, industry versions of the crisis, new-feature, supply, criticism and regulation events, deal value |
+| Product or service, businesses or consumers | Sales stage names and descriptions (four stage sets, plus industry overrides such as Pharma's territory to prescription path and Banking's eligibility, KYC and disbursal), welcome letter wording, learner role, deal value, team members' domain skills and profiles |
+| Location | Currency and local deal value, home city in events, conference destination, letter signatory, board member, lunch venue, and at Deep depth local names for every team member (pronouns kept) and local institutions in their profiles |
+
+**Depth** keeps the choice simple: *Light* (names, roles, city, money), *Standard* (plus stages, story, events, profiles), *Deep* (plus local people).
+
+**Coverage today:** 8 industry packs (Elevators, Banking and financial services, Insurance, Healthcare and medical devices, Pharmaceuticals, IT services and software, Manufacturing, Telecom) × 8 countries (United States, India, UAE, United Kingdom, Singapore, Germany, Australia, Japan). "Other" industries get generic, industry-neutral texts and a prompt to use Genie. A test sweeps every industry and country combination at Standard depth: none leaves a trace of the elevator storyline or introduces a validation error.
+
+**Safety rails**
+- Only words change. Timing, impacts and pass-on rates are untouched, so the balance check result is identical (covered by a test).
+- **Hand edits are protected.** Every generated value is recorded. On re-tailoring, a field the author has since changed is marked "You changed this" and starts unticked.
+- Re-tailoring proposes only what differs, so moving from Mumbai to Dubai shows 45 location changes, not 100.
+
+**Genie (hosted AI) for what packs cannot cover.** Inside GenieKreator on claude.ai, *Go further with Genie* rewrites a chosen scope (items still tied to the original storyline, story and events, team profiles, or action responses) for the profile plus the author's notes. Genie must keep every field token; answers that drop or invent tokens are flagged. Every Genie change goes through the same review before it applies. Outside the hosted version the panel explains that it is unavailable and the rewrite list remains.
 
 ## 7. The iLead model, as implemented
 
@@ -166,7 +190,8 @@ The Studio shell (gallery, wizard, sections, health, balance, preview, publish) 
 ## 13. Out of scope for the prototype, needed for production
 
 - Backend persistence, roles and review workflow (prototype uses browser storage).
-- "Rewrite with Genie" and "Translate with Genie" (the prototype lists items and lets authors edit).
+- "Translate with Genie" (rewriting with Genie works in the hosted version; translation is not built).
+- More industry and country packs, owned by content teams (the pack format is plain data in `src/templates/ilead/context-packs.js`).
 - Group report, leaderboard and cohort data (settings exist; no runtime yet).
 - LTI and SCORM packaging.
 - Migration of the other five legacy storylines (the script in `scripts/extract_ilead.py` handles one workbook; each storyline needs its workbook).

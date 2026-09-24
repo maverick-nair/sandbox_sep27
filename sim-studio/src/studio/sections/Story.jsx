@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collectTexts, contextBoundItems } from '../../engine/text.js';
 import { setTextAt } from '../../engine/authoring.js';
+import { TEMPLATES } from '../../templates/registry.js';
+import { AREAS } from '../../templates/ilead/contextualize.js';
 import { Button, Callout, Pill, SectionHead, TextInput, TokenArea, TokenText } from '../ui.jsx';
+import { ProfileForm, DepthPicker, ProposalReview, GeniePanel, chosen, defaultExcluded, profileSummary } from '../Tailoring.jsx';
 
-export default function Story({ def, update, focus }) {
+export default function Story({ def, update, focus, notify }) {
   const industryChanged = def.context.industry.toLowerCase() !== def.context.originalIndustry.toLowerCase();
   const bound = contextBoundItems(def);
-  const [tab, setTab] = useState(focus?.field === 'rewrite' || (industryChanged && bound.length) ? 'rewrite' : 'context');
+  const [tab, setTab] = useState(focus?.field === 'rewrite' || (industryChanged && bound.length) ? 'rewrite' : focus?.field === 'context' ? 'context' : 'profile');
   const tabs = [
+    ['profile', 'Your organization'],
     ['context', 'Context fields'],
     ['rewrite', `Rewrite list${industryChanged && bound.length ? ` (${bound.length})` : ''}`],
     ['letters', 'Welcome and target'],
@@ -17,15 +21,21 @@ export default function Story({ def, update, focus }) {
   return (
     <div>
       <SectionHead eyebrow="Build" title="Story and context">
-        Write names once as context fields; every letter, event and message picks them up. Situations tied to the original industry are collected in the rewrite list.
+        Describe your organization and the simulation is tailored to it: names, money, stages, story, events and people. Fine-tune any name in Context fields; anything still tied to the original storyline is in the rewrite list.
       </SectionHead>
       <div className="tabs" role="tablist">
         {tabs.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
+      {tab === 'profile' && <OrgProfile def={def} update={update} notify={notify} />}
       {tab === 'context' && <ContextFields def={def} update={update} />}
-      {tab === 'rewrite' && <RewriteList def={def} update={update} bound={bound} industryChanged={industryChanged} />}
+      {tab === 'rewrite' && (
+        <div className="stack" style={{ '--gap': '18px' }}>
+          <RewriteList def={def} update={update} bound={bound} industryChanged={industryChanged} />
+          {industryChanged && bound.length > 0 && <GeniePanel def={def} profile={def.context.profile} onApply={(props) => { update((d) => TEMPLATES[d.meta.templateId].contextualize.applyProposals(d, props)); notify?.(`${props.length} changes applied`); }} />}
+        </div>
+      )}
       {tab === 'letters' && (
         <div className="stack" style={{ '--gap': '18px', maxWidth: 820 }}>
           <TokenArea def={def} label="Welcome letter" rows={9} value={def.story.welcome} onChange={(v) => update((d) => { d.story.welcome = v; })} hint="The first thing learners read. Signed by the letter signatory." />
@@ -149,6 +159,71 @@ function Tour({ def, update }) {
         </div>
       ))}
       <div><Button onClick={() => update((d) => { d.story.walkthrough.push({ title: 'New step', text: '' }); })}>Add step</Button></div>
+    </div>
+  );
+}
+
+// Layer 1 (the profile) and layer 2 (what it changes), editable at any time after creation.
+function OrgProfile({ def, update, notify }) {
+  const ctx = TEMPLATES[def.meta.templateId].contextualize;
+  const [profile, setProfile] = useState(() => ({ ...def.context.profile }));
+  const proposals = useMemo(() => ctx.proposeContext(def, profile), [ctx, def, profile]);
+  const [excluded, setExcluded] = useState(() => defaultExcluded(proposals));
+  const [edits, setEdits] = useState({});
+  useEffect(() => {
+    // New proposals start ticked unless they would overwrite the author's own edits.
+    setExcluded((prev) => {
+      const ids = new Set(proposals.map((p) => p.id));
+      const next = new Set([...prev].filter((id) => ids.has(id)));
+      for (const p of proposals) if (p.status !== 'new' && !prev.has(p.id)) next.add(p.id);
+      return next;
+    });
+  }, [proposals]);
+  const picked = chosen(proposals, excluded, edits);
+  const profileChanged = JSON.stringify(profile) !== JSON.stringify(def.context.profile);
+  const counts = proposals.reduce((m, p) => ((m[p.area] = (m[p.area] || 0) + 1), m), {});
+  const apply = () => {
+    update((d) => ctx.applyProposals(d, picked, profile));
+    setEdits({});
+    notify?.(picked.length ? `${picked.length} changes applied` : 'Profile saved');
+  };
+
+  return (
+    <div className="stack" style={{ '--gap': '18px' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start', gap: 20 }}>
+        <div className="card stack">
+          <h3>Organization profile</h3>
+          <ProfileForm profile={profile} onChange={(p) => { setProfile(p); setEdits({}); }} />
+        </div>
+        <div className="stack" style={{ position: 'sticky', top: 16 }}>
+          <div className="card stack">
+            <span className="eyebrow">Tailored for</span>
+            <strong>{profileSummary(profile)}</strong>
+            <span className="label small" style={{ fontWeight: 600 }}>How deep</span>
+            <DepthPicker compact value={profile.depth} onChange={(d) => setProfile({ ...profile, depth: d })} />
+            {proposals.length ? (
+              <div className="stack" style={{ '--gap': '4px' }}>
+                {Object.entries(counts).map(([a, n]) => <div key={a} className="row spread small"><span>{AREAS[a].label}</span><span className="num">{n}</span></div>)}
+              </div>
+            ) : <p className="small muted">The simulation already matches this profile.</p>}
+            <div className="row">
+              <Button variant="primary" disabled={!picked.length && !profileChanged} onClick={apply}>{picked.length ? `Apply ${picked.length} change${picked.length === 1 ? '' : 's'}` : 'Save profile'}</Button>
+              {profileChanged && <Button variant="ghost" onClick={() => setProfile({ ...def.context.profile })}>Reset</Button>}
+            </div>
+            <p className="small muted">Changes you made by hand since the last tailoring are marked and left unticked.</p>
+          </div>
+        </div>
+      </div>
+      {proposals.length > 0 && (
+        <section className="stack">
+          <h2>What changes</h2>
+          <ProposalReview def={def} proposals={proposals} excluded={excluded} setExcluded={setExcluded} edits={edits} setEdits={setEdits} openFirst={false} />
+        </section>
+      )}
+      {def.context.profile.industry === 'other' && (
+        <Callout tone="warn" icon="!">{def.context.profile.customIndustry || 'Your industry'} is not one of the built-in industry packs, so events, stages and the product brief use generic versions. Ask Genie to write versions specific to your industry.</Callout>
+      )}
+      <GeniePanel def={def} profile={def.context.profile} defaultScope={def.context.profile.industry === 'other' ? 'story' : 'flagged'} onApply={(props) => { update((d) => ctx.applyProposals(d, props)); notify?.(`${props.length} Genie changes applied`); }} />
     </div>
   );
 }
