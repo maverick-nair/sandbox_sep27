@@ -1,207 +1,276 @@
 <title>AI PM Launchpad</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-:root{
-  --bg:#F3F5F8;--surface:#FFFFFF;--surface-2:#E8EDF1;--ink:#111827;--text:#242424;--muted:#566070;--line:#D5DBE3;
-  --blue:#0337D8;--blue-ink:#FFFFFF;--blue-soft:#E7EDFD;--gold:#FBD300;--orange:#FF7103;
-  --good:#23753A;--good-soft:#E3F2E6;--warn:#9A5B00;--warn-soft:#FFF1D6;--bad:#B42318;--bad-soft:#FDE8E5;
-  --hero:#111827;--hero-text:#F3F5F8;--hero-muted:#ADB8C8;
+/* Deliberately dark-first "mission control" theme in KNOLSKAPE colours: ebony, gold, science blue, rainbow accents. */
+:root{color-scheme:dark;
+  --bg:#070B14;--panel:#111827;--panel-2:#182135;--panel-3:#202B44;--line:#26324D;--line-2:#34436A;
+  --text:#E4E9F2;--muted:#95A2B8;--ink:#FFFFFF;
+  --gold:#FBD300;--orange:#FF7103;--blue:#0337D8;--blue-hi:#5B86FF;--lime:#C2D02F;--red:#FF5A3C;--good:#3FCB7E;--warn:#FFB020;
   --display:Cambria,"Source Serif 4",Georgia,serif;
   --body:"Segoe UI","Noto Sans",system-ui,-apple-system,sans-serif;
-  --radius:10px;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --rainbow:linear-gradient(90deg,#FBD300,#FF7103,#0337D8,#C2D02F,#C12400);
+  --r:12px;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
-  --bg:#0B1019;--surface:#141B29;--surface-2:#1B2434;--ink:#F3F5F8;--text:#DDE3EC;--muted:#98A3B5;--line:#283247;
-  --blue:#7196FF;--blue-ink:#0B1019;--blue-soft:#18264D;--good:#62C27A;--good-soft:#15301E;--warn:#F2B34D;--warn-soft:#332611;--bad:#FF7A66;--bad-soft:#3A1914;
-  --hero:#05080F;--hero-text:#F3F5F8;--hero-muted:#9AA6B8;}}
-:root[data-theme="dark"]{color-scheme:dark;
-  --bg:#0B1019;--surface:#141B29;--surface-2:#1B2434;--ink:#F3F5F8;--text:#DDE3EC;--muted:#98A3B5;--line:#283247;
-  --blue:#7196FF;--blue-ink:#0B1019;--blue-soft:#18264D;--good:#62C27A;--good-soft:#15301E;--warn:#F2B34D;--warn-soft:#332611;--bad:#FF7A66;--bad-soft:#3A1914;
-  --hero:#05080F;--hero-text:#F3F5F8;--hero-muted:#9AA6B8;}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.55;margin:0}
+html,body{background:var(--bg)}
+body{color:var(--text);font-family:var(--body);font-size:15px;line-height:1.55;margin:0;
+  background-image:linear-gradient(rgba(91,134,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(91,134,255,.045) 1px,transparent 1px);background-size:32px 32px}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-h1,h2,h3{font-family:var(--display);color:var(--ink);font-weight:600;line-height:1.2;text-wrap:balance;margin:0}
-h1{font-size:clamp(26px,3.2vw,34px)}h2{font-size:22px}h3{font-size:17px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);color:var(--ink);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,3.4vw,38px)}h2{font-size:23px}h3{font-size:18px}
 p{margin:0}
-.num{font-variant-numeric:tabular-nums}
-.rainbow{height:4px;background:linear-gradient(90deg,#FBD300,#FF7103,#0337D8,#C2D02F,#C12400)}
-.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
-header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.topbar{display:flex;align-items:center;gap:18px;padding-block:12px;flex-wrap:wrap}
-.brand{display:flex;flex-direction:column;line-height:1.1;margin-right:auto}
-.brand small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.brand strong{font-family:var(--display);font-size:20px;color:var(--ink)}
-nav.tabs{display:flex;gap:4px}
-nav.tabs button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:600}
-nav.tabs button[aria-current="page"]{background:var(--blue-soft);color:var(--blue)}
-.me{display:flex;align-items:center;gap:12px}
-.lvl{display:grid;gap:3px;min-width:150px}
-.lvl-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
-.lvl-row b{color:var(--ink)}
-.bar{height:6px;background:var(--surface-2);border-radius:6px;overflow:hidden}
-.bar > i{display:block;height:100%;background:var(--blue);border-radius:6px;transition:width .5s}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--text);white-space:nowrap}
-.chip.blue{background:var(--blue-soft);color:var(--blue)}
-.chip.good{background:var(--good-soft);color:var(--good)}
-.chip.warn{background:var(--warn-soft);color:var(--warn)}
-.chip.bad{background:var(--bad-soft);color:var(--bad)}
-.chip.gold{background:var(--gold);color:#111827}
-main{padding-block:26px 60px}
-.notice{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--muted);margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.notice b{color:var(--ink)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
-.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.gold{color:var(--gold)}
 .muted{color:var(--muted)}
-.btn{border:1px solid var(--line);background:var(--surface);padding:10px 16px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
-.btn:hover{border-color:var(--blue)}
-.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn.ghost{border-color:transparent;background:none;color:var(--blue);padding-inline:6px}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.stack{display:grid;gap:14px}
-.grid{display:grid;gap:18px}
-/* hero */
-.hero{background:var(--hero);color:var(--hero-text);border-radius:14px;padding:26px;display:grid;gap:14px;position:relative;overflow:hidden}
-.hero h1,.hero h2{color:var(--hero-text)}
-.hero .eyebrow{color:var(--gold)}
-.hero p{color:var(--hero-muted);max-width:62ch}
-.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#FBD300,#FF7103,#0337D8,#C2D02F,#C12400)}
-.hero .btn.primary{background:var(--gold);border-color:var(--gold);color:#111827}
-.home-top{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
-.missions{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
-.mission{display:grid;gap:10px;align-content:start;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:relative}
-.mission:hover:not([aria-disabled="true"]){border-color:var(--blue)}
-.mission[aria-disabled="true"]{opacity:.62;cursor:not-allowed}
-.mission .who{display:flex;gap:10px;align-items:center}
-.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;flex-shrink:0;background:var(--gold);color:#111827}
-.avatar.lg{width:56px;height:56px;font-size:18px}
-.who small{display:block;color:var(--muted);font-size:12px}
-.who strong{color:var(--ink)}
-.mission h3{font-size:18px}
-.mission .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.skills{display:grid;gap:10px}
-.skill{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13px}
-.skill .bar{grid-column:1/-1}
-.skill b{color:var(--ink);font-weight:600}
-.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:28px 0 12px}
-/* brief */
+.wrap{max-width:1200px;margin:0 auto;padding-inline:18px}
+.rainbow{height:3px;background:var(--rainbow)}
+/* HUD */
+header.hud{background:rgba(7,11,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:10}
+.hud-row{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:var(--rainbow);display:grid;place-items:center;font-family:var(--display);font-weight:700;color:#111827}
+.brand .mark span{background:#111827;color:var(--gold);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:15px}
+.brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.brand strong{font-family:var(--display);font-size:19px;color:var(--ink);line-height:1.1}
+nav.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+nav.tabs button{background:none;border:0;padding:7px 12px;border-radius:7px;color:var(--muted);font-weight:600;font-size:14px}
+nav.tabs button[aria-current="page"]{background:var(--panel-3);color:var(--ink)}
+.stats{display:flex;align-items:center;gap:10px}
+.stat{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 6px;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink)}
+.stat svg{flex-shrink:0}
+.lvl-shield{width:26px;height:26px;display:grid;place-items:center;background:var(--gold);color:#111827;clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);font-size:12px;font-weight:700}
+.xpbar{width:90px;height:6px;border-radius:6px;background:var(--panel-3);overflow:hidden}
+.xpbar i{display:block;height:100%;background:var(--rainbow);transition:width .6s}
+main{padding-block:22px 70px}
+/* Generic */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.stack{display:grid;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.btn{border:1px solid var(--line-2);background:var(--panel-2);padding:10px 16px;border-radius:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--ink);transition:transform .08s, background .15s}
+.btn:hover{background:var(--panel-3)}
+.btn:active{transform:translateY(1px)}
+.btn.go{background:var(--gold);border-color:var(--gold);color:#111827;box-shadow:0 4px 0 #A88D00}
+.btn.go:hover{filter:brightness(1.06)}
+.btn.go:active{box-shadow:0 1px 0 #A88D00;transform:translateY(3px)}
+.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 0 #021F7A}
+.btn.blue:active{box-shadow:0 1px 0 #021F7A;transform:translateY(3px)}
+.btn.ghost{background:none;border-color:transparent;color:var(--blue-hi);padding-inline:6px}
+.btn.big{padding:13px 22px;font-size:16px}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--panel-3);color:var(--text);white-space:nowrap}
+.chip.gold{background:var(--gold);color:#111827}.chip.blue{background:rgba(91,134,255,.18);color:#AFC3FF}.chip.good{background:rgba(63,203,126,.16);color:var(--good)}.chip.warn{background:rgba(255,176,32,.16);color:var(--warn)}.chip.bad{background:rgba(255,90,60,.16);color:var(--red)}
+.notice{border:1px dashed var(--line-2);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--muted);margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.notice b{color:var(--ink)}
+.stars{display:inline-flex;gap:2px}
+.stars svg{width:16px;height:16px}
+.stars.lg svg{width:40px;height:40px}
+.star-on{fill:var(--gold)}.star-off{fill:var(--panel-3)}
+/* Home */
+.home{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.season{background:linear-gradient(135deg,#111827 0%,#152046 100%);border:1px solid var(--line);border-radius:16px;padding:20px 22px;position:relative;overflow:hidden;display:grid;gap:8px}
+.season::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--rainbow)}
+.season p{color:var(--muted);max-width:60ch}
+.path{position:relative;margin-top:14px}
+.path svg.trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.node{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:6px;width:180px;text-align:center}
+.node-btn{width:78px;height:78px;border-radius:50%;border:0;display:grid;place-items:center;position:relative;background:var(--panel-3);color:var(--muted);box-shadow:0 6px 0 #0D1322;transition:transform .1s}
+.node-btn:hover:not([aria-disabled="true"]){transform:translateY(-2px)}
+.node-btn:active:not([aria-disabled="true"]){transform:translateY(3px);box-shadow:0 2px 0 #0D1322}
+.node-btn .ini{font-family:var(--display);font-weight:700;font-size:22px}
+.node.open .node-btn{background:var(--blue);color:#fff;box-shadow:0 6px 0 #021F7A}
+.node.done .node-btn{background:var(--gold);color:#111827;box-shadow:0 6px 0 #A88D00}
+.node.boss .node-btn{width:96px;height:96px;background:linear-gradient(135deg,#FF7103,#C12400);color:#fff;box-shadow:0 6px 0 #6E1500}
+.node.boss.locked .node-btn{background:var(--panel-3);color:var(--muted);box-shadow:0 6px 0 #0D1322}
+.node.current .node-btn::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--gold);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.07)}}
+.node .t{font-family:var(--display);font-weight:600;color:var(--ink);font-size:15px;line-height:1.2}
+.node .s{font-size:12px;color:var(--muted)}
+.node .start-tag{position:absolute;top:-34px;left:50%;transform:translateX(-50%);background:var(--gold);color:#111827;font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.node .start-tag::after{content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--gold);border-bottom:0}
+.chest .node-btn{width:62px;height:62px;border-radius:14px}
+.chest.ready .node-btn{background:var(--lime);color:#111827;box-shadow:0 6px 0 #7B8414}
+.chest.opened .node-btn{background:var(--panel-2);color:var(--muted)}
+.side{display:grid;gap:16px}
+.goal{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.ring{--p:0;width:78px;height:78px;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--p)*1%),var(--panel-3) 0);display:grid;place-items:center}
+.ring > div{width:60px;height:60px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-family:var(--mono);font-weight:600;color:var(--ink);font-size:14px;text-align:center;line-height:1.1}
+.ring small{display:block;font-size:10px;color:var(--muted)}
+.league-row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:7px 8px;border-radius:8px;font-size:14px}
+.league-row.you{background:rgba(251,211,0,.12);outline:1px solid rgba(251,211,0,.4)}
+.league-row b{font-family:var(--mono);color:var(--muted)}
+.spark{background:linear-gradient(135deg,#1B2340,#111827);border:1px solid var(--line-2)}
+.spark textarea,.plain{width:100%;min-height:80px;border:1px solid var(--line-2);border-radius:10px;padding:10px;background:var(--bg);resize:vertical;color:var(--text)}
+.quote-line{border-left:3px solid var(--gold);padding-left:10px;font-family:var(--display);font-size:17px;color:var(--ink)}
+/* Brief */
 .brief{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.portrait{display:flex;gap:14px;align-items:center}
+.face{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:22px;background:var(--gold);color:#111827;flex-shrink:0;position:relative}
+.face.sm{width:44px;height:44px;border-radius:12px;font-size:16px}
+.face .mood{position:absolute;bottom:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:3px solid var(--panel);background:var(--muted)}
+.portrait strong{display:block;color:var(--ink);font-size:16px}
+.portrait small{color:var(--muted);font-size:13px}
 .list{margin:0;padding-left:18px;display:grid;gap:6px}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
-.kv dt{color:var(--muted)}.kv dd{margin:0;color:var(--ink);font-weight:600}
-.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px}
+.crit-mini{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.crit-mini:last-child{border-bottom:0}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px}
 .seg button{border:0;background:none;padding:7px 12px;border-radius:7px;font-weight:600;color:var(--muted);font-size:13px}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-/* sim */
-.sim{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
-.chat{display:flex;flex-direction:column;min-height:560px;padding:0;overflow:hidden}
-.chat-head{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--panel-3);color:var(--ink)}
+/* Sim */
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.chat{display:flex;flex-direction:column;min-height:600px;padding:0;overflow:hidden}
+.chat-head{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
 .chat-head .grow{flex:1;min-width:0}
-.msgs{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:62vh}
-.msg{max-width:78%;padding:10px 14px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere}
-.msg.persona{background:var(--surface-2);color:var(--text);border-top-left-radius:3px}
-.msg.learner{background:var(--blue);color:var(--blue-ink);align-self:flex-end;border-top-right-radius:3px}
-.msg .who-line{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
-.moment{align-self:center;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;text-align:center}
-.typing{color:var(--muted);font-size:13px;font-style:italic}
-.composer{border-top:1px solid var(--line);padding:12px;display:grid;gap:8px}
-.composer textarea{width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg)}
-.composer .row{justify-content:space-between}
-.meter{display:grid;gap:4px;font-size:13px}
-.meter .lab{display:flex;justify-content:space-between}
-.meter .lab b{color:var(--ink)}
-.meter .bar{height:8px}
-.meter.trust .bar>i{background:var(--blue)}
-.meter.clarity .bar>i{background:var(--orange)}
-.meter.risk .bar>i{background:var(--good)}
-.fact{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
-.fact.found{background:var(--good-soft);color:var(--text)}
-.coach{background:var(--blue-soft);border-radius:8px;padding:10px 12px;font-size:13px}
-.coach b{color:var(--blue)}
-/* decision */
+.pips{display:flex;gap:4px}
+.pips i{width:14px;height:6px;border-radius:3px;background:var(--panel-3)}
+.pips i.used{background:var(--blue-hi)}
+.msgs{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:60vh}
+.msg{max-width:80%;padding:11px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;animation:pop .25s ease-out}
+@keyframes pop{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+.msg.persona{background:var(--panel-3);color:var(--text);border-top-left-radius:4px}
+.msg.learner{background:var(--blue);color:#fff;align-self:flex-end;border-top-right-radius:4px}
+.msg .who-line{display:block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;opacity:.75;margin-bottom:3px}
+.voice{align-self:flex-start;max-width:86%;font-size:14px;padding:6px 0 6px 12px;border-left:3px solid var(--vc,var(--gold));color:var(--text)}
+.voice b{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--vc,var(--gold));margin-right:6px}
+.stamp{align-self:center;font-family:var(--display);font-weight:700;font-size:22px;color:var(--orange);border:3px solid var(--orange);padding:4px 14px;border-radius:8px;transform:rotate(-3deg);letter-spacing:.04em;animation:slam .35s cubic-bezier(.2,1.6,.4,1)}
+.stamp small{display:block;font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:0;text-align:center}
+@keyframes slam{from{transform:rotate(-3deg) scale(1.8);opacity:0}to{transform:rotate(-3deg) scale(1);opacity:1}}
+.found-toast{align-self:center;background:rgba(63,203,126,.14);color:var(--good);font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;font-family:var(--mono)}
+.typing{color:var(--muted);font-size:13px;display:flex;gap:4px;align-items:center}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+.composer{border-top:1px solid var(--line);padding:12px;display:grid;gap:8px;background:var(--panel-2)}
+.composer textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--line-2);border-radius:10px;padding:10px;background:var(--bg);color:var(--text)}
+.gauge{display:grid;gap:5px}
+.gauge .lab{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.gauge .lab b{font-family:var(--mono);color:var(--ink)}
+.gbar{height:10px;border-radius:6px;background:var(--panel-3);position:relative;overflow:hidden}
+.gbar i{position:absolute;inset:0 auto 0 0;border-radius:6px;transition:width .6s cubic-bezier(.2,.9,.3,1)}
+.gbar.danger{outline:2px solid var(--red);animation:throb 1s infinite}
+@keyframes throb{50%{outline-color:transparent}}
+.delta{font-family:var(--mono);font-size:12px;font-weight:600;margin-left:6px;animation:rise 1.2s ease-out}
+.delta.up{color:var(--good)}.delta.down{color:var(--red)}
+@keyframes rise{from{transform:translateY(6px);opacity:0}30%{opacity:1}to{transform:none}}
+.evidence{display:grid;gap:8px}
+.ev{border:1px solid var(--line-2);border-radius:10px;padding:10px;font-size:13px;display:grid;gap:6px;background:var(--panel-2)}
+.ev.locked{border-style:dashed;color:var(--muted);background:none}
+.ev.found{border-color:rgba(63,203,126,.5)}
+.ev .ev-top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ev .ev-top b{color:var(--ink)}
+.ev.used{opacity:.7}
+/* Decide */
 .options{display:grid;gap:10px}
-.option{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--surface);cursor:pointer}
-.option:has(input:checked){border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
-.option input{margin-top:4px;accent-color:var(--blue)}
-textarea.plain{width:100%;min-height:90px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);resize:vertical}
-input[type=range]{width:100%;accent-color:var(--blue)}
-/* results */
-.score-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
-.ring{width:128px;height:128px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) calc(var(--p)*1%),rgba(255,255,255,.12) 0)}
-.ring > div{width:102px;height:102px;border-radius:50%;background:var(--hero);display:grid;place-items:center;text-align:center}
-.ring b{font-family:var(--display);font-size:38px;color:var(--hero-text);line-height:1}
-.ring small{font-size:11px;color:var(--hero-muted)}
-.results{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
-.crit{display:grid;gap:6px;padding:14px 0;border-bottom:1px solid var(--line)}
+.option{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--line-2);border-radius:12px;padding:14px;background:var(--panel-2);cursor:pointer;transition:border-color .15s, transform .1s}
+.option:hover{transform:translateY(-1px)}
+.option:has(input:checked){border-color:var(--gold);background:rgba(251,211,0,.07)}
+.option input{margin-top:4px;accent-color:var(--gold)}
+.option .key{font-family:var(--mono);font-weight:700;color:var(--gold)}
+input[type=range]{width:100%;accent-color:var(--gold)}
+/* Result */
+.result-hero{background:linear-gradient(135deg,#111827,#1A2550);border:1px solid var(--line);border-radius:18px;padding:26px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:26px;align-items:center;position:relative;overflow:hidden}
+.result-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--rainbow)}
+.bigscore{font-family:var(--display);font-size:84px;line-height:1;color:var(--ink);font-weight:700}
+.bigscore small{font-size:20px;color:var(--muted);font-weight:500}
+.results{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
+.crit{display:grid;gap:6px;padding:14px 0;border-bottom:1px solid var(--line);animation:rise .5s ease-out both}
 .crit:last-child{border-bottom:0}
 .crit-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .crit-top b{color:var(--ink)}
-.pips{display:inline-flex;gap:3px}
-.pips i{width:18px;height:6px;border-radius:3px;background:var(--surface-2)}
-.pips i.on{background:var(--blue)}
-.quote{font-size:13px;border-left:3px solid var(--line);padding-left:10px;color:var(--muted)}
+.cpips{display:inline-flex;gap:3px}
+.cpips i{width:20px;height:7px;border-radius:3px;background:var(--panel-3)}
+.cpips i.on{background:var(--gold)}
+.quote{font-size:13px;border-left:3px solid var(--line-2);padding-left:10px;color:var(--muted)}
 .xp-list{display:grid;gap:6px;font-size:14px}
 .xp-list div{display:flex;justify-content:space-between;gap:10px}
+.xp-list b{font-family:var(--mono);color:var(--gold)}
 .xp-list .total{border-top:1px solid var(--line);padding-top:6px;font-weight:700;color:var(--ink)}
-.badge{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;background:var(--surface-2)}
-.badge .medal{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:600;background:var(--line);color:var(--muted);flex-shrink:0}
+.rewrite{display:grid;gap:8px;font-size:14px}
+.rewrite .before{background:rgba(255,90,60,.1);padding:9px 11px;border-radius:10px}
+.rewrite .after{background:rgba(63,203,126,.1);padding:9px 11px;border-radius:10px}
+.reward{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:rgba(251,211,0,.1);border:1px solid rgba(251,211,0,.35);animation:rise .6s ease-out both}
+.reward b{color:var(--ink)}
+/* Badges */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.badge{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line)}
+.medal{width:40px;height:44px;display:grid;place-items:center;font-family:var(--display);font-weight:700;background:var(--panel-3);color:var(--muted);flex-shrink:0;clip-path:polygon(50% 0,100% 20%,100% 70%,50% 100%,0 70%,0 20%)}
 .badge.on .medal{background:var(--gold);color:#111827}
 .badge small{display:block;color:var(--muted);font-size:12px}
 .badge b{color:var(--ink);font-size:14px}
-.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-.rewrite{display:grid;gap:8px;font-size:14px}
-.rewrite .before{background:var(--bad-soft);padding:8px 10px;border-radius:8px}
-.rewrite .after{background:var(--good-soft);padding:8px 10px;border-radius:8px}
-/* board */
+.badge:not(.on){opacity:.75}
+/* Board */
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end;margin-bottom:14px}
+.pod{border-radius:12px 12px 4px 4px;padding:12px 10px;text-align:center;display:grid;gap:4px;background:var(--panel-2);border:1px solid var(--line)}
+.pod .pr{font-family:var(--display);font-size:26px;font-weight:700}
+.pod.p1{min-height:150px;border-color:rgba(251,211,0,.55)}.pod.p1 .pr{color:var(--gold)}
+.pod.p2{min-height:122px}.pod.p2 .pr{color:#C9D2E2}
+.pod.p3{min-height:104px}.pod.p3 .pr{color:var(--orange)}
+.pod .nm{font-weight:600;color:var(--ink);font-size:14px;overflow-wrap:anywhere}
+.pod .vl{font-family:var(--mono);color:var(--muted);font-size:13px}
 .board-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
 td.r,th.r{text-align:right}
-tr.you td{background:var(--blue-soft)}
-.rank{font-family:var(--display);font-weight:600;color:var(--ink);font-size:16px}
-select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+td.r b{font-family:var(--mono);color:var(--ink)}
+tr.you td{background:rgba(251,211,0,.1)}
+.rank{font-family:var(--mono);font-weight:600;color:var(--ink)}
+select{border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;background:var(--panel-2);color:var(--text)}
 .board-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
-.hist{display:grid;gap:8px}
-.hist-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
-/* onboarding */
-.onb{max-width:760px;margin:0 auto;display:grid;gap:18px}
-.choice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.pick{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--surface);cursor:pointer}
-.pick:has(input:checked){border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
-.pick input{margin-top:4px;accent-color:var(--blue)}
+.pick{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line-2);border-radius:12px;padding:12px;background:var(--panel-2);cursor:pointer}
+.pick:has(input:checked){border-color:var(--gold)}
+.pick input{margin-top:4px;accent-color:var(--gold)}
 .pick b{color:var(--ink);display:block}
 .pick small{color:var(--muted);font-size:12px}
-.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.how div{display:grid;gap:4px}
-.how b{color:var(--hero-text);font-family:var(--display);font-size:17px}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20;max-width:90vw}
+/* Profile */
+.profile{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
+.hist-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.radar text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+.confirm{border:1px solid var(--red);background:rgba(255,90,60,.08);border-radius:10px;padding:12px;display:grid;gap:8px}
+/* Onboarding */
+.onb{max-width:840px;margin:0 auto;display:grid;gap:18px}
+.onb-hero{text-align:center;display:grid;gap:12px;justify-items:center;padding:26px 10px 8px}
+.onb-hero p{color:var(--muted);max-width:58ch;font-size:16px}
+.loop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.loop div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:4px}
+.loop b{font-family:var(--display);color:var(--ink);font-size:18px}
+.loop .label{color:var(--gold)}
+.squads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.crest{display:grid;justify-items:center;gap:8px;text-align:center;border:2px solid var(--line-2);border-radius:14px;padding:14px 8px;background:var(--panel-2);cursor:pointer}
+.crest:has(input:checked){border-color:var(--sq);background:color-mix(in srgb,var(--sq) 10%,var(--panel-2))}
+.crest input{position:absolute;opacity:0;pointer-events:none}
+.crest .hex{width:52px;height:58px;background:var(--sq);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font-family:var(--display);font-weight:700;color:#111827;font-size:22px}
+.crest b{color:var(--ink);font-size:14px}
+.crest small{color:var(--muted);font-size:12px}
+.crest:focus-within{outline:3px solid var(--gold);outline-offset:2px}
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--gold);color:#111827;font-weight:600;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.4)}
 .toast.show{opacity:1}
-.confirm{border:1px solid var(--bad);background:var(--bad-soft);border-radius:8px;padding:12px;display:grid;gap:8px}
-@media (max-width:900px){.home-top,.brief,.sim,.results,.board-layout{grid-template-columns:1fr}.how{grid-template-columns:1fr}.msg{max-width:90%}.msgs{max-height:none}}
-@media (max-width:560px){.lvl{min-width:110px}.topbar{gap:10px}nav.tabs button{padding:6px 8px;font-size:14px}.score-hero{grid-template-columns:1fr}.hero{padding:20px}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:25}
+@media (max-width:980px){.home,.brief,.sim,.results,.board-layout,.profile{grid-template-columns:1fr}.msgs{max-height:none}}
+@media (max-width:620px){.loop,.squads{grid-template-columns:1fr 1fr}.result-hero{grid-template-columns:1fr}.bigscore{font-size:64px}.xpbar{width:56px}.node{width:130px}.node .t{font-size:13px}.msg{max-width:92%}.stat .hide-sm{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
 
 <div class="rainbow" aria-hidden="true"></div>
-<header class="top"><div class="wrap topbar">
-  <div class="brand"><small>KNOLSKAPE Academy</small><strong>AI PM Launchpad</strong></div>
+<header class="hud"><div class="wrap hud-row">
+  <div class="brand"><span class="mark" aria-hidden="true"><span>K</span></span><div><small>KNOLSKAPE Academy</small><strong>AI PM Launchpad</strong></div></div>
   <nav class="tabs" aria-label="Main">
-    <button id="nav-home" data-action="nav" data-view="home">Missions</button>
-    <button id="nav-board" data-action="nav" data-view="board">Leaderboard</button>
-    <button id="nav-progress" data-action="nav" data-view="progress">My progress</button>
+    <button id="nav-home" data-action="nav" data-view="home">Path</button>
+    <button id="nav-board" data-action="nav" data-view="board">League</button>
+    <button id="nav-progress" data-action="nav" data-view="progress">Profile</button>
   </nav>
-  <div class="me" id="me"></div>
+  <div class="stats" id="me"></div>
 </div></header>
 <main class="wrap" id="app" aria-live="polite"></main>
+<canvas id="fx" aria-hidden="true"></canvas>
 <div class="toast" id="toast" role="status"></div>
-
 <script>
 /* ---------- Content: skills, scenarios, badges ---------- */
 const SKILLS = {
@@ -366,6 +435,89 @@ const LEVELS = [
 ];
 const SQUADS = {evaluate:"Evaluate squad",educate:"Educate squad",experience:"Experience squad",enable:"Enable squad"};
 
+
+/* ---------- New content: path, evidence labels, skill voices, daily sparks ---------- */
+BADGES.push({id:"evidence",name:"Evidence-led",how:"Present 2 uncovered facts as evidence in one mission."});
+BADGES.push({id:"threestar",name:"Three stars",how:"Earn 3 stars on any mission."});
+const FACT_SHORT = {
+  promise:{f1:"Regional languages untested",f2:"Real goal: faster RM ramp-up",f3:"Renewal is in 6 weeks"},
+  evalgate:{f1:"Human agreement only 0.62",f2:"Non-native speakers: 0.48",f3:"Eval set: 80 calls, 1 client"},
+  dataask:{f1:"No consent for AI training",f2:"Calls contain patient details",f3:"Need: 5 objections, ~50 transcripts"},
+  margin:{f1:"Top 10% make 55% of sessions",f2:"Cheap model hurts complex scenarios",f3:"60% of prompt is cacheable"},
+  agentic:{f1:"EU AI Act high-risk exposure",f2:"Opt-outs hit 34% without managers",f3:"Board wants proof of outcomes"}
+};
+const SKILL_COLOR = {discover:"#FBD300",uncertainty:"#5B86FF",evals:"#C2D02F",rai:"#FF7103",economics:"#3FCB7E",influence:"#E58CFF"};
+const PATH = [
+  {type:"mission",id:"promise"},{type:"mission",id:"evalgate"},
+  {type:"chest",id:"chest1",needs:["promise","evalgate"]},
+  {type:"mission",id:"dataask"},{type:"mission",id:"margin"},
+  {type:"chest",id:"chest2",needs:["dataask","margin"]},
+  {type:"mission",id:"agentic"}
+];
+const FIELD_NOTES = [
+  "A demo is not evidence. Ask what the model was tested on, and against whom.",
+  "When someone asks for a number you don't have, give the range and the date you'll know.",
+  "Autonomy is a dial, not a switch: suggest, draft, act with approval, act within limits.",
+  "Cost per successful task beats cost per call. Failed calls still cost money.",
+  "Ask \"what would make this a win for you?\" before you propose anything.",
+  "Consent covers a purpose. New purpose, new consent.",
+  "A pilot is a promise you can keep. Name the metric, the owner and the date."
+];
+const SPARKS = [
+  {who:"Priya, Sales Director",line:"The client asked if our AI is bias-free. Can I just say yes?",skill:"uncertainty",good:"refuses to claim bias-free, explains how bias is tested and monitored, offers evidence or a next step"},
+  {who:"Arjun, ML Lead",line:"The new model scores 4 points higher on the public benchmark. Let's switch today.",skill:"evals",good:"asks whether the benchmark reflects our users, asks for our own eval results and a staged switch"},
+  {who:"Meera, client L&D head",line:"Can the AI coach read our employees' Slack messages to personalise tips?",skill:"rai",good:"raises consent, privacy and purpose limits, proposes an opt-in or less invasive signal"},
+  {who:"Rahul, CFO",line:"Why does the AI feature cost more every month when usage is flat?",skill:"economics",good:"asks about tokens per session, prompt growth, retries or model changes, proposes a cost breakdown"},
+  {who:"Vikram, CEO",line:"Give me one sentence I can tell the board about our AI strategy.",skill:"influence",good:"one clear sentence linking AI to a measurable client outcome, not hype"},
+  {who:"A client CHRO",line:"If the AI assessment gets someone's score wrong, who is accountable?",skill:"rai",good:"names human oversight, an appeal or review process and clear ownership"},
+  {who:"Design lead",line:"Should the AI Koach show its confidence level to learners?",skill:"uncertainty",good:"weighs trust calibration, suggests plain-language cues or showing sources rather than raw percentages"},
+  {who:"Priya, Sales Director",line:"A prospect wants a live demo tomorrow of a feature we haven't built. Thoughts?",skill:"discover",good:"asks what the prospect needs to see and why, offers a prototype or honest roadmap framing"}
+];
+
+/* ---------- Game helpers ---------- */
+function starsFor(score, facts){ if(score<PASS) return 0; if(score>=90 && facts===3) return 3; if(score>=85) return 2; return 1; }
+function bestStars(sid){ return P.attempts.filter(a=>a.s===sid).reduce((m,a)=>Math.max(m, a.stars ?? starsFor(a.score,a.facts)),0); }
+function starSvg(on){ return `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="${on?"star-on":"star-off"}" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>`; }
+function starsHtml(n, lg){ return `<span class="stars ${lg?"lg":""}" role="img" aria-label="${n} of 3 stars">${[1,2,3].map(i=>starSvg(i<=n)).join("")}</span>`; }
+function practiceDays(){ return new Set([...P.attempts.map(a=>dayKey(a.at)), ...(P.sparks||[]).map(s=>s.day)]); }
+function streakInfo(){
+  const days=practiceDays(); const shields=Math.min(2, Math.floor(days.size/5));
+  let n=0, used=0, t=Date.now();
+  if(!days.has(dayKey(t))) t-=DAY;
+  for(let guard=0; guard<400; guard++){
+    if(days.has(dayKey(t))){ n++; t-=DAY; continue; }
+    if(n>0 && used<shields && days.has(dayKey(t-DAY))){ used++; t-=DAY; continue; }
+    break;
+  }
+  return {n, shields:shields-used, today:days.has(dayKey(Date.now()))};
+}
+function xpToday(){
+  const k=dayKey(Date.now());
+  return P.attempts.filter(a=>dayKey(a.at)===k).reduce((x,a)=>x+(a.xp||0),0) + (P.sparks||[]).filter(s=>s.day===k).reduce((x,s)=>x+(s.xp||0),0) + (P.xpLog||[]).filter(e=>e.day===k).reduce((x,e)=>x+e.xp,0);
+}
+const DAILY_GOAL = 50;
+function mood(t){ if(t<25) return {name:"Frustrated",c:"#FF5A3C"}; if(t<45) return {name:"Wary",c:"#FFB020"}; if(t<70) return {name:"Open",c:"#5B86FF"}; return {name:"Won over",c:"#3FCB7E"}; }
+function flame(){ return `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF7103" d="M12 2c1 4 5 5.5 5 11a5 5 0 0 1-10 0c0-2.4 1.2-4 2.6-5.3.2 1.8 1 2.9 2.2 3.3C11 8.5 11.2 5 12 2z"/><path fill="#FBD300" d="M12 12.5c.6 1.7 2.2 2.4 2.2 4.4a2.2 2.2 0 0 1-4.4 0c0-1.3.9-2.4 2.2-4.4z"/></svg>`; }
+function shieldIcon(){ return `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#5B86FF" d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg>`; }
+
+/* ---------- Celebration effects (Brilliant-style moments of delight) ---------- */
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function burst(count=90){
+  if(reduceMotion) return;
+  const c=$("fx"), ctx=c.getContext("2d"); c.width=innerWidth; c.height=innerHeight;
+  const cols=["#FBD300","#FF7103","#0337D8","#C2D02F","#C12400","#FFFFFF"];
+  const ps=Array.from({length:count},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*0.35,vx:(Math.random()-.5)*12,vy:-Math.random()*12-4,r:3+Math.random()*4,c:cols[Math.floor(Math.random()*cols.length)],a:Math.random()*6}));
+  let f=0;
+  (function tick(){ ctx.clearRect(0,0,c.width,c.height); f++;
+    for(const p of ps){ p.vy+=0.35; p.x+=p.vx; p.y+=p.vy; p.a+=0.2; ctx.fillStyle=p.c; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); ctx.restore(); }
+    if(f<110) requestAnimationFrame(tick); else ctx.clearRect(0,0,c.width,c.height); })();
+}
+function countUp(el, to){
+  if(!el) return; if(reduceMotion){ el.textContent=to; return; }
+  const t0=performance.now(), d=900;
+  (function step(t){ const k=Math.min(1,(t-t0)/d); el.textContent=Math.round(to*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(step); })(t0);
+}
+
 /* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -384,11 +536,11 @@ function makeAlias(seed){
 
 /* ---------- State and storage ---------- */
 const STORE = "ks-launchpad:v1";
-function freshProfile(){ return {v:1, onboarded:false, team:"evaluate", visibility:"alias", alias:makeAlias(Math.random()), mode:"guided", xp:0, attempts:[], badges:[], challenges:[], created:Date.now()}; }
+function freshProfile(){ return {v:2, onboarded:false, team:"evaluate", visibility:"alias", alias:makeAlias(Math.random()), mode:"guided", xp:0, attempts:[], badges:[], challenges:[], sparks:[], chests:[], xpLog:[], created:Date.now()}; }
 function loadLocal(){ try{ const raw=localStorage.getItem(STORE); if(!raw) return freshProfile(); const p=JSON.parse(raw); if(!p || !Array.isArray(p.attempts)) return freshProfile(); return {...freshProfile(), ...p}; }catch{ return freshProfile(); } }
 let P = loadLocal();
-const S = { view: P.onboarded ? "home" : "onboard", sid:null, run:null, result:null, board:{tab:"overall",period:"all",scenario:"promise",skill:"discover"}, confirmReset:false };
-const RT = { sample:null, db:null, user:null, uid:null, claudeState:"checking", boardRows:[], names:{}, unsub:null };
+const S = { view: P.onboarded ? "home" : "onboard", sid:null, run:null, result:null, board:{tab:"overall",period:"week",scenario:"promise",skill:"discover"}, confirmReset:false, spark:{draft:"",busy:false,result:null} };
+const RT = { sample:null, db:null, user:null, uid:null, claudeState:"checking", boardRows:[], names:{} };
 
 function saveProfile(){
   try{ localStorage.setItem(STORE, JSON.stringify(P)); }catch{}
@@ -417,7 +569,7 @@ function isUnlocked(s){
   if(s.unlock.passes) return passedIds(P.attempts).length >= s.unlock.passes;
   return true;
 }
-function unlockText(s){ return s.unlock?.level ? `Reach level ${s.unlock.level} (${LEVELS[s.unlock.level-1].xp} XP) to unlock` : `Pass ${s.unlock.passes} missions to unlock`; }
+function unlockText(s){ return s.unlock?.level ? `Reach level ${s.unlock.level}` : `Pass ${s.unlock.passes} missions`; }
 function skillRatings(attempts){
   const out={};
   for(const k of Object.keys(SKILLS)){
@@ -429,17 +581,10 @@ function skillRatings(attempts){
   return out;
 }
 function profLevel(r){ if(r==null) return "Not yet assessed"; if(r<1.5) return "L1 Foundation"; if(r<2.5) return "L2 Practitioner"; if(r<3.3) return "L3 Advanced"; return "L4 Expert"; }
-function streak(attempts){
-  const days=new Set(attempts.map(a=>dayKey(a.at))); let n=0; let t=Date.now();
-  if(!days.has(dayKey(t))) t-=DAY;
-  while(days.has(dayKey(t))){ n++; t-=DAY; }
-  return n;
-}
 function weeklyChallenge(){
   const pool=SCENARIOS.filter(s=>s.tier<3); const w=weekIndex(Date.now()); const s=pool[w%pool.length];
-  return {week:w, sid:s.id, target:75, text:`Score 75 or more on "${s.title}" this week`};
+  return {week:w, sid:s.id, target:75, text:`Score 75+ on ${s.title}`};
 }
-/* Leaderboard maths: best score per mission, weighted by tier, averaged; confidence ramps up to 3 missions. */
 function rating(attempts){
   const best={};
   for(const a of attempts){ const s=scen(a.s); if(!s) continue; const v=Math.min(100, a.score*TIERS[s.tier].mult); best[a.s]=Math.max(best[a.s]??0, v); }
@@ -453,10 +598,11 @@ function improvement(attempts){
   if(!deltas.length) return null;
   return Math.round(deltas.reduce((x,y)=>x+y,0)/deltas.length*10)/10;
 }
+function giveXp(amount, why){ P.xp+=amount; (P.xpLog ??= []).push({day:dayKey(Date.now()), xp:amount, why}); P.xpLog=P.xpLog.slice(-100); }
 
 /* ---------- Claude: persona turns and assessment ---------- */
 function transcriptText(run, s){
-  return run.turns.filter(t=>t.role!=="moment").map(t => (t.role==="persona" ? s.persona.name.split(" ")[0] : "PM") + ": " + t.text).join("\n");
+  return run.turns.filter(t=>t.role==="persona"||t.role==="learner").map(t => (t.role==="persona" ? s.persona.name.split(" ")[0] : "PM") + ": " + t.text).join("\n");
 }
 function personaPrompt(run, s, moment){
   return `You are role-playing ${s.persona.name}, ${s.persona.role}, in a practice simulation for KNOLSKAPE AI product managers. Every person and company here is fictional.
@@ -466,6 +612,7 @@ The learner is the AI PM. Stay in character, speak naturally, keep replies under
 Private facts. Reveal a fact ONLY when the PM's latest message clearly asks about its topic; then state it plainly in character. Never volunteer facts unprompted.
 ${s.facts.map(f=>`- ${f.id}: ${f.text} (reveal only if asked about ${f.hint})`).join("\n")}
 Already revealed: ${[...run.revealed].join(", ") || "none"}.
+When the PM cites evidence you revealed earlier to support a sound point, respect it: trust and clarity should rise.
 React realistically: warm up when the PM asks sharp questions, gives honest limits and concrete plans; push harder when they are vague; be pleased but naive if they over-promise.
 ${moment ? `In this reply, after responding, raise this new pressure in your own words: "${moment}"` : ""}
 
@@ -473,7 +620,7 @@ Conversation so far:
 ${transcriptText(run, s)}
 
 Reply with only a JSON object:
-{"reply": string, "revealed": [ids of facts revealed in this reply], "trust": integer -10 to 10 (change in your trust of the PM from their latest message), "clarity": integer -10 to 10 (did they make the way forward clearer), "risk": integer -10 to 10 (positive if they reduced risk; negative if they over-promised or accepted something unsafe), "flags": array from ["overpromise","unsafe_accept","good_question","clear_tradeoff","empathy"], "coach": string (under 20 words, a tip to the PM for their next message, not in character)}`;
+{"reply": string, "revealed": [ids of facts revealed in this reply], "trust": integer -10 to 10 (change in your trust of the PM from their latest message), "clarity": integer -10 to 10 (did they make the way forward clearer), "risk": integer -10 to 10 (positive if they reduced risk; negative if they over-promised or accepted something unsafe), "flags": array from ["overpromise","unsafe_accept","good_question","clear_tradeoff","empathy"], "voice": {"skill": one of ${JSON.stringify(Object.keys(SKILLS))}, "line": string (under 18 words: the PM's inner voice for that skill, noticing something useful for their next move, addressed as "you")}}`;
 }
 function assessPrompt(run, s, decision, rationale){
   return `You are a KNOLSKAPE Conversation AI assessor scoring an AI product manager's performance in a simulated stakeholder conversation. Be fair, specific and evidence-based. Quote the PM's own words as evidence.
@@ -492,74 +639,81 @@ Reply with only JSON:
 "rewrite":{"original":"one PM line quoted exactly","improved":"a better version of that line"},
 "next":"one sentence on what to practise next"}`;
 }
-
-/* Offline scripted engine: used when Claude is unavailable in this view. */
 const hasAny = (t, kws) => kws.some(k => t.includes(k));
 const OVER = ["guarantee","definitely","100%","98%","always","every time","no problem","sure, go","yes, go ahead","of course","absolutely","just do it","we can ship","ship it","start this week","take them all","no approvals","fully autonomous"];
 const CAREFUL = ["pilot","phase","stage","metric","measure","eval","test","consent","anonym","human","manager","approve","risk","trade-off","tradeoff","threshold","evidence","data","limit","fair","review","cache","route"];
+const VOICE_BANK = {
+  discover:["Something is behind this request. What do they really need?","You haven't asked why yet.","Who are the actual users here?"],
+  uncertainty:["Say what you know, what you don't, and when you will.","A number you can't defend is a promise you'll break.","Name the limit before they find it."],
+  evals:["How was this measured, and on whose data?","A demo is not evidence.","Ask what 'accurate' means here."],
+  rai:["Who could be harmed if this goes wrong?","Consent covers a purpose. Is this that purpose?","Where does a human stay in the loop?"],
+  economics:["What does each successful outcome actually cost?","Follow the tokens.","Which users drive the cost?"],
+  influence:["Give them something concrete they can say yes to.","Scope, metric, owner, date.","Offer a path, not just a no."]
+};
+const VOICE_LINES = Object.fromEntries(Object.entries(VOICE_BANK).map(([k,v])=>[k,v[0]]));
 function offlinePersona(run, s, text, moment){
   const t=text.toLowerCase(); const revealed=[]; const flags=[];
   for(const f of s.facts){ if(!run.revealed.has(f.id) && hasAny(t,f.kw) && t.includes("?") ) { revealed.push(f.id); break; } }
   if(!revealed.length) for(const f of s.facts){ if(!run.revealed.has(f.id) && hasAny(t,f.kw)) { revealed.push(f.id); break; } }
   const negated=/\b(cannot|can't|won't|will not|not promise|don't|do not|never)\b/.test(t);
   const over=hasAny(t,OVER)&&!negated, careful=CAREFUL.filter(k=>t.includes(k)).length, q=(t.match(/\?/g)||[]).length;
+  const cited=/evidence:/.test(t);
   if(over) flags.push("overpromise"); if(q) flags.push("good_question"); if(careful>=2) flags.push("clear_tradeoff");
   let reply;
   if(revealed.length){ const f=s.facts.find(x=>x.id===revealed[0]); reply = "Fair question. " + f.text + " Does that change what you'd recommend?"; }
   else if(over){ reply = "That's exactly what I wanted to hear. So I can go ahead and say yes to all of it?"; }
-  else if(careful>=2){ reply = "Okay, that's more concrete than I expected. What would you need from me to make that happen, and how fast?"; }
+  else if(careful>=2 || cited){ reply = "Okay, that's more concrete than I expected. What would you need from me to make that happen, and how fast?"; }
   else if(q){ reply = "I'm not sure that's the right question. What do you actually need to know before we decide?"; }
   else { reply = "I hear you, but I need something I can act on. What's your recommendation?"; }
   if(moment) reply += " " + moment;
-  return { reply, revealed, trust: over?2:(careful>=2?6:(q?3:-3)), clarity: careful>=2?7:(over?3:-2), risk: over?-8:(careful>=1?5:0), flags,
-    coach: over ? "You committed before checking the facts. Ask what is behind the request." : (revealed.length? "Good find. Use it to shape a concrete, lower-risk plan." : "Ask about the goal, the users or the evidence before proposing.") };
+  const missing=s.facts.find(f=>!run.revealed.has(f.id) && !revealed.includes(f.id));
+  const vskill = over ? "uncertainty" : missing ? "discover" : s.rubric[2].skill;
+  return { reply, revealed, trust: over?2:(careful>=2||cited?6:(q?3:-4)), clarity: careful>=2||cited?7:(over?3:-3), risk: over?-9:(careful>=1?5:0), flags,
+    voice:{skill:vskill, line: over ? "Careful. You just committed before checking the facts." : VOICE_BANK[vskill][run.learnerTurns % VOICE_BANK[vskill].length]} };
 }
 function offlineAssess(run, s, decision, rationale){
   const learner=run.turns.filter(t=>t.role==="learner").map(t=>t.text).join(" ").toLowerCase()+" "+rationale.toLowerCase();
   const q=run.turns.filter(t=>t.role==="learner" && t.text.includes("?")).length;
   const careful=CAREFUL.filter(k=>learner.includes(k)).length, over=run.flags.includes("overpromise");
   const found=run.revealed.size, dpts=decision.pts;
-  const crit=s.rubric.map((c,i)=>{
+  const crit=s.rubric.map(c=>{
     let sc;
     if(c.skill==="discover") sc = clamp(Math.round(found*1.1 + (q>=3?1:0)),0,4);
     else if(c.skill==="rai") sc = clamp((careful>=3?2:1) + (dpts>=25?1:0) + (over?-1:1),0,4);
     else if(c.skill==="uncertainty") sc = clamp((over?1:3) + (learner.includes("limit")||learner.includes("not ")?1:0) - (dpts<10?1:0),0,4);
     else if(c.skill==="evals") sc = clamp((learner.includes("eval")||learner.includes("test")||learner.includes("agreement")?2:1) + (found>=2?1:0) + (dpts>=25?1:0),0,4);
     else if(c.skill==="economics") sc = clamp((learner.includes("cost")||learner.includes("₹")||learner.includes("value")||learner.includes("outcome")?2:1) + (found>=2?1:0) + (dpts>=25?1:0),0,4);
-    else sc = clamp((dpts>=25?2:1) + (careful>=2?1:0) + (rationale.length>80?1:0),0,4);
+    else sc = clamp((dpts>=25?2:1) + (careful>=2?1:0) + (rationale.length>80?1:0) + (run.evidenceUsed.size>=1?1:0),0,4);
     return {id:c.id, score:sc, evidence:"none", feedback: sc>=3 ? "Solid evidence of this behaviour." : "Show this more explicitly in the conversation."};
   });
   return { criteria:crit, strengths:[found>=2?"You uncovered most of the hidden facts.":"You kept the conversation moving.", dpts>=25?"Your final decision balanced value and risk.":"You made a clear decision."],
     gaps:[over?"You over-promised before checking the facts.":"Ask more open questions early.", dpts<25?"Your decision left a major risk unmanaged.":"Tie your plan to a measurable outcome."],
-    rewrite:null, next: found<3 ? "Replay and aim to uncover all three hidden facts before proposing." : "Try Expert mode without coach tips.", offline:true };
+    rewrite:null, next: found<3 ? "Replay and aim to uncover all three hidden facts before proposing." : "Try Expert mode without inner voices.", offline:true };
 }
-
 async function personaTurn(run, s, text, moment){
   if(RT.sample && RT.claudeState==="on"){
     try{
       run.ctl = new AbortController();
       const j = await RT.sample.json(personaPrompt(run, s, moment), {modelTier:"quick", cache:false, signal:run.ctl.signal});
       return normTurn(j, s, run);
-    }catch(e){
-      if(e?.code==="cancelled") throw e;
-      handleClaudeError(e);
-    }
+    }catch(e){ if(e?.code==="cancelled") throw e; handleClaudeError(e); }
   }
   return offlinePersona(run, s, text, moment);
 }
 function normTurn(j, s, run){
   const ids=new Set(s.facts.map(f=>f.id));
   const n = v => clamp(Math.round(Number(v)||0), -10, 10);
+  const vs = j?.voice && SKILLS[j.voice.skill] && j.voice.line ? {skill:j.voice.skill, line:String(j.voice.line).slice(0,160)} : null;
   return { reply: String(j?.reply || "Sorry, go on.").slice(0,900),
     revealed: Array.isArray(j?.revealed) ? j.revealed.map(String).filter(x=>ids.has(x) && !run.revealed.has(x)) : [],
     trust:n(j?.trust), clarity:n(j?.clarity), risk:n(j?.risk),
-    flags: Array.isArray(j?.flags) ? j.flags.map(String).slice(0,5) : [], coach: String(j?.coach || "").slice(0,200) };
+    flags: Array.isArray(j?.flags) ? j.flags.map(String).slice(0,5) : [], voice:vs };
 }
 function handleClaudeError(e){
   const code=e?.code;
   if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(code)){ RT.claudeState="off"; toast("Claude is not available in this view. Switched to scripted practice mode."); }
-  else if(code==="rate_limited"){ toast("Claude is busy for your account right now. This turn used the scripted reply; try again in a minute."); }
-  else if(code==="session_expired"){ toast("Your session expired. Sign in again to use Claude. This turn used the scripted reply."); }
+  else if(code==="rate_limited"){ toast("Claude is busy for your account right now. This turn used a scripted reply; try again in a minute."); }
+  else if(code==="session_expired"){ toast("Your session expired. Sign in again to use Claude. This turn used a scripted reply."); }
   else { toast("Claude could not answer this turn, so a scripted reply was used."); }
   renderMe();
 }
@@ -567,27 +721,41 @@ function handleClaudeError(e){
 /* ---------- Simulation flow ---------- */
 function startRun(sid){
   const s=scen(sid);
-  S.run = { sid, mode:P.mode, turns:[{role:"persona",text:s.opening}], meters:{trust:50,clarity:40,risk:50}, revealed:new Set(), flags:[], learnerTurns:0, busy:false, coach:"Start by understanding the request. What would you ask first?", draft:"", started:Date.now(), stage:"talk", decision:null, rationale:"", predicted:65, assessing:false };
+  S.run = { sid, mode:P.mode, turns:[{role:"persona",text:s.opening}], meters:{trust:50,clarity:40,risk:50}, delta:null, revealed:new Set(), evidenceUsed:new Set(), flags:[], learnerTurns:0, busy:false, draft:"", started:Date.now(), stage:"talk", decision:null, rationale:"", predicted:65, assessing:false, walkout:false };
+  if(P.mode==="guided") S.run.turns.push({role:"voice",skill:"discover",text:VOICE_LINES.discover});
   S.view="sim"; render(); setTimeout(()=>$("composer")?.focus(),50);
+}
+function useEvidence(fid){
+  const run=S.run, s=scen(run.sid); if(!run || !run.revealed.has(fid)) return;
+  const tag=`(Evidence: ${FACT_SHORT[s.id][fid]}) `;
+  if(!run.draft.includes(tag)) run.draft = tag + run.draft;
+  run.evidenceUsed.add(fid); render(); const c=$("composer"); if(c){ c.focus(); c.setSelectionRange(c.value.length,c.value.length); }
 }
 async function sendTurn(){
   const run=S.run, s=scen(run.sid); const text=(run.draft||"").trim();
-  if(!text || run.busy || run.learnerTurns>=MAX_TURNS) return;
-  run.turns.push({role:"learner",text}); run.draft=""; run.learnerTurns++; run.busy=true; render();
+  if(!text || run.busy || run.learnerTurns>=MAX_TURNS || run.walkout) return;
+  run.turns.push({role:"learner",text}); run.draft=""; run.learnerTurns++; run.busy=true; render(); scrollChat();
   const moment=s.moments.find(m=>m.after===run.learnerTurns)?.text || null;
   let r;
   try{ r = await personaTurn(run, s, text, moment); }
   catch(e){ run.busy=false; run.turns.pop(); run.learnerTurns--; run.draft=text; render(); return; }
   if(S.run!==run) return;
-  if(moment) run.turns.push({role:"moment",text:"Pressure moment: "+s.persona.name.split(" ")[0]+" raises the stakes"});
+  if(moment) run.turns.push({role:"stamp",text:"Pressure!",sub:s.persona.name.split(" ")[0]+" raises the stakes"});
   run.turns.push({role:"persona",text:r.reply});
-  for(const id of r.revealed) run.revealed.add(id);
+  for(const id of r.revealed){ run.revealed.add(id); run.turns.push({role:"found",text:"Evidence unlocked: "+FACT_SHORT[s.id][id]}); }
+  const before={...run.meters};
   run.meters.trust=clamp(run.meters.trust+r.trust*2,0,100);
   run.meters.clarity=clamp(run.meters.clarity+r.clarity*2,0,100);
   run.meters.risk=clamp(run.meters.risk+r.risk*2,0,100);
-  run.flags.push(...r.flags); run.coach=r.coach||run.coach; run.busy=false;
-  render(); setTimeout(()=>{ const m=$("msgs"); if(m) m.scrollTop=m.scrollHeight; $("composer")?.focus(); },30);
+  run.delta={trust:run.meters.trust-before.trust, clarity:run.meters.clarity-before.clarity, risk:run.meters.risk-before.risk};
+  run.flags.push(...r.flags);
+  if(run.mode==="guided" && r.voice) run.turns.push({role:"voice",skill:r.voice.skill,text:r.voice.line});
+  run.busy=false;
+  if(run.meters.trust<=5){ run.walkout=true; run.turns.push({role:"stamp",text:"Walk-out",sub:s.persona.name.split(" ")[0]+" has ended the meeting"}); }
+  render(); scrollChat(); if(r.revealed.length) burst(40);
+  if(!run.walkout) $("composer")?.focus();
 }
+function scrollChat(){ setTimeout(()=>{ const m=$("msgs"); if(m) m.scrollTop=m.scrollHeight; },30); }
 async function submitDecision(){
   const run=S.run, s=scen(run.sid);
   const decision=s.options.find(o=>o.id===run.decision);
@@ -617,17 +785,18 @@ function normAssess(a, s){
 function finishAttempt(run, s, decision, a, note){
   const rubricPct = a.criteria.reduce((x,c)=>x+c.score,0)/(4*s.rubric.length);
   const discovery = run.revealed.size/s.facts.length;
-  const score = Math.round(rubricPct*60 + decision.pts + discovery*15);
-  const prevBest = bestFor(P.attempts, s.id);
+  let score = Math.round(rubricPct*60 + decision.pts + discovery*15);
+  if(run.walkout) score = Math.min(score, 69);
+  const stars = starsFor(score, run.revealed.size);
+  const prevBest = bestFor(P.attempts, s.id), prevStars = bestStars(s.id);
   const skillScores={}; for(const c of s.rubric){ const cs=a.criteria.find(x=>x.id===c.id).score; skillScores[c.skill]=Math.max(skillScores[c.skill]??0, cs); }
-  const attempt = {id:"a"+Date.now(), s:s.id, score, at:Date.now(), decision:decision.id, facts:run.revealed.size, mode:run.mode, predicted:Number(run.predicted), over:run.flags.includes("overpromise"), skillScores, turns:run.learnerTurns};
-  // XP: first attempt earns the tier-weighted score; replays earn only for improvement, so repetition alone never climbs the board.
+  const attempt = {id:"a"+Date.now(), s:s.id, score, stars, at:Date.now(), decision:decision.id, facts:run.revealed.size, evidence:run.evidenceUsed.size, mode:run.mode, predicted:Number(run.predicted), over:run.flags.includes("overpromise"), walkout:run.walkout, skillScores, turns:run.learnerTurns};
   const mult=TIERS[s.tier].mult, xp=[];
-  if(prevBest==null) xp.push(["Mission score (x"+mult+" "+TIERS[s.tier].label+")", Math.round(score*mult)]);
+  if(prevBest==null) xp.push(["Mission score x"+mult, Math.round(score*mult)]);
   else { xp.push(["Replay completed",10]); if(score>prevBest) xp.push(["Beat your best by "+(score-prevBest), Math.round((score-prevBest)*2*mult)]); }
+  if(stars>prevStars) xp.push([`New star${stars-prevStars>1?"s":""} (${stars} of 3)`, (stars-prevStars)*25]);
   const before = new Set(P.badges), afterAttempts=[...P.attempts, attempt];
-  const earned=[];
-  const give = id => { if(!before.has(id) && !earned.includes(id)) earned.push(id); };
+  const earned=[]; const give = id => { if(!before.has(id) && !earned.includes(id)) earned.push(id); };
   give("first");
   if(attempt.facts===s.facts.length) give("questions");
   if(score>=PASS && !attempt.over) give("straight");
@@ -637,30 +806,71 @@ function finishAttempt(run, s, decision, a, note){
   if(score>=PASS && run.mode==="expert") give("unassisted");
   if(["promise","evalgate","dataask"].every(id=>passedIds(afterAttempts).includes(id))) give("core");
   if(s.id==="agentic" && score>=PASS) give("boardroom");
-  if(streak(afterAttempts)>=3) give("streak3");
+  if(attempt.evidence>=2) give("evidence");
+  if(stars===3) give("threestar");
   for(const b of earned) xp.push(["Badge: "+BADGES.find(x=>x.id===b).name, BADGE_XP]);
   const ch=weeklyChallenge();
   if(ch.sid===s.id && score>=ch.target && !P.challenges.includes(ch.week)){ xp.push(["Weekly challenge",CHALLENGE_XP]); P.challenges.push(ch.week); }
   const gained = xp.reduce((x,[,v])=>x+v,0);
-  const oldLevel=levelOf(P.xp).n, oldRatings=skillRatings(P.attempts), oldUnlocked=SCENARIOS.filter(isUnlocked).map(x=>x.id);
+  const oldLevel=levelOf(P.xp).n, oldRatings=skillRatings(P.attempts), oldUnlocked=SCENARIOS.filter(isUnlocked).map(x=>x.id), oldStreak=streakInfo().n;
   attempt.xp=gained;
   P.attempts.push(attempt); P.attempts=P.attempts.slice(-200); P.xp+=gained; P.badges.push(...earned);
+  const st=streakInfo();
+  if(st.n>=3) { if(!P.badges.includes("streak3")){ P.badges.push("streak3"); earned.push("streak3"); P.xp+=BADGE_XP; } }
   const newUnlocks=SCENARIOS.filter(x=>isUnlocked(x) && !oldUnlocked.includes(x.id));
   saveProfile();
-  S.result = {attempt, s, decision, a, note, xp, gained, earned, prevBest, levelUp: levelOf(P.xp).n>oldLevel, oldRatings, newRatings:skillRatings(P.attempts), newUnlocks, meters:{...run.meters}, facts:[...run.revealed]};
+  S.result = {attempt, s, decision, a, note, xp, gained, earned, prevBest, prevStars, levelUp: levelOf(P.xp).n>oldLevel, oldRatings, newRatings:skillRatings(P.attempts), newUnlocks, meters:{...run.meters}, streakUp: st.n>oldStreak ? st.n : 0};
   S.run=null; S.view="result"; render(); window.scrollTo(0,0);
+  countUp($("bigscore-n"), score);
+  if(score>=PASS) setTimeout(()=>burst(stars>=3?160:100), 300);
 }
+function openChest(id){
+  const node=PATH.find(n=>n.id===id); if(!node || P.chests.includes(id)) return;
+  if(!node.needs.every(x=>passedIds(P.attempts).includes(x))){ toast("Pass the two missions before this chest to open it."); return; }
+  const amount = 25 + Math.floor(Math.random()*36);
+  const note = FIELD_NOTES[Math.floor(Math.random()*FIELD_NOTES.length)];
+  P.chests.push(id); giveXp(amount, "Chest"); saveProfile(); render(); burst(70);
+  S.chestNote={amount, note}; render();
+}
+async function submitSpark(){
+  const sp=todaySpark(); const text=(S.spark.draft||"").trim();
+  if(text.length<15){ toast("Write a full reply, at least a sentence."); return; }
+  if(sparkDone()) return;
+  S.spark.busy=true; render();
+  let r=null;
+  if(RT.sample && RT.claudeState==="on"){
+    try{
+      const j = await RT.sample.json(`You coach KNOLSKAPE AI product managers. Score this one-message reply from 0 to 10.
+Stakeholder (${sp.who}) said: "${sp.line}"
+PM replied: "${text}"
+A strong reply ${sp.good}.
+Reply with only JSON: {"score": integer 0-10, "feedback": "one sentence, specific", "better": "an improved reply under 45 words"}`, {modelTier:"quick", cache:false});
+      r = {score:clamp(Math.round(Number(j?.score)||0),0,10), feedback:String(j?.feedback||"").slice(0,300), better:String(j?.better||"").slice(0,400)};
+    }catch(e){ handleClaudeError(e); }
+  }
+  if(!r){ const t=text.toLowerCase(); const neg=/\b(cannot|can't|won't|not|don't)\b/.test(t); const over=hasAny(t,OVER)&&!neg; const c=CAREFUL.filter(k=>t.includes(k)).length;
+    r = {score:clamp(4+c+(t.includes("?")?1:0)-(over?4:0),0,10), feedback: over?"This commits to something you can't yet back up.":"Scripted check: good use of specifics. Claude gives richer feedback on claude.ai.", better:""}; }
+  const xp = r.score*3;
+  (P.sparks ??= []).push({day:dayKey(Date.now()), at:Date.now(), score:r.score, xp, skill:sp.skill});
+  P.sparks=P.sparks.slice(-120); P.xp+=xp; saveProfile();
+  S.spark={draft:"", busy:false, result:{...r, xp}}; render(); if(r.score>=7) burst(60);
+}
+function todaySpark(){ const d=Math.floor(Date.now()/DAY); return SPARKS[d % SPARKS.length]; }
+function sparkDone(){ return (P.sparks||[]).some(s=>s.day===dayKey(Date.now())); }
 
-/* ---------- Rendering ---------- */
+/* ---------- Rendering: HUD ---------- */
 function renderMe(){
-  const L=levelOf(P.xp), N=nextLevel(P.xp), pct = N ? (P.xp-L.xp)/(N.xp-L.xp)*100 : 100, st=streak(P.attempts);
-  $("me").innerHTML = P.onboarded ? `<div class="lvl"><div class="lvl-row"><b>Lv ${L.n} ${esc(L.name)}</b><span class="num">${P.xp} XP</span></div><div class="bar" title="${N? (N.xp-P.xp)+' XP to '+N.name : 'Top level'}"><i style="width:${pct}%"></i></div></div>${st?`<span class="chip warn num" title="Days in a row with a completed mission">${st}-day streak</span>`:""}` : "";
+  const L=levelOf(P.xp), N=nextLevel(P.xp), pct = N ? (P.xp-L.xp)/(N.xp-L.xp)*100 : 100, st=streakInfo(), today=xpToday();
+  $("me").innerHTML = P.onboarded ? `
+    <span class="stat" title="${st.n}-day streak${st.shields?`, ${st.shields} streak shield${st.shields>1?"s":""} ready`:""}">${flame()}<span>${st.n}</span>${st.shields?`<span class="hide-sm" style="display:inline-flex;align-items:center;gap:2px">${shieldIcon()}${st.shields}</span>`:""}</span>
+    <span class="stat" title="Today's goal: ${DAILY_GOAL} XP"><span class="ring" style="--p:${Math.min(100,today/DAILY_GOAL*100)};width:22px;height:22px"><div style="width:14px;height:14px"></div></span><span>${Math.min(today,DAILY_GOAL)}/${DAILY_GOAL}</span></span>
+    <span class="stat" title="${N?(N.xp-P.xp)+" XP to "+N.name:"Top level"}"><span class="lvl-shield">${L.n}</span><span class="hide-sm">${P.xp} XP</span><span class="xpbar"><i style="width:${pct}%"></i></span></span>` : "";
   for(const v of ["home","board","progress"]){ const b=$("nav-"+v); if(b){ b.hidden=!P.onboarded; if(S.view===v || (v==="home" && ["brief","sim","result"].includes(S.view))) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); } }
 }
 function modeNotice(){
-  if(RT.claudeState==="on") return `<div class="notice"><span class="chip blue">Claude on</span><span>Stakeholders are played live by Claude, and Claude runs the Conversation AI assessment. The first message asks you to allow Claude for this page.</span></div>`;
+  if(RT.claudeState==="on") return `<div class="notice"><span class="chip blue">Claude live</span><span>Stakeholders are played live by Claude, and Claude runs your Conversation AI assessment.</span></div>`;
   if(RT.claudeState==="checking") return `<div class="notice"><span class="chip">Connecting</span><span>Checking whether Claude is available in this view.</span></div>`;
-  return `<div class="notice"><span class="chip warn">Scripted mode</span><span><b>Claude is not available in this view.</b> Stakeholders use scripted replies and a backup rubric. Open this page on claude.ai for the live Claude experience.</span></div>`;
+  return `<div class="notice"><span class="chip warn">Scripted mode</span><span><b>Claude is not available in this view.</b> Stakeholders use scripted replies and a backup rubric. Open this page on claude.ai to play with Claude.</span></div>`;
 }
 function render(){
   renderMe();
@@ -673,188 +883,236 @@ function render(){
   else if(S.view==="board") { app.innerHTML=viewBoard(); refreshNames(); }
   else if(S.view==="progress") app.innerHTML=viewProgress();
 }
+
+/* ---------- Onboarding ---------- */
+const SQUAD_STYLE = {evaluate:{c:"#5B86FF",l:"Ev",d:"Measure what matters"},educate:{c:"#FBD300",l:"Ed",d:"Build the foundations"},experience:{c:"#FF7103",l:"Ex",d:"Learn by doing"},enable:{c:"#C2D02F",l:"En",d:"Make it stick"}};
 function viewOnboard(){
   return `<div class="onb">
-  <section class="hero"><p class="eyebrow">KNOLSKAPE Academy · AI Product Management</p>
-    <h1>Practise the conversations that make or break AI products.</h1>
-    <p>You are a new AI PM on KNOLSKAPE's GENIE team. Sales, engineering, clients and the CEO will bring you hard asks. Talk them through it, make the call, and see what happens.</p>
-    <div class="how"><div><b>Talk</b><span class="muted" style="color:var(--hero-muted)">A live, unscripted conversation with a stakeholder played by Claude.</span></div><div><b>Decide</b><span style="color:var(--hero-muted)">Choose a course of action and explain why. Every choice has consequences.</span></div><div><b>Grow</b><span style="color:var(--hero-muted)">Get scored on real AI PM skills, earn XP and badges, and replay to improve.</span></div></div>
-  </section>
-  <form class="card stack" id="onb-form">
-    <div class="stack"><h2>Set up in 30 seconds</h2><p class="muted">You can change any of this later in My progress.</p></div>
-    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">Your experience</legend>
-      <div class="choice-grid">
-        <label class="pick"><input type="radio" name="mode" value="guided" checked><span><b>Newer to AI products</b><small>Guided mode: a coach tip after every reply.</small></span></label>
-        <label class="pick"><input type="radio" name="mode" value="expert"><span><b>Experienced PM</b><small>Expert mode: no tips. Earns the Unassisted badge.</small></span></label>
-      </div></fieldset>
-    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">Your squad</legend>
-      <div class="choice-grid">${Object.entries(SQUADS).map(([k,v],i)=>`<label class="pick"><input type="radio" name="team" value="${k}" ${i===0?"checked":""}><span><b>${esc(v)}</b><small>Squads are ranked by average rating, so size does not matter.</small></span></label>`).join("")}</div></fieldset>
-    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">On the leaderboard, show me as</legend>
-      <div class="choice-grid">
-        <label class="pick"><input type="radio" name="vis" value="alias" checked><span><b>An alias</b><small>You appear as "${esc(P.alias)}".</small></span></label>
-        <label class="pick"><input type="radio" name="vis" value="name"><span><b>My name</b><small>Visible to people in your organisation.</small></span></label>
-        <label class="pick"><input type="radio" name="vis" value="private"><span><b>Private</b><small>Only you see your rank. Not counted in squad averages.</small></span></label>
-      </div></fieldset>
-    <div class="row"><button class="btn primary" type="submit">Start my first mission</button><span class="muted">First mission: The two-week promise, about 8 minutes.</span></div>
+  <section class="onb-hero"><span class="label gold">Season 1 · Launch Quarter</span>
+    <h1>You just joined the GENIE team as an AI PM.</h1>
+    <p>Sales wants promises. Engineering wants to ship. Clients want magic. The CEO wants agents. Your job is to get it right. Every conversation is a mission.</p></section>
+  <div class="loop"><div><span class="label">01 Talk</span><b>Live conversations</b><span class="muted" style="font-size:14px">Stakeholders played by Claude react to every word.</span></div><div><span class="label">02 Decide</span><b>Real consequences</b><span class="muted" style="font-size:14px">Your call changes what happens next.</span></div><div><span class="label">03 Level up</span><b>Earn stars</b><span class="muted" style="font-size:14px">Get scored on real AI PM skills, then replay for 3 stars.</span></div></div>
+  <form class="panel stack" id="onb-form" style="padding:22px">
+    <div><span class="label">Step 1</span><h2>Choose your squad</h2><p class="muted" style="font-size:14px">Squads compete on average skill, so every member counts equally.</p></div>
+    <div class="squads" role="radiogroup" aria-label="Squad">${Object.entries(SQUADS).map(([k,v],i)=>`<label class="crest" style="--sq:${SQUAD_STYLE[k].c}"><input type="radio" name="team" value="${k}" ${i===0?"checked":""}><span class="hex">${SQUAD_STYLE[k].l}</span><b>${esc(v)}</b><small>${SQUAD_STYLE[k].d}</small></label>`).join("")}</div>
+    <div><span class="label">Step 2</span><h2>Pick your difficulty</h2></div>
+    <div class="choice-grid">
+      <label class="pick"><input type="radio" name="mode" value="guided" checked><span><b>Guided</b><small>Your inner voices (skills) whisper hints during conversations.</small></span></label>
+      <label class="pick"><input type="radio" name="mode" value="expert"><span><b>Expert</b><small>No hints. Passing earns the Unassisted badge.</small></span></label></div>
+    <div><span class="label">Step 3</span><h2>How you appear in the league</h2></div>
+    <div class="choice-grid">
+      <label class="pick"><input type="radio" name="vis" value="alias" checked><span><b>Codename</b><small>You play as "${esc(P.alias)}".</small></span></label>
+      <label class="pick"><input type="radio" name="vis" value="name"><span><b>My name</b><small>Visible to your organisation.</small></span></label>
+      <label class="pick"><input type="radio" name="vis" value="private"><span><b>Private</b><small>Only you see your rank.</small></span></label></div>
+    <div class="row"><button class="btn go big" type="submit">Start mission 1</button><span class="muted" style="font-size:14px">The two-week promise · about 8 minutes</span></div>
   </form></div>`;
 }
-function missionCard(s){
-  const open=isUnlocked(s), best=bestFor(P.attempts,s.id), passed=best!=null && best>=PASS;
-  const skills=[...new Set(s.rubric.map(c=>c.skill))];
-  return `<button class="mission" data-action="brief" data-sid="${s.id}" ${open?"":'aria-disabled="true"'}>
-    <div class="row" style="justify-content:space-between"><span class="chip ${s.tier===3?"gold":s.tier===2?"blue":""}">${TIERS[s.tier].label}</span>${best!=null?`<span class="chip ${passed?"good":"warn"} num">Best ${best}</span>`:open?`<span class="chip">New</span>`:`<span class="chip">Locked</span>`}</div>
-    <h3>${esc(s.title)}</h3>
-    <div class="who"><span class="avatar">${esc(s.persona.initials)}</span><div><strong>${esc(s.persona.name)}</strong><small>${esc(s.persona.role)}</small></div></div>
-    <p class="muted" style="font-size:14px">${esc(s.setup)}</p>
-    <div class="row" style="gap:6px">${skills.map(k=>`<span class="chip">${esc(SKILLS[k].name)}</span>`).join("")}</div>
-    <div class="foot"><span>About ${s.minutes} min · 3 hidden facts</span><span>${open ? (best!=null?"Replay to improve":"Start") : esc(unlockText(s))}</span></div>
-  </button>`;
-}
-function recommended(){
-  const open=SCENARIOS.filter(isUnlocked);
-  const untried=open.find(s=>bestFor(P.attempts,s.id)==null);
-  if(untried) return {s:untried, why:"New mission"};
-  const weak=open.map(s=>({s,b:bestFor(P.attempts,s.id)})).sort((x,y)=>x.b-y.b)[0];
-  return {s:weak.s, why: weak.b<PASS ? "Not passed yet: replay it" : "Your lowest score: replay to improve"};
-}
+
+/* ---------- Home: the path ---------- */
+const X_POS=[50,72,50,28,50,72,50];
 function viewHome(){
-  const rec=recommended(), ch=weeklyChallenge(), chDone=P.challenges.includes(ch.week), R=skillRatings(P.attempts);
-  const r=rating(P.attempts);
+  const passed=passedIds(P.attempts), ch=weeklyChallenge(), chDone=P.challenges.includes(ch.week);
+  const nextId = (PATH.find(n=>n.type==="mission" && isUnlocked(scen(n.id)) && !passed.includes(n.id))||{}).id || null;
+  const gap=150, H=PATH.length*gap+30;
+  const pts=PATH.map((n,i)=>({x:X_POS[i%X_POS.length], y:60+i*gap}));
+  const d=pts.map((p,i)=> i===0?`M ${p.x} ${p.y}`:`C ${pts[i-1].x} ${pts[i-1].y+gap/2}, ${p.x} ${p.y-gap/2}, ${p.x} ${p.y}`).join(" ");
+  const doneUpTo = PATH.reduce((k,n,i)=> (n.type==="mission"? passed.includes(n.id) : P.chests.includes(n.id)) ? i : k, -1);
+  const dDone = pts.slice(0,doneUpTo+1).map((p,i)=> i===0?`M ${p.x} ${p.y}`:`C ${pts[i-1].x} ${pts[i-1].y+gap/2}, ${p.x} ${p.y-gap/2}, ${p.x} ${p.y}`).join(" ");
+  const nodes=PATH.map((n,i)=>{
+    const p=pts[i];
+    if(n.type==="chest"){
+      const ready=n.needs.every(x=>passed.includes(x)), opened=P.chests.includes(n.id);
+      return `<div class="node chest ${opened?"opened":ready?"ready":"locked"}" style="left:${p.x}%;top:${p.y}px">
+        <button class="node-btn" data-action="chest" data-id="${n.id}" ${ready&&!opened?"":'aria-disabled="true"'} aria-label="${opened?"Chest opened":ready?"Open reward chest":"Locked chest"}">${chestIcon(opened)}</button>
+        <span class="s">${opened?"Opened":ready?"Tap to open":"Reward chest"}</span></div>`;
+    }
+    const s=scen(n.id), open=isUnlocked(s), st=bestStars(s.id), best=bestFor(P.attempts,s.id), cur=n.id===nextId;
+    const cls=["node", s.tier===3?"boss":"", open?"open":"locked", passed.includes(s.id)?"done":"", cur?"current":""].join(" ");
+    return `<div class="${cls}" style="left:${p.x}%;top:${p.y}px">
+      ${cur?`<span class="start-tag">${best!=null?"TRY AGAIN":"START"}</span>`:""}
+      <button class="node-btn" data-action="brief" data-sid="${s.id}" ${open?"":'aria-disabled="true"'} aria-label="${esc(s.title)}${open?"":", locked"}">${open?`<span class="ini">${esc(s.persona.initials)}</span>`:lockIcon()}</button>
+      <span class="t">${esc(s.title)}</span>
+      <span class="s">${open ? (best!=null?starsHtml(st):`${TIERS[s.tier].label} · ${s.minutes} min`) : esc(unlockText(s))}</span></div>`;
+  }).join("");
   return `${modeNotice()}
-  <div class="home-top">
-    <section class="hero"><p class="eyebrow">Your next mission · ${esc(rec.why)}</p>
-      <h1>${esc(rec.s.title)}</h1>
-      <div class="who"><span class="avatar lg">${esc(rec.s.persona.initials)}</span><div><strong style="color:var(--hero-text)">${esc(rec.s.persona.name)}</strong><small style="color:var(--hero-muted)">${esc(rec.s.persona.role)}</small></div></div>
-      <p>${esc(rec.s.setup)}</p>
-      <div class="row"><button class="btn primary" data-action="brief" data-sid="${rec.s.id}">Open mission brief</button><span style="color:var(--hero-muted);font-size:13px">About ${rec.s.minutes} minutes</span></div>
+  <div class="home">
+    <section>
+      <div class="season"><span class="label gold">Season 1 · Launch Quarter · ends 31 Dec</span><h1>Get GENIE's AI launches right.</h1>
+        <p>Five stakeholders, five hard conversations. Pass each mission to move along the path; earn 3 stars by finding every hidden fact and scoring 90+.</p>
+        <div class="row"><span class="chip gold num">${PATH.filter(n=>n.type==="mission").reduce((x,n)=>x+bestStars(n.id),0)} / 15 stars</span><span class="chip num">${passed.length} of 5 passed</span></div></div>
+      ${S.chestNote?`<div class="reward" style="margin-top:14px"><span class="chip gold num">+${S.chestNote.amount} XP</span><div><b>Field note unlocked</b><div style="font-size:14px">${esc(S.chestNote.note)}</div></div></div>`:""}
+      <div class="path" style="height:${H}px">
+        <svg class="trail" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="#26324D" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dDone?`<path d="${dDone}" fill="none" stroke="#FBD300" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`:""}</svg>
+        ${nodes}
+      </div>
     </section>
-    <div class="grid">
-      <section class="card stack"><p class="eyebrow">Weekly challenge</p><h3>${esc(ch.text)}</h3>
-        <p class="muted" style="font-size:14px">${chDone?"Completed this week. A new challenge starts Monday.":`+${CHALLENGE_XP} XP when you hit ${ch.target}. Resets every Monday.`}</p>
-        ${chDone?'<span class="chip good">Done</span>':`<div><button class="btn" data-action="brief" data-sid="${ch.sid}" ${isUnlocked(scen(ch.sid))?"":"disabled"}>Take the challenge</button></div>`}</section>
-      <section class="card stack"><div class="row" style="justify-content:space-between"><p class="eyebrow">Readiness rating</p><span class="rank num">${r.value}</span></div>
-        <p class="muted" style="font-size:13px">${r.n<3?`Based on ${r.n} of your missions. Complete 3 for a full-confidence rating.`:"Your best score per mission, weighted by difficulty."}</p>
-        <button class="btn ghost" data-action="nav" data-view="board" style="justify-self:start">See the leaderboard</button></section>
-    </div>
-  </div>
-  <div class="section-head"><h2>Missions</h2><span class="muted" style="font-size:14px">${passedIds(P.attempts).length} of ${SCENARIOS.length} passed · pass mark ${PASS}</span></div>
-  <div class="missions">${SCENARIOS.map(missionCard).join("")}</div>
-  <div class="section-head"><h2>Skill progression</h2><span class="muted" style="font-size:14px">Mapped to the AI PM competency framework</span></div>
-  <div class="card skills">${Object.entries(SKILLS).map(([k,v])=>`<div class="skill"><b>${esc(v.name)} <span class="muted" style="font-weight:400">${esc(v.code)}</span></b><span class="muted">${profLevel(R[k])}</span><div class="bar"><i style="width:${R[k]==null?0:R[k]/4*100}%"></i></div></div>`).join("")}</div>`;
-}
-function viewBrief(){
-  const s=scen(S.sid), best=bestFor(P.attempts,s.id), tries=P.attempts.filter(a=>a.s===s.id).length;
-  return `${modeNotice()}<button class="btn ghost" data-action="nav" data-view="home">Back to missions</button>
-  <div class="brief" style="margin-top:10px">
-    <section class="card stack">
-      <div class="row"><span class="chip ${s.tier===3?"gold":s.tier===2?"blue":""}">${TIERS[s.tier].label} mission</span><span class="muted">About ${s.minutes} minutes · up to ${MAX_TURNS} messages</span></div>
-      <h1>${esc(s.title)}</h1>
-      <div class="who"><span class="avatar lg">${esc(s.persona.initials)}</span><div><strong>${esc(s.persona.name)}</strong><small>${esc(s.persona.role)}</small></div></div>
-      <p>${esc(s.setup)}</p>
-      <div><p class="eyebrow">Your objective</p><p>${esc(s.objective)}</p></div>
-      <div><p class="eyebrow">How it works</p><ul class="list">
-        <li>Talk to ${esc(s.persona.name.split(" ")[0])} in your own words. There are 3 hidden facts; good questions reveal them.</li>
-        <li>Expect 2 pressure moments. How you respond shows in the Trust, Clarity and Risk control meters.</li>
-        <li>After at least ${MIN_TURNS} messages, choose a decision, explain why, and predict your score.</li></ul></div>
-    </section>
-    <aside class="grid">
-      <section class="card stack"><p class="eyebrow">What you are scored on</p>
-        ${s.rubric.map(c=>`<div><b style="color:var(--ink)">${esc(c.name)}</b><div class="muted" style="font-size:13px">${esc(SKILLS[c.skill].name)}</div></div>`).join("")}
-        <p class="muted" style="font-size:13px">Score out of 100: rubric 60, decision 25, hidden facts 15. Pass at ${PASS}.</p></section>
-      <section class="card stack"><p class="eyebrow">Mode</p>
-        <div class="seg" role="group" aria-label="Mode"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
-        <p class="muted" style="font-size:13px">${P.mode==="guided"?"A coach tip appears after each reply.":"No tips. Passing earns the Unassisted badge."}</p>
-        ${best!=null?`<p style="font-size:14px">Your best: <b class="num">${best}</b> over ${tries} attempt${tries>1?"s":""}. Replays earn XP only when you beat your best.</p>`:""}
-        <button class="btn primary" data-action="start" data-sid="${s.id}">${best!=null?"Replay mission":"Start conversation"}</button></section>
+    <aside class="side">${sideGoal()}${sideSpark()}${sideLeague()}
+      <section class="panel stack"><div class="row between"><span class="label">Weekly challenge</span>${chDone?'<span class="chip good">Done</span>':`<span class="chip gold">+${CHALLENGE_XP} XP</span>`}</div>
+        <h3>${esc(ch.text)}</h3><p class="muted" style="font-size:13px">Resets every Monday.</p>
+        ${chDone?"":`<button class="btn" data-action="brief" data-sid="${ch.sid}" ${isUnlocked(scen(ch.sid))?"":"disabled"}>Take the challenge</button>`}</section>
     </aside>
   </div>`;
 }
-function meter(cls,label,v,help){ return `<div class="meter ${cls}" title="${esc(help)}"><div class="lab"><span>${label}</span><b class="num">${Math.round(v)}</b></div><div class="bar"><i style="width:${v}%"></i></div></div>`; }
+function lockIcon(){ return `<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>`; }
+function chestIcon(open){ return `<svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${open?"M3 11h18v9H3zM4 6l16-2 .6 4L4.6 10z":"M3 10h18v10H3zM5 4h14a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2z"}"/><rect x="10.5" y="11.5" width="3" height="4" rx="1" fill="#111827"/></svg>`; }
+function sideGoal(){
+  const t=xpToday(), st=streakInfo();
+  return `<section class="panel goal"><div class="ring" style="--p:${Math.min(100,t/DAILY_GOAL*100)}"><div>${Math.min(t,DAILY_GOAL)}<small>of ${DAILY_GOAL} XP</small></div></div>
+    <div class="stack" style="gap:4px"><span class="label">Daily goal</span><b style="color:var(--ink)">${t>=DAILY_GOAL?"Goal reached. Nice work.":st.today?"Keep going to hit today's goal.":"Practise today to keep your streak."}</b>
+    <span class="muted" style="font-size:13px;display:flex;align-items:center;gap:6px">${flame()} ${st.n}-day streak${st.shields?` · ${shieldIcon()} ${st.shields} shield${st.shields>1?"s":""}`:""}</span>
+    <span class="muted" style="font-size:12px">A shield covers one missed day. Earn one for every 5 practice days, up to 2.</span></div></section>`;
+}
+function sideSpark(){
+  const sp=todaySpark(), done=sparkDone(), R=S.spark.result;
+  return `<section class="panel spark stack"><div class="row between"><span class="label gold">Daily spark · 2 min</span><span class="chip" style="--vc:${SKILL_COLOR[sp.skill]}">${esc(SKILLS[sp.skill].name)}</span></div>
+    <p class="muted" style="font-size:13px">${esc(sp.who)} says:</p><p class="quote-line">"${esc(sp.line)}"</p>
+    ${done ? (R ? `<div class="stack" style="gap:6px"><div class="row"><span class="chip gold num">${R.score} / 10</span><span class="chip num">+${R.xp} XP</span></div><p style="font-size:14px">${esc(R.feedback)}</p>${R.better?`<p class="muted" style="font-size:13px"><b style="color:var(--good)">Stronger:</b> ${esc(R.better)}</p>`:""}</div>` : `<p class="muted" style="font-size:14px">Done for today. A new spark arrives tomorrow.</p>`)
+      : `<label for="spark" class="label">Your reply</label><textarea id="spark" class="plain" placeholder="Reply in one or two sentences…" ${S.spark.busy?"disabled":""}>${esc(S.spark.draft)}</textarea>
+      <button class="btn go" data-action="spark" ${S.spark.busy?"disabled":""}>${S.spark.busy?"Scoring…":"Send reply · up to 30 XP"}</button>`}
+  </section>`;
+}
+function sideLeague(){
+  const entries=boardEntries().filter(e=>e.you || e.visibility!=="private");
+  const since=Date.now()-7*DAY;
+  const rows=entries.map(e=>({e, v:rating((e.attempts||[]).filter(a=>a.at>=since)).value})).filter(x=>x.v>0||x.e.you).sort((a,b)=>b.v-a.v);
+  const i=rows.findIndex(r=>r.e.you);
+  const lo=Math.max(0,i-2), view=rows.slice(lo, lo+5);
+  return `<section class="panel stack"><div class="row between"><span class="label">This week's league</span><button class="btn ghost" data-action="nav" data-view="board">Full league</button></div>
+    ${rows.length>1||rows[0]?.v>0 ? view.map((r,k)=>`<div class="league-row ${r.e.you?"you":""}"><b>${lo+k+1}</b><span>${esc(displayName(r.e))}${r.e.you?' <span class="chip gold">You</span>':""}</span><span class="num">${r.v}</span></div>`).join("") : `<p class="muted" style="font-size:14px">Finish a mission this week to join the league.</p>`}
+    <p class="muted" style="font-size:12px">Ranked by your best mission scores this week, not by hours played.</p></section>`;
+}
+
+/* ---------- Brief ---------- */
+function viewBrief(){
+  const s=scen(S.sid), best=bestFor(P.attempts,s.id), st=bestStars(s.id);
+  return `${modeNotice()}<button class="btn ghost" data-action="nav" data-view="home">Back to the path</button>
+  <div class="brief" style="margin-top:10px">
+    <section class="panel stack" style="padding:22px">
+      <div class="row"><span class="chip ${s.tier===3?"gold":s.tier===2?"blue":""}">${TIERS[s.tier].label} mission</span><span class="muted">${s.minutes} min · ${MAX_TURNS} messages · 3 hidden facts</span></div>
+      <h1>${esc(s.title)}</h1>
+      <div class="portrait"><span class="face">${esc(s.persona.initials)}</span><div><strong>${esc(s.persona.name)}</strong><small>${esc(s.persona.role)}</small></div></div>
+      <p style="font-size:16px">${esc(s.setup)}</p>
+      <div class="panel" style="background:var(--panel-2)"><span class="label gold">Your objective</span><p style="margin-top:4px">${esc(s.objective)}</p></div>
+      <div class="stack" style="gap:8px"><span class="label">How to win</span>
+        <div class="crit-mini"><span class="chip gold">1</span><span>Ask sharp questions to unlock 3 hidden facts. Present them as evidence to strengthen your case.</span></div>
+        <div class="crit-mini"><span class="chip gold">2</span><span>Keep Trust above zero or ${esc(s.persona.name.split(" ")[0])} walks out. Watch for 2 pressure moments.</span></div>
+        <div class="crit-mini"><span class="chip gold">3</span><span>Make the call, explain why, and predict your score.</span></div></div>
+    </section>
+    <aside class="side">
+      <section class="panel stack"><div class="row between"><span class="label">Stars</span>${starsHtml(st)}</div>
+        <div class="crit-mini">${starsHtml(1)}<span style="font-size:14px">Pass with ${PASS}+</span></div>
+        <div class="crit-mini">${starsHtml(2)}<span style="font-size:14px">Score 85+</span></div>
+        <div class="crit-mini">${starsHtml(3)}<span style="font-size:14px">Score 90+ and find all 3 facts</span></div>
+        ${best!=null?`<p class="muted" style="font-size:13px">Your best: <b class="num" style="color:var(--ink)">${best}</b>. Replays earn XP only when you beat it.</p>`:""}</section>
+      <section class="panel stack"><span class="label">Scored on</span>${s.rubric.map(c=>`<div style="font-size:14px"><b style="color:var(--ink)">${esc(c.name)}</b><div class="muted" style="font-size:12px;color:${SKILL_COLOR[c.skill]}">${esc(SKILLS[c.skill].name)}</div></div>`).join("")}</section>
+      <section class="panel stack"><span class="label">Difficulty</span>
+        <div class="seg" role="group" aria-label="Difficulty"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
+        <p class="muted" style="font-size:13px">${P.mode==="guided"?"Your skills speak up with hints as you talk.":"No hints. Passing earns the Unassisted badge."}</p>
+        <button class="btn go big" data-action="start" data-sid="${s.id}">${best!=null?"Replay mission":"Start mission"}</button></section>
+    </aside></div>`;
+}
+
+/* ---------- Simulation ---------- */
+function gauge(label, v, d, color, help){
+  const danger = v<=20;
+  return `<div class="gauge" title="${esc(help)}"><div class="lab"><span>${label}${d?`<span class="delta ${d>0?"up":"down"}">${d>0?"+":""}${d}</span>`:""}</span><b>${Math.round(v)}</b></div><div class="gbar ${danger?"danger":""}"><i style="width:${v}%;background:${color}"></i></div></div>`;
+}
 function viewSim(){
   const run=S.run, s=scen(run.sid), first=s.persona.name.split(" ")[0];
-  const left=MAX_TURNS-run.learnerTurns, canDecide=run.learnerTurns>=MIN_TURNS;
   if(run.stage==="decide") return viewDecide(run,s);
+  const left=MAX_TURNS-run.learnerTurns, canDecide=run.learnerTurns>=MIN_TURNS || run.walkout, m=mood(run.meters.trust), d=run.delta||{};
   return `<div class="sim">
-  <section class="card chat">
-    <div class="chat-head"><span class="avatar">${esc(s.persona.initials)}</span><div class="grow"><strong style="color:var(--ink)">${esc(s.persona.name)}</strong><div class="muted" style="font-size:12px">${esc(s.persona.role)} · ${RT.claudeState==="on"?"played by Claude":"scripted practice"}</div></div><button class="btn ghost" data-action="quit">Leave</button></div>
-    <div class="msgs" id="msgs">${run.turns.map(t=> t.role==="moment" ? `<div class="moment">${esc(t.text)}</div>` : `<div class="msg ${t.role}"><span class="who-line">${t.role==="persona"?esc(first):"You"}</span>${esc(t.text)}</div>`).join("")}
-      ${run.busy?`<div class="typing">${esc(first)} is replying…</div>`:""}</div>
+  <section class="panel chat">
+    <div class="chat-head"><span class="face sm">${esc(s.persona.initials)}<span class="mood" style="background:${m.c}"></span></span>
+      <div class="grow"><strong style="color:var(--ink)">${esc(s.persona.name)}</strong><div class="muted" style="font-size:12px">${esc(m.name)} · ${RT.claudeState==="on"?"played by Claude":"scripted practice"}</div></div>
+      <div class="pips" aria-label="${run.learnerTurns} of ${MAX_TURNS} messages used">${Array.from({length:MAX_TURNS},(_,i)=>`<i class="${i<run.learnerTurns?"used":""}"></i>`).join("")}</div>
+      <button class="btn ghost" data-action="quit">Leave</button></div>
+    <div class="msgs" id="msgs">${run.turns.map(t=>{
+      if(t.role==="stamp") return `<div class="stamp">${esc(t.text)}<small>${esc(t.sub)}</small></div>`;
+      if(t.role==="found") return `<div class="found-toast">${esc(t.text)}</div>`;
+      if(t.role==="voice") return `<div class="voice" style="--vc:${SKILL_COLOR[t.skill]}"><b>${esc(SKILLS[t.skill].name)}</b>${esc(t.text)}</div>`;
+      return `<div class="msg ${t.role}"><span class="who-line">${t.role==="persona"?esc(first):"You"}</span>${esc(t.text)}</div>`; }).join("")}
+      ${run.busy?`<div class="typing">${esc(first)} is typing <i></i><i></i><i></i></div>`:""}</div>
     <div class="composer">
-      ${left>0?`<label for="composer" class="eyebrow">Your reply</label><textarea id="composer" placeholder="Ask a question, explain a limit, or propose a plan…" ${run.busy?"disabled":""}>${esc(run.draft)}</textarea>`:`<p><b>You've used all ${MAX_TURNS} messages.</b> Time to make your decision.</p>`}
-      <div class="row"><span class="muted num" style="font-size:13px">${left} of ${MAX_TURNS} messages left · Ctrl+Enter to send</span>
-        <div class="row">${canDecide?`<button class="btn" data-action="to-decide">Wrap up and decide</button>`:`<span class="muted" style="font-size:13px">Decide after ${MIN_TURNS-run.learnerTurns} more messages</span>`}${left>0?`<button class="btn primary" data-action="send" ${run.busy?"disabled":""}>Send</button>`:""}</div></div>
+      ${run.walkout ? `<p><b style="color:var(--red)">${esc(first)} walked out.</b> Your best score this attempt is capped at 69. Make your decision, then replay.</p>`
+        : left>0?`<label for="composer" class="label">Your move</label><textarea id="composer" placeholder="Ask a question, name a limit, or propose a plan…" ${run.busy?"disabled":""}>${esc(run.draft)}</textarea>`:`<p><b>All ${MAX_TURNS} messages used.</b> Time to make the call.</p>`}
+      <div class="row between"><span class="muted" style="font-size:12px">${run.walkout?"":left>0?"Ctrl+Enter to send":""}</span>
+        <div class="row">${canDecide?`<button class="btn ${run.walkout||left===0?"go":""}" data-action="to-decide">Make the call</button>`:`<span class="muted" style="font-size:13px">Decide after ${MIN_TURNS-run.learnerTurns} more</span>`}${left>0&&!run.walkout?`<button class="btn blue" data-action="send" ${run.busy?"disabled":""}>Send</button>`:""}</div></div>
     </div>
   </section>
-  <aside class="grid">
-    <section class="card stack"><p class="eyebrow">Live read of ${esc(first)}</p>
-      ${meter("trust","Trust",run.meters.trust,"How much the stakeholder trusts you")}
-      ${meter("clarity","Clarity",run.meters.clarity,"How clear the way forward is")}
-      ${meter("risk","Risk control",run.meters.risk,"Falls when you over-promise or accept unsafe asks")}
+  <aside class="side">
+    <section class="panel stack"><span class="label">Live read</span>
+      ${gauge("Trust",run.meters.trust,d.trust,"#5B86FF","At zero the stakeholder walks out")}
+      ${gauge("Clarity",run.meters.clarity,d.clarity,"#FF7103","How clear the way forward is")}
+      ${gauge("Risk control",run.meters.risk,d.risk,"#3FCB7E","Falls when you over-promise or accept unsafe asks")}
     </section>
-    <section class="card stack"><div class="row" style="justify-content:space-between"><p class="eyebrow">Hidden facts</p><span class="chip ${run.revealed.size===3?"good":""} num">${run.revealed.size} of 3</span></div>
-      ${s.facts.map(f=>run.revealed.has(f.id)?`<div class="fact found">${esc(f.text)}</div>`:`<div class="fact muted">Undiscovered${run.mode==="guided"?`: ask about ${esc(f.hint)}`:""}</div>`).join("")}</section>
-    ${run.mode==="guided"&&run.coach?`<section class="coach"><b>Coach tip</b><br>${esc(run.coach)}</section>`:""}
+    <section class="panel stack"><div class="row between"><span class="label">Evidence locker</span><span class="chip ${run.revealed.size===3?"good":""} num">${run.revealed.size} / 3</span></div>
+      <div class="evidence">${s.facts.map(f=>run.revealed.has(f.id)
+        ? `<div class="ev found ${run.evidenceUsed.has(f.id)?"used":""}"><div class="ev-top"><b>${esc(FACT_SHORT[s.id][f.id])}</b>${run.walkout?"":`<button class="btn ghost" data-action="evidence" data-fid="${f.id}" style="padding:2px 4px">${run.evidenceUsed.has(f.id)?"Cited":"Present"}</button>`}</div><span class="muted">${esc(f.text)}</span></div>`
+        : `<div class="ev locked">Locked${run.mode==="guided"?` · try asking about ${esc(f.hint)}`:""}</div>`).join("")}</div>
+      <p class="muted" style="font-size:12px">Present evidence to back up your point in your next message.</p></section>
   </aside></div>`;
 }
 function viewDecide(run,s){
   return `<div class="brief">
-  <section class="card stack"><p class="eyebrow">Decision point · ${esc(s.title)}</p><h1>What do you decide?</h1>
-    <p class="muted">You uncovered ${run.revealed.size} of 3 hidden facts in ${run.learnerTurns} messages. Choose the course of action you will take, then explain why.</p>
-    <fieldset class="options" style="border:0;padding:0;margin:0"><legend class="eyebrow" style="margin-bottom:8px">Your decision</legend>
-      ${s.options.map(o=>`<label class="option"><input type="radio" name="decision" value="${o.id}" ${run.decision===o.id?"checked":""}><span>${esc(o.label)}</span></label>`).join("")}</fieldset>
-    <label for="rationale" class="eyebrow">Why? (the assessor scores your reasoning)</label>
+  <section class="panel stack" style="padding:22px"><span class="label gold">Decision point · ${esc(s.title)}</span><h1>Make the call.</h1>
+    <p class="muted">You found ${run.revealed.size} of 3 facts in ${run.learnerTurns} messages${run.walkout?", but the meeting ended early":""}.</p>
+    <fieldset class="options" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:8px">Choose one</legend>
+      ${s.options.map((o,i)=>`<label class="option"><input type="radio" name="decision" value="${o.id}" ${run.decision===o.id?"checked":""}><span class="key">${"ABC"[i]}</span><span>${esc(o.label)}</span></label>`).join("")}</fieldset>
+    <label for="rationale" class="label">Why? The assessor scores your reasoning</label>
     <textarea id="rationale" class="plain" placeholder="I chose this because…">${esc(run.rationale)}</textarea>
   </section>
-  <aside class="card stack"><p class="eyebrow">Predict your score</p>
-    <p class="muted" style="font-size:14px">Good PMs know how well they did. Predict within 10 points to earn the Calibrated badge.</p>
-    <label for="predict" class="row" style="justify-content:space-between"><span>My prediction</span><b class="num" id="predict-out" style="color:var(--ink);font-size:20px">${run.predicted}</b></label>
+  <aside class="side"><section class="panel stack"><span class="label">Predict your score</span>
+    <p class="muted" style="font-size:14px">Land within 10 points to earn the Calibrated badge.</p>
+    <label for="predict" class="row between"><span>My prediction</span><b class="num" id="predict-out" style="color:var(--gold);font-size:28px">${run.predicted}</b></label>
     <input id="predict" type="range" min="0" max="100" step="1" value="${run.predicted}">
-    <button class="btn primary" data-action="submit" ${run.assessing?"disabled":""}>${run.assessing?(RT.claudeState==="on"?"Claude is assessing your conversation…":"Scoring…"):"Submit for assessment"}</button>
-    ${run.assessing&&RT.claudeState==="on"?'<p class="muted" style="font-size:13px">A careful assessment takes 15 to 60 seconds.</p><button class="btn ghost" data-action="stop">Stop</button>':`<button class="btn ghost" data-action="back-talk">Back to the conversation</button>`}
-  </aside></div>`;
+    <button class="btn go big" data-action="submit" ${run.assessing?"disabled":""}>${run.assessing?(RT.claudeState==="on"?"Claude is reviewing your conversation…":"Scoring…"):"Lock it in"}</button>
+    ${run.assessing&&RT.claudeState==="on"?'<p class="muted" style="font-size:13px">A careful review takes 15 to 60 seconds.</p><button class="btn ghost" data-action="stop">Stop</button>':(run.walkout?"":`<button class="btn ghost" data-action="back-talk">Back to the conversation</button>`)}
+  </section></aside></div>`;
 }
+
+/* ---------- Result ---------- */
 function viewResult(){
-  const R=S.result, s=R.s, a=R.a, sc=R.attempt.score, pass=sc>=PASS, ms=R.meters;
+  const R=S.result, s=R.s, a=R.a, sc=R.attempt.score, pass=sc>=PASS, st=R.attempt.stars;
   const reasonPts = Math.round(a.criteria.reduce((x,c)=>x+c.score,0)/(4*s.rubric.length)*60), discPts=Math.round(R.attempt.facts/3*15);
+  const nextStar = st<1 ? `Score ${PASS}+ to earn your first star.` : st<2 ? "Score 85+ for the second star." : st<3 ? "Find all 3 facts and score 90+ for the third star." : "Three stars. Try Expert mode next.";
   const skillLines=Object.keys(SKILLS).filter(k=>R.newRatings[k]!=null && s.rubric.some(c=>c.skill===k)).map(k=>{
     const o=R.oldRatings[k], n=R.newRatings[k]; const up = o==null || n>o+0.001;
-    return `<div class="skill"><b>${esc(SKILLS[k].name)}</b><span class="${up?"":"muted"}">${o==null?"New: ":up?"Up: ":""}${profLevel(n)}</span><div class="bar"><i style="width:${n/4*100}%"></i></div></div>`; }).join("");
-  const later = ms.trust<35 ? `${s.persona.name.split(" ")[0]} left the conversation frustrated, and it shows: expect less goodwill next time.` : ms.risk<35 ? "Your commitments in the conversation added risk the team now has to manage." : "The relationship is in good shape after the conversation.";
+    return `<div class="gauge"><div class="lab"><span style="color:${SKILL_COLOR[k]}">${esc(SKILLS[k].name)}</span><span class="${up?"":"muted"}" style="font-size:12px">${up?"Up · ":""}${profLevel(n)}</span></div><div class="gbar"><i style="width:${n/4*100}%;background:${SKILL_COLOR[k]}"></i></div></div>`; }).join("");
+  const rewards=[R.levelUp?`Level up: ${levelOf(P.xp).name}`:null, ...R.earned.map(b=>"Badge: "+BADGES.find(x=>x.id===b).name), ...R.newUnlocks.map(u=>"Unlocked: "+u.title), R.streakUp?`${R.streakUp}-day streak`:null].filter(Boolean);
   return `${R.note?`<div class="notice"><span class="chip warn">Note</span><span>${esc(R.note)}</span></div>`:""}
-  <section class="hero"><div class="score-hero">
-    <div class="ring" style="--p:${sc}" role="img" aria-label="Score ${sc} out of 100"><div><div><b class="num">${sc}</b><br><small>out of 100</small></div></div></div>
-    <div class="stack"><p class="eyebrow">${esc(s.title)} · ${pass?"Passed":"Not passed yet"}${R.prevBest!=null?` · previous best ${R.prevBest}`:""}</p>
-      <h1>${pass? (sc>=85?"Strong performance.":"You passed. Now make it sharper.") : "Useful practice. Replay to pass."}</h1>
-      <p>You predicted ${R.attempt.predicted}. ${Math.abs(R.attempt.predicted-sc)<=10?"Well calibrated.":R.attempt.predicted>sc?"You rated yourself higher than the evidence shows.":"You did better than you thought."} Rubric ${reasonPts} of 60 · decision ${R.decision.pts} of 25 · hidden facts ${discPts} of 15.</p>
-      <div class="row">${R.levelUp?`<span class="chip gold">Level up: ${esc(levelOf(P.xp).name)}</span>`:""}<span class="chip gold num">+${R.gained} XP</span>${R.earned.map(b=>`<span class="chip gold">Badge: ${esc(BADGES.find(x=>x.id===b).name)}</span>`).join("")}${R.newUnlocks.map(u=>`<span class="chip gold">Unlocked: ${esc(u.title)}</span>`).join("")}</div>
-    </div></div></section>
-  <div class="results" style="margin-top:18px">
-    <div class="grid">
-      <section class="card stack"><p class="eyebrow">What happened next</p><p><b style="color:var(--ink)">You chose:</b> ${esc(R.decision.label)}</p><p>${esc(R.decision.outcome)}</p><p class="muted">${esc(later)}</p></section>
-      <section class="card"><p class="eyebrow">Conversation AI assessment</p>
-        ${s.rubric.map(c=>{ const x=a.criteria.find(k=>k.id===c.id); return `<div class="crit"><div class="crit-top"><b>${esc(c.name)}</b><span class="pips" aria-label="${x.score} of 4">${[1,2,3,4].map(i=>`<i class="${i<=x.score?"on":""}"></i>`).join("")}</span></div>
-          <span class="muted" style="font-size:12px">${esc(SKILLS[c.skill].name)} · ${x.score} of 4</span>${x.feedback?`<p style="font-size:14px">${esc(x.feedback)}</p>`:""}${x.evidence&&x.evidence!=="none"?`<p class="quote">"${esc(x.evidence)}"</p>`:""}</div>`; }).join("")}
-      </section>
-      ${a.rewrite?`<section class="card rewrite"><p class="eyebrow">Say it better</p><div class="before"><b>You said:</b> ${esc(a.rewrite.original)}</div><div class="after"><b>Try:</b> ${esc(a.rewrite.improved)}</div></section>`:""}
+  <section class="result-hero">
+    <div style="text-align:center;display:grid;gap:8px;justify-items:center">${starsHtml(st,true)}<div class="bigscore"><span id="bigscore-n">${sc}</span><small>/100</small></div></div>
+    <div class="stack"><span class="label gold">${esc(s.title)} · ${pass?"Mission passed":"Not passed yet"}${R.prevBest!=null?` · previous best ${R.prevBest}`:""}</span>
+      <h1>${R.attempt.walkout?`${esc(s.persona.name.split(" ")[0])} walked out. Regroup and replay.`:pass?(st===3?"Flawless. Three stars.":sc>=85?"Strong performance.":"Passed. Now go for more stars."):"Close. Replay to pass."}</h1>
+      <p class="muted">Rubric ${reasonPts}/60 · decision ${R.decision.pts}/25 · facts ${discPts}/15. You predicted ${R.attempt.predicted}: ${Math.abs(R.attempt.predicted-sc)<=10?"well calibrated.":R.attempt.predicted>sc?"you rated yourself higher than the evidence.":"you did better than you thought."}</p>
+      <div class="row"><span class="chip gold num">+${R.gained} XP</span><span class="chip">${esc(nextStar)}</span></div></div>
+  </section>
+  ${rewards.length?`<div class="row" style="margin-top:14px">${rewards.map((r,i)=>`<div class="reward" style="animation-delay:${.2+i*.15}s"><span class="medal" style="width:30px;height:34px;background:var(--gold);color:#111827">★</span><b>${esc(r)}</b></div>`).join("")}</div>`:""}
+  <div class="results">
+    <div class="side">
+      <section class="panel stack"><span class="label">What happened next</span><p><b style="color:var(--ink)">You chose:</b> ${esc(R.decision.label)}</p><p style="font-size:16px">${esc(R.decision.outcome)}</p></section>
+      <section class="panel"><span class="label">Conversation AI assessment</span>
+        ${s.rubric.map((c,i)=>{ const x=a.criteria.find(k=>k.id===c.id); return `<div class="crit" style="animation-delay:${.15*i}s"><div class="crit-top"><b>${esc(c.name)}</b><span class="cpips" aria-label="${x.score} of 4">${[1,2,3,4].map(j=>`<i class="${j<=x.score?"on":""}"></i>`).join("")}</span></div>
+          <span style="font-size:12px;color:${SKILL_COLOR[c.skill]}">${esc(SKILLS[c.skill].name)} · ${x.score}/4</span>${x.feedback?`<p style="font-size:14px">${esc(x.feedback)}</p>`:""}${x.evidence&&x.evidence!=="none"?`<p class="quote">"${esc(x.evidence)}"</p>`:""}</div>`; }).join("")}</section>
+      ${a.rewrite?`<section class="panel rewrite"><span class="label">Say it better</span><div class="before"><b>You said:</b> ${esc(a.rewrite.original)}</div><div class="after"><b>Try:</b> ${esc(a.rewrite.improved)}</div></section>`:""}
     </div>
-    <aside class="grid">
-      <section class="card stack"><p class="eyebrow">Development insights</p>
+    <aside class="side">
+      <section class="panel stack"><button class="btn go big" data-action="start" data-sid="${s.id}">${st<3?"Replay for more stars":"Replay mission"}</button><button class="btn" data-action="nav" data-view="home">Back to the path</button></section>
+      <section class="panel stack"><span class="label">Development insights</span>
         ${a.strengths.length?`<div><b style="color:var(--good)">Strengths</b><ul class="list">${a.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
-        ${a.gaps.length?`<div><b style="color:var(--bad)">Work on</b><ul class="list">${a.gaps.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
-        ${a.next?`<div class="coach"><b>Next practice</b><br>${esc(a.next)}</div>`:""}</section>
-      <section class="card stack"><p class="eyebrow">XP earned</p><div class="xp-list">${R.xp.map(([k,v])=>`<div><span>${esc(k)}</span><b class="num">+${v}</b></div>`).join("")}<div class="total"><span>Total</span><span class="num">+${R.gained}</span></div></div>
-        <p class="muted" style="font-size:12px">Replays earn XP only for beating your best, so practice pays off through improvement.</p></section>
-      ${skillLines?`<section class="card skills"><p class="eyebrow">Skill progress</p>${skillLines}</section>`:""}
-      <section class="card stack"><div class="row"><button class="btn primary" data-action="start" data-sid="${s.id}">Replay this mission</button><button class="btn" data-action="nav" data-view="home">Back to missions</button></div><button class="btn ghost" data-action="nav" data-view="board" style="justify-self:start">See where you rank</button></section>
+        ${a.gaps.length?`<div><b style="color:var(--red)">Work on</b><ul class="list">${a.gaps.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+        ${a.next?`<div class="panel" style="background:var(--panel-2)"><span class="label gold">Next practice</span><p style="font-size:14px;margin-top:4px">${esc(a.next)}</p></div>`:""}</section>
+      <section class="panel stack"><span class="label">XP earned</span><div class="xp-list">${R.xp.map(([k,v])=>`<div><span>${esc(k)}</span><b>+${v}</b></div>`).join("")}<div class="total"><span>Total</span><b>+${R.gained}</b></div></div></section>
+      ${skillLines?`<section class="panel stack"><span class="label">Skill progress</span>${skillLines}</section>`:""}
     </aside>
   </div>`;
 }
 
-/* ---------- Leaderboard ---------- */
+/* ---------- League ---------- */
 function boardEntries(){
   const map=new Map();
   for(const r of RT.boardRows) map.set(r.id, r);
-  // Always include yourself from local state, so your rank shows even when private or offline.
   map.set(RT.uid||"me", {id:RT.uid||"me", ...boardSummary(), you:true});
   return [...map.values()];
 }
@@ -881,71 +1139,83 @@ function viewBoard(){
   let head="", rows=[], explain="";
   const listed = e => e.you || e.visibility!=="private";
   if(b.tab==="overall"){
-    explain="Readiness rating: your best score on each mission you have tried, weighted for difficulty (Core x1.0, Advanced x1.1, Boss x1.2), averaged. It reaches full weight after 3 missions. Retrying the same mission only helps if you do better.";
-    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]); const r=rating(atts); return {e, v:r.value, sub:r.n+" missions", n:atts.length};}).filter(x=>x.n>0);
-    head="Rating";
+    explain="Readiness rating: your best score on each mission, weighted for difficulty (Core x1.0, Advanced x1.1, Boss x1.2), averaged. Full weight after 3 missions. Retrying only helps if you do better.";
+    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]); const r=rating(atts); return {e, v:r.value, sub:r.n+" missions", n:atts.length};}).filter(x=>x.n>0); head="Rating";
   } else if(b.tab==="improved"){
-    explain="Average gain from your first to your best attempt on missions you have replayed. This rewards learning, whatever your starting point.";
-    rows=entries.filter(listed).map(e=>{const imp=improvement(periodFilter(e.attempts||[])); return {e, v:imp, sub:"points gained"};}).filter(x=>x.v!=null);
-    head="Avg gain";
+    explain="Average gain from first to best attempt on missions you replayed. Rewards learning, whatever your starting point.";
+    rows=entries.filter(listed).map(e=>{const imp=improvement(periodFilter(e.attempts||[])); return {e, v:imp, sub:"points gained"};}).filter(x=>x.v!=null); head="Avg gain";
   } else if(b.tab==="scenario"){
-    explain="Best score on this mission. Ties go to whoever reached it in fewer attempts.";
-    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]).filter(a=>a.s===b.scenario); if(!atts.length) return null; return {e, v:Math.max(...atts.map(a=>a.score)), sub:atts.length+" attempt"+(atts.length>1?"s":""), tie:atts.length};}).filter(Boolean);
-    head="Best";
+    explain="Best score on this mission. Ties go to whoever got there in fewer attempts.";
+    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]).filter(a=>a.s===b.scenario); if(!atts.length) return null; return {e, v:Math.max(...atts.map(a=>a.score)), sub:atts.length+" attempt"+(atts.length>1?"s":""), tie:atts.length};}).filter(Boolean); head="Best";
   } else if(b.tab==="skill"){
-    explain="Skill rating from 0 to 4: your best assessor score for this skill on each mission that tests it, averaged across those missions.";
-    rows=entries.filter(listed).map(e=>{const r=skillRatings(periodFilter(e.attempts||[]))[b.skill]; return r==null?null:{e, v:Math.round(r*100)/100, sub:profLevel(r)};}).filter(Boolean);
-    head="Rating";
+    explain="Skill rating 0 to 4: your best assessor score for this skill on each mission that tests it, averaged.";
+    rows=entries.filter(listed).map(e=>{const r=skillRatings(periodFilter(e.attempts||[]))[b.skill]; return r==null?null:{e, v:Math.round(r*100)/100, sub:profLevel(r)};}).filter(Boolean); head="Rating";
   } else {
-    explain="Squads rank by the average rating of members with at least one mission, so a small squad can beat a large one. Private learners are not counted.";
+    explain="Squads rank by the average rating of active members, so a small squad can beat a large one. Private learners are not counted.";
     const sq={}; for(const e of entries){ if(e.you && P.visibility==="private") continue; if(!e.you && e.visibility==="private") continue; const atts=periodFilter(e.attempts||[]); if(!atts.length) continue; (sq[e.team] ??= []).push(rating(atts).value); }
-    rows=Object.entries(sq).map(([t,vs])=>({team:t, v:Math.round(vs.reduce((x,y)=>x+y,0)/vs.length*10)/10, sub:vs.length+" active member"+(vs.length>1?"s":""), mine:t===P.team}));
-    head="Avg rating";
+    rows=Object.entries(sq).map(([t,vs])=>({team:t, v:Math.round(vs.reduce((x,y)=>x+y,0)/vs.length*10)/10, sub:vs.length+" active", mine:t===P.team})); head="Avg rating";
   }
   rows.sort((x,y)=> (y.v-x.v) || ((x.tie||0)-(y.tie||0)));
   const you = rows.findIndex(r=>r.e?.you);
+  const nm = r => b.tab==="squads" ? esc(SQUADS[r.team]||r.team) : esc(displayName(r.e));
+  const podium = rows.length>=3 ? `<div class="podium">${[1,0,2].map(i=>{const r=rows[i]; return `<div class="pod p${i+1}"><span class="pr">${i+1}</span><span class="nm">${nm(r)}${(r.e?.you||r.mine)?' <span class="chip gold">You</span>':""}</span><span class="vl">${r.v}</span></div>`;}).join("")}</div>` : "";
   const hasDemo = RT.boardRows.some(r=>r.demo);
-  const table = rows.length ? `<div class="table-wrap"><table><thead><tr><th>Rank</th><th>${b.tab==="squads"?"Squad":"Learner"}</th>${b.tab==="squads"?"":"<th>Squad</th>"}<th class="r">${head}</th><th>Detail</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr class="${(r.e?.you||r.mine)?"you":""}"><td class="rank num">${i+1}</td><td>${b.tab==="squads"?esc(SQUADS[r.team]||r.team):`${esc(displayName(r.e))}${r.e.you?' <span class="chip blue">You</span>':""}${r.e.demo?' <span class="chip">Sample</span>':""}`}</td>${b.tab==="squads"?"":`<td class="muted">${esc(SQUADS[r.e.team]||"")}</td>`}<td class="r num"><b>${r.v}</b></td><td class="muted">${esc(r.sub)}</td></tr>`).join("")}
-  </tbody></table></div>` : `<p class="muted" style="padding:20px 0">No results for this view yet. ${b.tab==="improved"?"Replay a mission to show improvement.":"Complete a mission to appear here."}</p>`;
-  return `<div class="section-head" style="margin-top:0"><div><p class="eyebrow">Cohort leaderboard</p><h1>Rewarding skill and growth, not hours logged.</h1></div></div>
-  ${!RT.db?`<div class="notice"><span class="chip warn">Just you</span><span>The shared cohort leaderboard needs this page to be open on claude.ai. You are seeing your own results only.</span></div>`:hasDemo?`<div class="notice"><span class="chip">Sample</span><span>Rows marked Sample are demo learners added to show how a full cohort looks.</span></div>`:""}
-  <div class="board-layout"><section class="card">
-    <div class="board-controls"><div class="seg" role="tablist" aria-label="Leaderboard view">${tabs.map(([k,l])=>`<button role="tab" data-action="btab" data-tab="${k}" aria-pressed="${b.tab===k}">${l}</button>`).join("")}</div>
+  const table = rows.length ? `${podium}<div class="table-wrap"><table><thead><tr><th>Rank</th><th>${b.tab==="squads"?"Squad":"Player"}</th>${b.tab==="squads"?"":"<th>Squad</th>"}<th class="r">${head}</th><th>Detail</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${(r.e?.you||r.mine)?"you":""}"><td class="rank">${i+1}</td><td>${nm(r)}${r.e?.you?' <span class="chip gold">You</span>':""}${r.e?.demo?' <span class="chip">Sample</span>':""}</td>${b.tab==="squads"?"":`<td class="muted">${esc(SQUADS[r.e.team]||"")}</td>`}<td class="r"><b>${r.v}</b></td><td class="muted">${esc(r.sub)}</td></tr>`).join("")}
+  </tbody></table></div>` : `<p class="muted" style="padding:20px 0">No results in this view yet. ${b.tab==="improved"?"Replay a mission to show improvement.":"Finish a mission to appear here."}</p>`;
+  return `<div class="stack" style="margin-bottom:14px"><span class="label gold">Season 1 league</span><h1>Ranked on skill and growth, not hours logged.</h1></div>
+  ${!RT.db?`<div class="notice"><span class="chip warn">Just you</span><span>The shared cohort league needs this page open on claude.ai. You are seeing your own results only.</span></div>`:hasDemo?`<div class="notice"><span class="chip">Sample</span><span>Rows marked Sample are demo players that show how a full cohort looks.</span></div>`:""}
+  <div class="board-layout"><section class="panel">
+    <div class="board-controls"><div class="seg" role="tablist" aria-label="League view">${tabs.map(([k,l])=>`<button role="tab" data-action="btab" data-tab="${k}" aria-pressed="${b.tab===k}">${l}</button>`).join("")}</div>
       <div class="row">${b.tab==="scenario"?`<select id="b-scenario" aria-label="Mission">${SCENARIOS.map(s=>`<option value="${s.id}" ${b.scenario===s.id?"selected":""}>${esc(s.title)}</option>`).join("")}</select>`:""}
         ${b.tab==="skill"?`<select id="b-skill" aria-label="Skill">${Object.entries(SKILLS).map(([k,v])=>`<option value="${k}" ${b.skill===k?"selected":""}>${esc(v.name)}</option>`).join("")}</select>`:""}
-        <select id="b-period" aria-label="Time period"><option value="week" ${b.period==="week"?"selected":""}>Last 7 days</option><option value="month" ${b.period==="month"?"selected":""}>Last 30 days</option><option value="all" ${b.period==="all"?"selected":""}>All time</option></select></div></div>
-    <p class="muted" style="font-size:13px;margin-bottom:8px">${esc(explain)}</p>
+        <select id="b-period" aria-label="Time period"><option value="week" ${b.period==="week"?"selected":""}>This week</option><option value="month" ${b.period==="month"?"selected":""}>Last 30 days</option><option value="all" ${b.period==="all"?"selected":""}>All season</option></select></div></div>
+    <p class="muted" style="font-size:13px;margin-bottom:12px">${esc(explain)}</p>
     ${table}
-    ${you>=0?`<p style="margin-top:12px;font-size:14px">You are <b>#${you+1}</b> of ${rows.length} in this view${P.visibility==="private"?" (visible only to you)":""}.</p>`:""}
+    ${you>=0?`<p style="margin-top:12px;font-size:14px">You are <b class="gold">#${you+1}</b> of ${rows.length}${P.visibility==="private"?" (only you can see this)":""}.</p>`:""}
   </section>
-  <aside class="grid">
-    <section class="card stack"><p class="eyebrow">Your visibility</p>
-      ${[["alias","Alias",`Shown as "${P.alias}"`],["name","My name","Visible to your organisation"],["private","Private","Only you see your rank"]].map(([k,l,d])=>`<label class="pick"><input type="radio" name="bvis" value="${k}" ${P.visibility===k?"checked":""}><span><b>${l}</b><small>${esc(d)}</small></span></label>`).join("")}</section>
-    <section class="card stack"><p class="eyebrow">How we keep it fair</p><ul class="list" style="font-size:13px">
+  <aside class="side">
+    <section class="panel stack"><span class="label">Your visibility</span>
+      ${[["alias","Codename",`Shown as "${P.alias}"`],["name","My name","Visible to your organisation"],["private","Private","Only you see your rank"]].map(([k,l,d])=>`<label class="pick"><input type="radio" name="bvis" value="${k}" ${P.visibility===k?"checked":""}><span><b>${l}</b><small>${esc(d)}</small></span></label>`).join("")}</section>
+    <section class="panel stack"><span class="label">Fair play</span><ul class="list" style="font-size:13px">
       <li>Only assessed attempts count. Starting a mission earns nothing.</li>
-      <li>Your best score per mission counts, not your total, so grinding does not help.</li>
-      <li>Harder missions carry more weight; the rating reaches full weight after 3 missions.</li>
+      <li>Your best score per mission counts, so grinding does not help.</li>
+      <li>Harder missions weigh more; full weight after 3 missions.</li>
       <li>Most improved rewards learning from any starting point.</li>
       <li>Squads use averages, so size does not matter.</li></ul></section>
   </aside></div>`;
 }
 
-/* ---------- Progress ---------- */
+/* ---------- Profile ---------- */
+function radar(R){
+  const keys=Object.keys(SKILLS), cx=130, cy=120, rad=84;
+  const pt=(i,v)=>{ const a=-Math.PI/2 + i*2*Math.PI/keys.length; return [cx+Math.cos(a)*rad*v, cy+Math.sin(a)*rad*v]; };
+  const ring=v=>keys.map((_,i)=>pt(i,v).join(",")).join(" ");
+  const poly=keys.map((k,i)=>pt(i,(R[k]??0)/4).join(",")).join(" ");
+  const short={discover:"Discovery",uncertainty:"Uncertainty",evals:"Evals",rai:"Resp. AI",economics:"Economics",influence:"Influence"};
+  return `<svg class="radar" viewBox="0 0 260 240" width="100%" style="max-width:320px" role="img" aria-label="Skill radar">
+    ${[.25,.5,.75,1].map(v=>`<polygon points="${ring(v)}" fill="none" stroke="#26324D" stroke-width="1"/>`).join("")}
+    ${keys.map((_,i)=>{const [x,y]=pt(i,1); return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#26324D"/>`;}).join("")}
+    <polygon points="${poly}" fill="rgba(251,211,0,.25)" stroke="#FBD300" stroke-width="2"/>
+    ${keys.map((k,i)=>{const [x,y]=pt(i,1.2); return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" style="fill:${SKILL_COLOR[k]}">${short[k]}</text>`;}).join("")}
+  </svg>`;
+}
 function viewProgress(){
-  const L=levelOf(P.xp), N=nextLevel(P.xp), R=skillRatings(P.attempts), hist=[...P.attempts].sort((a,b)=>b.at-a.at).slice(0,20);
-  return `<div class="section-head" style="margin-top:0"><div><p class="eyebrow">My progress</p><h1>Level ${L.n}: ${esc(L.name)}</h1></div><span class="muted num">${P.xp} XP${N?` · ${N.xp-P.xp} XP to ${esc(N.name)}`:" · top level"}</span></div>
-  <div class="results">
-    <div class="grid">
-      <section class="card stack"><p class="eyebrow">Badges · ${P.badges.length} of ${BADGES.length}</p><div class="badges">${BADGES.map(b=>{const on=P.badges.includes(b.id); return `<div class="badge ${on?"on":""}"><span class="medal">${on?"★":"·"}</span><div><b>${esc(b.name)}</b><small>${esc(b.how)}</small></div></div>`;}).join("")}</div></section>
-      <section class="card"><p class="eyebrow">Mission history</p><div class="hist">${hist.length?hist.map(a=>{const s=scen(a.s); return `<div class="hist-row"><div><b style="color:var(--ink)">${esc(s?.title||a.s)}</b><div class="muted" style="font-size:12px">${new Date(a.at).toLocaleString()} · ${a.mode==="expert"?"Expert":"Guided"} · ${a.facts} of 3 facts · +${a.xp||0} XP</div></div><span class="chip ${a.score>=PASS?"good":"warn"} num">${a.score}</span><button class="btn" data-action="brief" data-sid="${a.s}">Replay</button></div>`;}).join(""):'<p class="muted">No missions yet.</p>'}</div></section>
+  const L=levelOf(P.xp), N=nextLevel(P.xp), R=skillRatings(P.attempts), hist=[...P.attempts].sort((a,b)=>b.at-a.at).slice(0,20), st=streakInfo();
+  return `<div class="row between" style="margin-bottom:16px"><div class="row" style="gap:14px"><span class="lvl-shield" style="width:56px;height:56px;font-size:22px">${L.n}</span><div><span class="label gold">${esc(P.alias)} · ${esc(SQUADS[P.team])}</span><h1>${esc(L.name)}</h1></div></div><span class="muted num">${P.xp} XP${N?` · ${N.xp-P.xp} to ${esc(N.name)}`:" · max level"}</span></div>
+  <div class="profile">
+    <div class="side">
+      <section class="panel stack"><span class="label">Badges · ${P.badges.length} of ${BADGES.length}</span><div class="badges">${BADGES.map(b=>{const on=P.badges.includes(b.id); return `<div class="badge ${on?"on":""}"><span class="medal">${on?"★":"?"}</span><div><b>${esc(b.name)}</b><small>${esc(b.how)}</small></div></div>`;}).join("")}</div></section>
+      <section class="panel"><span class="label">Mission log</span><div>${hist.length?hist.map(a=>{const s=scen(a.s); return `<div class="hist-row"><div><b style="color:var(--ink)">${esc(s?.title||a.s)}</b><div class="muted" style="font-size:12px">${new Date(a.at).toLocaleString()} · ${a.mode==="expert"?"Expert":"Guided"} · ${a.facts}/3 facts · +${a.xp||0} XP</div></div><span class="row" style="gap:6px">${starsHtml(a.stars ?? starsFor(a.score,a.facts))}<span class="chip ${a.score>=PASS?"good":"warn"} num">${a.score}</span></span><button class="btn" data-action="brief" data-sid="${a.s}">Replay</button></div>`;}).join(""):'<p class="muted">No missions yet.</p>'}</div></section>
     </div>
-    <aside class="grid">
-      <section class="card skills"><p class="eyebrow">Skills</p>${Object.entries(SKILLS).map(([k,v])=>`<div class="skill"><b>${esc(v.name)}</b><span class="muted">${profLevel(R[k])}</span><div class="bar"><i style="width:${R[k]==null?0:R[k]/4*100}%"></i></div></div>`).join("")}</section>
-      <section class="card stack"><p class="eyebrow">Settings</p>
-        <label for="set-team">Squad</label><select id="set-team">${Object.entries(SQUADS).map(([k,v])=>`<option value="${k}" ${P.team===k?"selected":""}>${esc(v)}</option>`).join("")}</select>
-        <div class="seg" role="group" aria-label="Default mode"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
-        ${S.confirmReset?`<div class="confirm"><b>Delete all your progress?</b><span style="font-size:13px">XP, badges and history will be removed and you leave the leaderboard. This cannot be undone.</span><div class="row"><button class="btn" data-action="reset-yes" style="border-color:var(--bad);color:var(--bad)">Delete my progress</button><button class="btn ghost" data-action="reset-no">Keep it</button></div></div>`:`<button class="btn ghost" data-action="reset" style="justify-self:start;color:var(--bad)">Reset my progress</button>`}
+    <aside class="side">
+      <section class="panel stack" style="justify-items:center"><span class="label" style="justify-self:start">Skill radar</span>${radar(R)}
+        <div class="stack" style="width:100%;gap:8px">${Object.entries(SKILLS).map(([k,v])=>`<div class="row between" style="font-size:13px"><span style="color:${SKILL_COLOR[k]}">${esc(v.name)} <span class="muted">${esc(v.code)}</span></span><span class="muted">${profLevel(R[k])}</span></div>`).join("")}</div></section>
+      <section class="panel stack"><span class="label">Streak</span><p class="row" style="gap:8px">${flame()}<b class="num" style="font-size:22px;color:var(--ink)">${st.n}</b> days ${st.shields?`· ${shieldIcon()} ${st.shields} shield${st.shields>1?"s":""}`:""}</p></section>
+      <section class="panel stack"><span class="label">Settings</span>
+        <label for="set-team" class="muted" style="font-size:13px">Squad</label><select id="set-team">${Object.entries(SQUADS).map(([k,v])=>`<option value="${k}" ${P.team===k?"selected":""}>${esc(v)}</option>`).join("")}</select>
+        <div class="seg" role="group" aria-label="Default difficulty"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
+        ${S.confirmReset?`<div class="confirm"><b>Delete all your progress?</b><span style="font-size:13px">XP, stars, badges and history will be removed and you leave the league. This cannot be undone.</span><div class="row"><button class="btn" data-action="reset-yes" style="border-color:var(--red);color:var(--red)">Delete my progress</button><button class="btn ghost" data-action="reset-no">Keep it</button></div></div>`:`<button class="btn ghost" data-action="reset" style="justify-self:start;color:var(--red)">Reset my progress</button>`}
       </section>
     </aside>
   </div>`;
@@ -955,16 +1225,19 @@ function viewProgress(){
 document.addEventListener("click", e=>{
   const b=e.target.closest("[data-action]"); if(!b || b.getAttribute("aria-disabled")==="true" || b.disabled) return;
   const act=b.dataset.action;
-  if(act==="nav"){ if(S.run?.busy) return; S.run=null; S.view=b.dataset.view; S.confirmReset=false; render(); window.scrollTo(0,0); }
-  else if(act==="brief"){ S.sid=b.dataset.sid; S.view="brief"; render(); window.scrollTo(0,0); }
+  if(act==="nav"){ if(S.run?.busy) return; S.run=null; S.chestNote=null; S.view=b.dataset.view; S.confirmReset=false; render(); window.scrollTo(0,0); }
+  else if(act==="brief"){ S.sid=b.dataset.sid; S.view="brief"; S.chestNote=null; render(); window.scrollTo(0,0); }
   else if(act==="mode"){ P.mode=b.dataset.mode; saveProfile(); render(); }
   else if(act==="start"){ startRun(b.dataset.sid); window.scrollTo(0,0); }
   else if(act==="send") sendTurn();
+  else if(act==="evidence") useEvidence(b.dataset.fid);
   else if(act==="to-decide"){ S.run.stage="decide"; render(); window.scrollTo(0,0); }
-  else if(act==="back-talk"){ S.run.stage="talk"; render(); }
+  else if(act==="back-talk"){ S.run.stage="talk"; render(); scrollChat(); }
   else if(act==="submit") submitDecision();
   else if(act==="stop"){ S.run?.ctl?.abort(); }
   else if(act==="quit"){ S.run?.ctl?.abort(); S.run=null; S.view="brief"; render(); }
+  else if(act==="chest") openChest(b.dataset.id);
+  else if(act==="spark") submitSpark();
   else if(act==="btab"){ S.board.tab=b.dataset.tab; render(); }
   else if(act==="reset"){ S.confirmReset=true; render(); }
   else if(act==="reset-no"){ S.confirmReset=false; render(); }
@@ -973,6 +1246,7 @@ document.addEventListener("click", e=>{
 document.addEventListener("input", e=>{
   if(e.target.id==="composer" && S.run) S.run.draft=e.target.value;
   if(e.target.id==="rationale" && S.run) S.run.rationale=e.target.value;
+  if(e.target.id==="spark") S.spark.draft=e.target.value;
   if(e.target.id==="predict" && S.run){ S.run.predicted=Number(e.target.value); $("predict-out").textContent=e.target.value; }
 });
 document.addEventListener("change", e=>{
@@ -981,7 +1255,7 @@ document.addEventListener("change", e=>{
   if(t.id==="b-period"){ S.board.period=t.value; render(); }
   if(t.id==="b-scenario"){ S.board.scenario=t.value; render(); }
   if(t.id==="b-skill"){ S.board.skill=t.value; render(); }
-  if(t.name==="bvis"){ P.visibility=t.value; saveProfile(); render(); toast(t.value==="private"?"You are now private. Only you see your rank.":"Leaderboard visibility updated."); }
+  if(t.name==="bvis"){ P.visibility=t.value; saveProfile(); render(); toast(t.value==="private"?"You are now private. Only you see your rank.":"League visibility updated."); }
   if(t.id==="set-team"){ P.team=t.value; saveProfile(); toast("Squad updated."); }
 });
 document.addEventListener("keydown", e=>{ if(e.target.id==="composer" && e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); sendTurn(); } });
@@ -991,7 +1265,7 @@ document.addEventListener("submit", e=>{
   S.sid="promise"; S.view="brief"; render(); window.scrollTo(0,0);
 });
 
-/* ---------- Boot: render now, light up Claude and the shared store when they arrive ---------- */
+/* ---------- Boot ---------- */
 render();
 (async function boot(){
   const CL = window.claude && typeof window.claude.use==="function" ? window.claude : null;
@@ -1009,9 +1283,9 @@ render();
         if(S.view==="onboard" && P.onboarded) S.view="home";
       } else if(P.onboarded){ saveProfile(); }
     }catch{}
-    RT.unsub = db.collection("board").limit(500).onSnapshot(q=>{
+    db.collection("board").limit(500).onSnapshot(q=>{
       RT.boardRows = q.docs.filter(d=>d.id!==RT.uid).map(d=>({id:d.id, ...d.data()}));
-      if(S.view==="board") render();
+      if((S.view==="board" || S.view==="home") && !S.run && document.activeElement?.id!=="spark") render();
     }, ()=>{});
   }
   if(!S.run) render(); else renderMe();
