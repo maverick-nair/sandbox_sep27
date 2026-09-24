@@ -241,7 +241,7 @@ export function TokenArea({ def, label, hint, value, onChange, rows = 4, tokens 
       el.setSelectionRange(pos, pos);
     });
   };
-  const runtime = tokens === 'actor' ? ['actor', 'stage', 'he', 'his', 'him'] : tokens === 'report' ? ['style', 'dominant_style', 'weeks'] : [];
+  const runtime = tokens === 'actor' ? ['actor', 'stage', 'he', 'his', 'him'] : tokens === 'report' ? ['style', 'dominant_style', 'weeks'] : tokens === 'decision' ? ['actor', 'he', 'his', 'him', 'actor2', 'he2', 'his2', 'him2', 'style', 'conversions', 'target'] : [];
   const hasTokens = findTokens(value).length > 0;
   return (
     <div className="field">
@@ -273,7 +273,7 @@ export function TokenArea({ def, label, hint, value, onChange, rows = 4, tokens 
       {preview && hasTokens && (
         <div className="small ink2" style={{ padding: '6px 2px 0' }}>
           <span className="eyebrow" style={{ marginRight: 6 }}>Reads as</span>
-          {renderText(def, value, { actor: 'Beth Killiney', pronoun: 'she', stage: def.stages[0]?.name, style: def.leadership.styles[0].name, dominant_style: def.leadership.styles[0].name })}
+          {renderText(def, value, { actor: def.actors[0]?.name || 'Beth Killiney', pronoun: def.actors[0]?.pronoun || 'she', actor2: def.actors[1]?.name || 'Derick Kaynes', he2: 'he', his2: 'his', him2: 'him', stage: def.stages[0]?.name, style: def.leadership.styles[0].name, dominant_style: def.leadership.styles[0].name, conversions: Math.round(def.funnel.target * 0.4), target: def.funnel.target })}
         </div>
       )}
       {hint && <span className="hint">{hint}</span>}

@@ -133,6 +133,52 @@ export function validate(def) {
   else if (!enabledActions.some((a) => a.mechanic === 'styleChoice')) add('error', 'actions', 'No leadership style action is switched on', 'The simulation measures leadership style through these actions. Switch on at least one.', { code: 'no-style-action' });
   for (const a of enabledActions) if (blank(a.name)) add('error', 'actions', 'An action has no name', 'Learners pick actions by name.', { ref: { actionId: a.id }, code: 'action-no-name', data: { actionId: a.id } });
 
+  // Decision moments
+  const dx = def.decisions;
+  if (dx) {
+    const pts = (dx.points || []).filter((p) => p.enabled !== false);
+    const dpw = def.timeline.daysPerWeek;
+    const ids = new Set((dx.points || []).map((p) => p.id));
+    const flags = new Set();
+    for (const p of dx.points || []) {
+      for (const o of p.options || []) for (const f of o.consequences?.flags || []) flags.add(f);
+      for (const oc of Object.values(p.outcomes || {})) for (const f of oc?.consequences?.flags || []) flags.add(f);
+    }
+    const peopleIds = new Set(def.actors.filter((a) => a.pool === 'team').map((a) => a.id));
+    const name = (p) => String(p.title || 'A moment').replace(/\{\{\s*actor2?\s*\}\}/g, (m) => def.actors.find((a) => a.id === (m.includes('2') ? p.about2 : p.about))?.name || 'someone');
+    const refOf = (p) => ({ dpId: p.id });
+    if (!pts.length) add('info', 'decisions', 'No decision moments are switched on', 'Learners would only run the team. Decision moments are where they meet situations and are scored on their judgement.', { code: 'dp-none' });
+    for (const p of pts) {
+      const n = `"${name(p)}"`;
+      if (p.week < 1 || p.week > weeks) add('error', 'decisions', `${n} is outside the simulation`, `It is set for week ${p.week}; the simulation has ${weeks} weeks.`, { ref: refOf(p), code: 'dp-outside', data: { dpId: p.id } });
+      else if (p.day < 1 || p.day > dpw) add('error', 'decisions', `${n} falls on a day that does not exist`, `Day ${p.day} of a ${dpw}-day week.`, { ref: refOf(p), code: 'dp-outside', data: { dpId: p.id } });
+      if (blank(p.situation) && !(p.variants || []).length) add('error', 'decisions', `${n} has no situation`, 'Learners would get a message with nothing in it.', { ref: refOf(p), code: 'dp-no-situation', data: { dpId: p.id } });
+      if (blank(p.prompt)) add('warning', 'decisions', `${n} does not ask the learner anything`, 'Add the question the learner answers, e.g. "How do you reply?"', { ref: refOf(p), code: 'dp-no-prompt', data: { dpId: p.id } });
+      if (p.type !== 'open' && (p.options || []).filter((o) => !blank(o.text)).length < 2) add('error', 'decisions', `${n} needs at least two options`, 'A choice needs something to choose between.', { ref: refOf(p), code: 'dp-few-options', data: { dpId: p.id } });
+      if (p.type === 'multi' && (p.options || []).length && !(p.options || []).some((o) => o.correct)) add('error', 'decisions', `${n}: no option is marked right`, 'Multiple select is scored on the right options a learner picks. With none marked, every answer scores zero.', { ref: refOf(p), code: 'dp-multi-no-correct', data: { dpId: p.id } });
+      if (p.type === 'open' && !(p.open?.keyIdeas || []).length) add('warning', 'decisions', `${n}: no key ideas to look for`, 'The evaluator scores open answers partly on the key ideas they cover. Without any, scores lean on general writing signals.', { ref: refOf(p), code: 'dp-no-ideas', data: { dpId: p.id } });
+      const byBand = p.type !== 'single' && p.type !== 'scenario' || (p.options || []).some((o) => o.style);
+      if (byBand && ['strong', 'mixed', 'weak'].some((b) => blank(p.outcomes?.[b]?.feedback))) add('warning', 'decisions', `${n}: coaching notes are missing`, 'Learners see a coach\'s note after each decision. Some bands have none, so they would see no feedback.', { ref: refOf(p), code: 'dp-no-feedback', data: { dpId: p.id } });
+      const conds = [].concat(p.requires || [], ...(p.variants || []).map((v) => v.when || []));
+      for (const c of conds) {
+        const broken = (c.decision && !ids.has(c.decision)) || (c.flag && !flags.has(c.flag)) || (c.notFlag && !flags.has(c.notFlag)) || ((c.kpiBelow || c.kpiAbove) && !(dx.kpis || []).some((k) => k.id === (c.kpiBelow || c.kpiAbove).id));
+        if (broken) { add('error', 'decisions', `${n} depends on something that no longer exists`, `Its condition refers to ${c.decision ? 'a deleted moment' : c.flag || c.notFlag ? `"${c.flag || c.notFlag}", which no choice sets any more` : 'a deleted KPI'}. It would ${c === p.requires ? 'never appear' : 'never use that variant'}.`, { ref: refOf(p), code: 'dp-bad-condition', data: { dpId: p.id } }); break; }
+      }
+      const who = [p.from?.actor, p.about, p.about2].filter(Boolean);
+      if (who.some((id) => !peopleIds.has(id))) add('error', 'decisions', `${n} is about someone who is not on the team`, 'The person was removed or moved to the hiring pool. Choose someone on the starting team.', { ref: refOf(p), code: 'dp-bad-person', data: { dpId: p.id } });
+    }
+    const slots = new Map();
+    for (const p of pts) if (!slots.has(p.slot || p.id)) slots.set(p.slot || p.id, p);
+    const total = slots.size;
+    const open = [...slots.values()].filter((p) => p.type === 'open').length;
+    const target = dx.mix?.open ?? 30;
+    const want = Math.round((total * target) / 100);
+    if (total >= 3 && Math.abs(open - want) >= 1 && Math.abs(open / total - target / 100) > 0.12) add('warning', 'decisions', `The interaction mix is ${Math.round((open / total) * 100)}% open, the target is ${target}%`, `${open} of ${total} moments ask for an answer in the learner's own words; the target means about ${want}.`, { ref: { tab: 'moments' }, code: 'dp-mix-off', data: { open, want, total, target } });
+    const w = def.scoring || {};
+    if (Object.keys(w).length && !Object.values(w).some((v) => v > 0)) add('error', 'decisions', 'Every part of the final score is weighted zero', 'Learners would all score the same. Weight at least one part in Scoring and KPIs.', { ref: { tab: 'scoring' }, code: 'scoring-zero' });
+    for (const r of def.learning?.reflections || []) if (def.learning.reflection !== false && (r.week < 1 || r.week > weeks)) add('warning', 'decisions', 'A reflection is set after the last week', `It is set for week ${r.week}; the simulation has ${weeks} weeks, so learners never see it.`, { ref: { tab: 'learning' }, code: 'reflection-outside', data: { id: r.id } });
+  }
+
   // Numbers that are allowed but almost certainly a slip.
   if (def.funnel.target > 0 && def.meta.baseTarget > 0) {
     const ratio = def.funnel.target / def.meta.baseTarget;

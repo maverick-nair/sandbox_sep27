@@ -3,6 +3,7 @@
 // team member the moment is about). Default mix: 7 structured to 3 open (70:30).
 import { DEFAULT_KPIS, mixOf, slotsOf, INTERACTION_TYPES } from '../../engine/decisions.js';
 import { suggestCriteria, draftKeyIdeas } from '../../engine/nlp.js';
+import { desiredStyle } from '../../engine/engine.js';
 
 export const CONCEPTS = {
   diagnose: { label: 'Reading people before acting', competency: 'adapt' },
@@ -255,15 +256,25 @@ export function defaultDecisions() {
 
 // ---------- switching interaction types ----------
 
-const bestOption = (dp) => [...(dp.options || [])].sort((a, b) => (b.quality ?? (b.correct ? 80 : 30)) - (a.quality ?? (a.correct ? 80 : 30)))[0];
+// With a definition, style options are judged by the style the person needs at the start.
+const bestOption = (dp, def) => {
+  const who = def && dp.about && def.actors.find((a) => a.id === dp.about);
+  if (who && (dp.options || []).some((o) => o.style)) {
+    const st = who.stats?.[who.startStage];
+    const need = st && desiredStyle(def, st.s, st.m);
+    const hit = dp.options.find((o) => o.style === need);
+    if (hit) return hit;
+  }
+  return [...(dp.options || [])].sort((a, b) => (b.quality ?? (b.correct ? 80 : 30)) - (a.quality ?? (a.correct ? 80 : 30)))[0];
+};
 
 // Converts a moment to another interaction type, keeping everything a learner would see.
-export function convertType(dp, type) {
+export function convertType(dp, type, def) {
   if (dp.type === type) return dp;
   const x = JSON.parse(JSON.stringify(dp));
   const wasOpen = x.type === 'open';
   if (type === 'open') {
-    const best = bestOption(x);
+    const best = bestOption(x, def);
     x.alt = { type: x.type, options: x.options, maxSelect: x.maxSelect };
     const answer = x.open?.modelAnswer || [best?.text, best?.feedback].filter(Boolean).join('. ').replace(/\.\./g, '.');
     x.open = x.open?.keyIdeas?.length ? x.open : { minWords: 25, criteria: suggestCriteria(x), keyIdeas: draftKeyIdeas(answer), modelAnswer: answer };
@@ -316,13 +327,13 @@ function bandsFromOptions(options = []) {
 
 // Changes interaction types so the open share is as close as possible to the target (0 to 100).
 // Moments the author fixed (lockType) are never changed.
-export function applyMix(points, openPct) {
+export function applyMix(points, openPct, def) {
   const list = JSON.parse(JSON.stringify(points || []));
   const slots = slotsOf(list);
   const want = Math.round((slots.length * openPct) / 100);
   let have = mixOf(list).open;
   const convertSlot = (slot, type) => {
-    for (let i = 0; i < list.length; i++) if ((list[i].slot || list[i].id) === slot) list[i] = convertType(list[i], type);
+    for (let i = 0; i < list.length; i++) if ((list[i].slot || list[i].id) === slot) list[i] = convertType(list[i], type, def);
   };
   // Prefer turning rich, higher-level moments into open ones; turn back the lowest-level first.
   const toOpen = slots.filter((p) => p.type !== 'open' && !p.lockType).sort((a, b) => (b.alt?.type === 'open' ? 2 : 0) + (b.level || 1) - ((a.alt?.type === 'open' ? 2 : 0) + (a.level || 1)));

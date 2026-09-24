@@ -6,7 +6,7 @@ import { TEMPLATES } from '../templates/registry.js';
 import { Button, Callout, Drawer, Field, NumberInput, Pill, Switch, TextInput, TokenArea } from './ui.jsx';
 import { useSample } from './Tailoring.jsx';
 
-const SECTION = { overview: 'Overview', story: 'Story and context', funnel: 'Funnel and target', team: 'Team', leadership: 'Leadership model', actions: 'Actions', events: 'Events', report: 'Report', settings: 'Settings' };
+const SECTION = { overview: 'Overview', story: 'Story and context', funnel: 'Funnel and target', team: 'Team', leadership: 'Leadership model', actions: 'Actions', events: 'Events', decisions: 'Decision moments', report: 'Report', settings: 'Settings' };
 const GROUPS = [
   { sev: 'error', title: 'Must fix before publishing', tone: 'bad' },
   { sev: 'warning', title: 'Worth fixing', tone: 'warn' },

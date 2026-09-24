@@ -23,7 +23,7 @@ export function EffectChips({ effects }) {
   );
 }
 
-export default function Moment({ def, state, dp, answered, onSubmit, evaluating, onRewind, canRewind, rewindsLeft, xray, group, hintsOn }) {
+export default function Moment({ def, state, dp, answered, onSubmit, evaluating, onRewind, canRewind, rewindsLeft, xray, group, hintsOn, onBack, next, onNext }) {
   const sender = senderOf(def, state, dp);
   const ch = CHANNELS[dp.channel] || CHANNELS.email;
   const text = situationText(def, state, dp);
@@ -36,6 +36,7 @@ export default function Moment({ def, state, dp, answered, onSubmit, evaluating,
 
   return (
     <article className={`lx-moment ch-${dp.channel}`} aria-label={title}>
+      {onBack && <button type="button" className="lx-back" onClick={onBack} disabled={evaluating}><span aria-hidden="true">←</span> Today</button>}
       <header className="lx-moment-head">
         {dp.channel === 'meeting' || dp.channel === 'call' ? (
           <div className="lx-room">
@@ -64,7 +65,7 @@ export default function Moment({ def, state, dp, answered, onSubmit, evaluating,
         )}
         {xray && about && <p className="lx-xray">X-ray: {about.name} has skill {Math.round(about.s)}, morale {Math.round(about.m)} and needs {def.leadership.styles.find((s) => s.id === desiredStyle(def, about.s, about.m))?.name}.</p>}
 
-        {answered ? <Answered def={def} state={state} dp={dp} a={answered} sender={sender} onRewind={onRewind} canRewind={canRewind} rewindsLeft={rewindsLeft} /> : !typing && (
+        {answered ? <Answered def={def} state={state} dp={dp} a={answered} sender={sender} onRewind={onRewind} canRewind={canRewind} rewindsLeft={rewindsLeft} onBack={onBack} next={next} onNext={onNext} /> : !typing && (
           <Respond def={def} state={state} dp={dp} prompt={prompt} verb={ch.verb} onSubmit={onSubmit} evaluating={evaluating} xray={xray} group={group} hintsOn={hintsOn} />
         )}
       </div>
@@ -189,7 +190,7 @@ function bestIds(def, state, dp) {
   return dp.options.filter((o) => (o.quality ?? 0) === top).map((o) => o.id);
 }
 
-function Answered({ def, state, dp, a, sender, onRewind, canRewind, rewindsLeft }) {
+function Answered({ def, state, dp, a, sender, onRewind, canRewind, rewindsLeft, onBack, next, onNext }) {
   const [why, setWhy] = useState(a.band !== 'strong');
   const yours = a.expired ? null : dp.type === 'open' ? a.answer?.text : dp.type === 'rank' ? (a.answer?.order || []).map((id, i) => `${i + 1}. ${say(def, state, dp, dp.options?.find((o) => o.id === id)?.text)}`).join('\n') : (a.answer?.optionIds || [a.answer?.optionId]).map((id) => say(def, state, dp, dp.options?.find((o) => o.id === id)?.text)).filter(Boolean).join('\n');
   const toneLabel = { strong: 'Landed well', mixed: 'Partly landed', weak: 'Did not land' }[a.band];
@@ -229,6 +230,16 @@ function Answered({ def, state, dp, a, sender, onRewind, canRewind, rewindsLeft 
         <div className="lx-rewind">
           <span className="small">Not what you wanted? You can rethink this moment before moving on.</span>
           <button type="button" className="btn sm" onClick={onRewind}>Rethink ({rewindsLeft} left)</button>
+        </div>
+      )}
+      {(onBack || next) && (
+        <div className="lx-next">
+          {next ? (
+            <>
+              {onBack && <button type="button" className="btn ghost" onClick={onBack}>Back to today</button>}
+              <button type="button" className="btn primary" onClick={onNext}>Next: {next.title} <span aria-hidden="true">→</span></button>
+            </>
+          ) : <button type="button" className="btn primary" onClick={onBack}>Back to today <span aria-hidden="true">→</span></button>}
         </div>
       )}
     </div>

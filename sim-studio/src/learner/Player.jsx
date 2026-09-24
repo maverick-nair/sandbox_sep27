@@ -245,7 +245,8 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
           {error && <div className="lx-error" role="alert">{error}</div>}
           {item?.kind === 'moment' ? (
             <Moment key={`${item.dp.id}:${state.dx.answered[item.dp.id]?.attempts || 0}:${state.dx.rewindsUsed}`} def={def} state={state} dp={item.dp} answered={state.dx.answered[item.dp.id]} onSubmit={submitMoment} evaluating={evaluating} xray={xray} group={identity.group} hintsOn={def.learning?.hints !== false}
-              canRewind={!!rewind?.snap && rewind.dpId === item.dp.id && state.dx.answered[item.dp.id]?.band !== 'strong' && rewindsLeft > 0 && !state.dx.answered[item.dp.id]?.expired} rewindsLeft={rewindsLeft} onRewind={doRewind} />
+              canRewind={!!rewind?.snap && rewind.dpId === item.dp.id && state.dx.answered[item.dp.id]?.band !== 'strong' && rewindsLeft > 0 && !state.dx.answered[item.dp.id]?.expired} rewindsLeft={rewindsLeft} onRewind={doRewind}
+              onBack={() => setSelected(null)} next={pending.find((p) => p.key !== item.key)} onNext={() => setSelected(pending.find((p) => p.key !== item.key)?.key || null)} />
           ) : item ? (
             <article className="lx-moment">
               <header className="lx-moment-head"><div className="row nowrap" style={{ '--gap': '12px' }}><Avatar name={item.sender.name} size={42} /><div><div className="lx-from"><strong>{item.sender.name}</strong>{item.sender.role && <span className="muted"> · {item.sender.role}</span>}</div><div className="lx-subject">{item.title}</div></div></div></header>

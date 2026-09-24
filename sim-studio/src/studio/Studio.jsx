@@ -8,6 +8,7 @@ import Team from './sections/Team.jsx';
 import Leadership from './sections/Leadership.jsx';
 import Actions from './sections/Actions.jsx';
 import Events from './sections/Events.jsx';
+import Decisions from './sections/Decisions.jsx';
 import Report from './sections/Report.jsx';
 import Settings from './sections/Settings.jsx';
 import Balance from './Balance.jsx';
@@ -36,6 +37,7 @@ export const SECTIONS = [
   { id: 'leadership', label: 'Leadership model', group: 'Build', component: Leadership },
   { id: 'actions', label: 'Actions', group: 'Build', component: Actions },
   { id: 'events', label: 'Events', group: 'Build', component: Events },
+  { id: 'decisions', label: 'Decision moments', group: 'Build', component: Decisions },
   { id: 'report', label: 'Report', group: 'Build', component: Report },
   { id: 'settings', label: 'Settings and delivery', group: 'Ship', component: Settings },
 ];

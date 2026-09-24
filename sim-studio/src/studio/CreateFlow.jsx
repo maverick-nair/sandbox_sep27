@@ -17,6 +17,8 @@ import { Button, Callout, Field, Pill, Seg, StylePill, Switch, TextInput, TokenA
 import { LocationFields, useSample } from './Tailoring.jsx';
 import { writeFlowDraft } from './store.js';
 import { clone } from '../engine/clone.js';
+import { INTERACTION_TYPES, CHANNELS, mixOf, textVars } from '../engine/decisions.js';
+import { MixMeter } from './sections/Decisions.jsx';
 
 const STEPS = [
   { id: 'describe', label: 'Describe it', short: 'Describe' },
@@ -29,7 +31,7 @@ const OLD_STEP = [0, 1, 2, 2, 2, 2];
 const LENGTH_OF = Object.fromEntries(SESSION_LENGTHS.map((l) => [l.id, l]));
 const GENIE_TIMEOUT_MS = 20000;
 const EMPTY_BRIEF = { instructions: '', outcomes: [], outcomeText: '', constraints: '', chips: [] };
-const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null };
+const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null, openMix: 30, dpTypes: {} };
 const DRIVERS = ['orgName', 'industry', 'customIndustry', 'offeringType', 'customerType', 'country', 'customCountry', 'city'];
 const briefText = (b) => [b.instructions, b.outcomeText, b.constraints, ...(b.outcomes || []), ...(b.chips || [])].join('|');
 
@@ -121,8 +123,19 @@ export default function CreateFlow({ templateId, resume, onCancel, onCreate }) {
     if (settings.dealValue > 0) def.funnel.valuePerConversion = settings.dealValue;
     if (settings.currency) def.funnel.currency = settings.currency;
     if (settings.target) def.funnel.target = settings.target;
+    const dec = TEMPLATES[templateId]?.decisions;
+    if (def.decisions && dec) {
+      const mix = settings.openMix ?? 30;
+      def.decisions.mix = { ...(def.decisions.mix || {}), open: mix };
+      if (mix !== 30) def.decisions.points = dec.applyMix(def.decisions.points, mix, def);
+      for (const [id, type] of Object.entries(settings.dpTypes || {})) {
+        const i = def.decisions.points.findIndex((p) => p.id === id);
+        if (i >= 0 && def.decisions.points[i].type !== type) def.decisions.points[i] = { ...dec.convertType(def.decisions.points[i], type, def), lockType: true };
+        else if (i >= 0) def.decisions.points[i].lockType = true;
+      }
+    }
     return def;
-  }, [base, ctx, profile, settings, overrides, specifics]);
+  }, [base, ctx, profile, settings, overrides, specifics, templateId]);
 
   const notes = [brief.instructions, brief.outcomeText && `Outcome: ${brief.outcomeText}`, brief.constraints && `Constraints: ${brief.constraints}`, settings.formal && 'Use a formal tone.'].filter(Boolean).join('\n');
 
@@ -579,6 +592,12 @@ function BasicsStep({ profile, settings, sources, asked, answered, found, resolv
             <span className="hint">{DIFFICULTY[settings.difficulty].note}</span>
           </div>
         </Row>
+        <Row label="How learners respond" value={`${100 - (settings.openMix ?? 30)}% choices, ${settings.openMix ?? 30}% in their own words`} guessed={false}>
+          <Field label="Share of moments answered in the learner's own words">
+            <Seg label="Open response share" value={settings.openMix ?? 30} onChange={(v) => setS({ openMix: v })} options={[0, 20, 30, 40, 50].map((v) => ({ value: v, label: `${v}%` }))} />
+            <span className="hint">{(settings.openMix ?? 30) === 30 ? 'Recommended. Most moments are quick choices (single, multiple select, ranking, scenario); about a third ask for a written reply that is scored on reasoning, relevance and judgement.' : (settings.openMix ?? 30) > 30 ? 'More written replies: deeper practice and richer debriefs, but a longer session.' : 'Fewer written replies: faster to play, less practice at explaining decisions.'}</span>
+          </Field>
+        </Row>
         <Row label="The debrief focuses on" value={settings.outcomes.map((o) => OUTCOMES.find((x) => x.id === o)?.label.toLowerCase()).join('; ')} guessed={guess('outcomes')}>
           <div className="row" style={{ '--gap': '6px' }}>
             {OUTCOMES.map((o) => <button key={o.id} type="button" className={`btn sm ${settings.outcomes.includes(o.id) ? 'primary' : ''}`} aria-pressed={settings.outcomes.includes(o.id)} onClick={() => setS({ outcomes: settings.outcomes.includes(o.id) ? settings.outcomes.filter((x) => x !== o.id) : [...settings.outcomes, o.id] })}>{o.label}</button>)}
@@ -640,6 +659,7 @@ const TABS = [
   { id: 'story', label: 'Story' },
   { id: 'team', label: 'Team' },
   { id: 'events', label: 'Events' },
+  { id: 'decisions', label: 'Decisions' },
   { id: 'fairness', label: 'Target' },
 ];
 
@@ -725,6 +745,31 @@ function ReviewStep({ draft, profile, settings, setS, overrides, found, calibrat
           </div>
           {events.map((e) => <EventRow key={e.id} draft={draft} ev={e} edited={overrides[`ref:${refKey({ eventId: e.id })}`]?.by === 'you'} onSave={(v) => editText({ eventId: e.id }, v)} />)}
           <p className="small muted">Plus {draft.triggers.filter((t) => t.enabled).length} consequences that follow from the learner's own decisions, such as a resignation after poor leadership.</p>
+        </div>
+      )}
+
+      {tab === 'decisions' && (
+        <div className="card stack">
+          <div>
+            <h3>The decisions learners make</h3>
+            <p className="small muted">Moments arrive as emails, chats, meetings and business updates. Each is scored and changes what happens next. Change how any of them is answered; the content is kept.</p>
+          </div>
+          {(() => { const m = mixOf(draft.decisions?.points || []); return <MixMeter open={m.open} total={m.total} target={settings.openMix ?? 30} />; })()}
+          <div className="stack" style={{ '--gap': '6px' }}>
+            {(draft.decisions?.points || []).filter((p) => p.enabled !== false).sort((a, b) => a.week - b.week || a.day - b.day).map((p) => (
+              <div key={p.id} className="review-dp">
+                <span className="small muted num">W{p.week}</span>
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <strong className="small">{renderText(draft, p.title, textVars(draft, null, p))}</strong>
+                  <span className="small muted" style={{ display: 'block' }}>{CHANNELS[p.channel]?.label}{p.requires ? ' · only on some paths' : ''}</span>
+                </span>
+                <select className="select" aria-label={`How "${renderText(draft, p.title, textVars(draft, null, p))}" is answered`} value={p.type} onChange={(e) => setS({ dpTypes: { ...(settings.dpTypes || {}), [p.id]: e.target.value } })}>
+                  {Object.entries(INTERACTION_TYPES).map(([id, t]) => <option key={id} value={id}>{t.label}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+          <p className="small muted">In the Studio, Decision moments lets you edit options, criteria, consequences and branching.</p>
         </div>
       )}
 

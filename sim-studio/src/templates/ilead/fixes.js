@@ -14,6 +14,10 @@ import { collectTexts, findTokens, knownTokenKeys } from '../../engine/text.js';
 import { OUTCOME_LABELS, outcomeLabel } from '../../engine/validate.js';
 import { setTextAt } from '../../engine/authoring.js';
 import { refKey } from './contextualize.js';
+import { applyMix, DEFAULT_POINTS } from './decisions.js';
+import { draftKeyIdeas } from '../../engine/nlp.js';
+import { DEFAULT_SCORING } from '../../engine/decisions.js';
+import { renderText } from '../../engine/text.js';
 
 let original = null;
 const orig = () => (original ||= createIleadDefinition());
@@ -456,6 +460,133 @@ function suggest(def, issue, draft) {
         apply: (x, v) => { x.funnel.valuePerConversion = Math.max(1, Number(v.value)); },
       };
     }
+    case 'dp-outside': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const w = Math.max(1, Math.min(weeks, p.week));
+      const day = Math.max(1, Math.min(dpw, p.day));
+      return {
+        summary: `Move it to week ${w}, day ${day}`,
+        fields: [{ key: 'week', label: 'Week', type: 'number', value: w, min: 1, max: weeks }, { key: 'day', label: 'Day', type: 'number', value: day, min: 1, max: dpw }],
+        apply: (x, v) => { const q = x.decisions.points.find((y) => y.id === d.dpId); q.week = Math.max(1, Math.min(weeks, Math.round(Number(v.week)))); q.day = Math.max(1, Math.min(dpw, Math.round(Number(v.day)))); },
+      };
+    }
+    case 'dp-no-situation': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const src = DEFAULT_POINTS.find((y) => y.id === d.dpId)?.situation;
+      const value = src || `${p.about ? '{{actor}}' : '{{ceo}}'} needs a decision from you about ${String(p.title || 'this').toLowerCase()}.`;
+      return {
+        summary: src ? 'Restore the original situation' : 'Write a short situation',
+        note: 'Write it as the sender would. Fields like {{actor}} fill in automatically.',
+        fields: [{ key: 'text', label: 'Situation', type: 'textarea', value, rows: 3 }],
+        apply: (x, v) => { x.decisions.points.find((y) => y.id === d.dpId).situation = String(v.text); },
+        genie: { field: 'text', prompt: (v) => `Rewrite this situation for a leadership simulation set at ${renderText(def, '{{company}}')}. Two or three sentences, written as the sender would, keep any {{tokens}} as they are, no em dashes. Reply with the text only.\n\n${v.text}` },
+      };
+    }
+    case 'dp-no-prompt': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const value = { email: 'How do you reply?', chat: 'What do you say?', meeting: 'What do you say?', call: 'What do you say?', dashboard: 'What do you do?' }[p.channel] || 'What do you do?';
+      return {
+        summary: `Ask "${value}"`,
+        fields: [{ key: 'text', label: 'Question to the learner', type: 'text', value }],
+        apply: (x, v) => { x.decisions.points.find((y) => y.id === d.dpId).prompt = String(v.text); },
+      };
+    }
+    case 'dp-few-options': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const src = DEFAULT_POINTS.find((y) => y.id === d.dpId && y.type === p.type)?.options;
+      return {
+        summary: src ? 'Restore the original options' : 'Make it an open response instead',
+        note: src ? undefined : 'The learner answers in their own words and is scored against criteria, so no options are needed.',
+        fields: [],
+        apply: (x) => {
+          const i = x.decisions.points.findIndex((y) => y.id === d.dpId);
+          if (src) x.decisions.points[i].options = JSON.parse(JSON.stringify(src));
+          else x.decisions.points[i] = { ...x.decisions.points[i], type: 'open', options: undefined, open: x.decisions.points[i].open || { minWords: 25, keyIdeas: [], modelAnswer: '' } };
+        },
+      };
+    }
+    case 'dp-multi-no-correct': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const src = DEFAULT_POINTS.find((y) => y.id === d.dpId);
+      const guess = (p.options || []).filter((o) => src?.options?.find((q) => q.id === o.id)?.correct || (o.quality ?? 0) >= 70).map((o) => o.id);
+      const value = guess.length ? guess : [p.options[0].id];
+      return {
+        summary: `Mark ${value.length} option${value.length === 1 ? '' : 's'} as right`,
+        fields: [{ key: 'ids', label: 'Right choices', type: 'checklist', value, options: p.options.map((o) => ({ value: o.id, label: renderText(def, o.text) })) }],
+        apply: (x, v) => { for (const o of x.decisions.points.find((y) => y.id === d.dpId).options) o.correct = (v.ids || []).includes(o.id); },
+      };
+    }
+    case 'dp-no-ideas': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const answer = p.open?.modelAnswer || DEFAULT_POINTS.find((y) => y.id === d.dpId)?.open?.modelAnswer || '';
+      return {
+        summary: answer ? 'Draft key ideas from the strong answer' : 'Write a strong answer, then draft key ideas from it',
+        note: 'One key idea per sentence. You can refine the words to look for in Decision moments.',
+        fields: [{ key: 'answer', label: 'A strong answer', type: 'textarea', value: answer || 'I want to understand what is getting in the way, because I can help. Here is what I suggest and why. Let us agree the next step and check in on Friday.', rows: 4 }],
+        apply: (x, v) => { const q = x.decisions.points.find((y) => y.id === d.dpId); q.open ||= { minWords: 25 }; q.open.modelAnswer = String(v.answer); q.open.keyIdeas = draftKeyIdeas(String(v.answer)); },
+      };
+    }
+    case 'dp-no-feedback': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const DRAFT = {
+        strong: 'That landed. You read the situation and chose an approach that fits it.',
+        mixed: 'Part of the way there. Think about what this person needs from you right now, not what worked last time.',
+        weak: 'That did not land. Look again at what the situation tells you before you act.',
+      };
+      const missing = ['strong', 'mixed', 'weak'].filter((b) => !String(p.outcomes?.[b]?.feedback || '').trim());
+      return {
+        summary: `Add ${missing.length} short coaching note${missing.length === 1 ? '' : 's'}`,
+        fields: missing.map((b) => ({ key: b, label: `${b.charAt(0).toUpperCase()}${b.slice(1)} answer`, type: 'textarea', value: DEFAULT_POINTS.find((y) => y.id === d.dpId)?.outcomes?.[b]?.feedback || DRAFT[b], rows: 2 })),
+        apply: (x, v) => { const q = x.decisions.points.find((y) => y.id === d.dpId); q.outcomes ||= {}; for (const b of missing) { q.outcomes[b] ||= {}; q.outcomes[b].feedback = String(v[b]); } },
+      };
+    }
+    case 'dp-bad-condition': {
+      return {
+        summary: 'Remove the broken condition',
+        note: 'The moment then appears for every learner. You can set a new condition under Branching.',
+        fields: [],
+        apply: (x) => {
+          const q = x.decisions.points.find((y) => y.id === d.dpId);
+          const ids = new Set(x.decisions.points.map((y) => y.id));
+          const flags = new Set(x.decisions.points.flatMap((y) => [...(y.options || []).flatMap((o) => o.consequences?.flags || []), ...Object.values(y.outcomes || {}).flatMap((o) => o?.consequences?.flags || [])]));
+          const kpis = new Set((x.decisions.kpis || []).map((k) => k.id));
+          const ok = (c) => !((c.decision && !ids.has(c.decision)) || (c.flag && !flags.has(c.flag)) || (c.notFlag && !flags.has(c.notFlag)) || ((c.kpiBelow || c.kpiAbove) && !kpis.has((c.kpiBelow || c.kpiAbove).id)));
+          if (q.requires && !ok(q.requires)) delete q.requires;
+          if (q.variants) q.variants = q.variants.filter((vr) => !vr.when || ok(vr.when));
+        },
+      };
+    }
+    case 'dp-bad-person': {
+      const p = def.decisions.points.find((y) => y.id === d.dpId);
+      const people = team(def);
+      const ok = new Set(people.map((a) => a.id));
+      const pick = people.find((a) => a.id === p.about) || people[0];
+      return {
+        summary: `Make it about ${pick.name}`,
+        fields: [{ key: 'actorId', label: 'Who it is about', type: 'select', value: pick.id, options: people.map((a) => ({ value: a.id, label: a.name })) }],
+        apply: (x, v) => {
+          const q = x.decisions.points.find((y) => y.id === d.dpId);
+          if (q.about && !ok.has(q.about)) q.about = v.actorId;
+          if (q.from?.actor && !ok.has(q.from.actor)) q.from = { actor: v.actorId };
+          if (q.about2 && (!ok.has(q.about2) || q.about2 === q.about)) q.about2 = people.find((a) => a.id !== q.about)?.id;
+        },
+      };
+    }
+    case 'dp-mix-off':
+      return {
+        summary: `Rebalance to ${d.target}% open (about ${d.want} of ${d.total})`,
+        note: 'Changes the interaction type of the moments that suit it best and keeps their content. Moments you locked are not changed. Or keep the mix and change the target.',
+        fields: [{ key: 'target', label: 'Target share of open responses (%)', type: 'number', value: d.target, min: 0, max: 100 }],
+        apply: (x, v) => { const t = Math.max(0, Math.min(100, Math.round(Number(v.target)))); x.decisions.mix = { ...(x.decisions.mix || {}), open: t }; x.decisions.points = applyMix(x.decisions.points, t, x); },
+      };
+    case 'scoring-zero':
+      return { summary: 'Restore the standard weights (30, 30, 30, 10)', fields: [], apply: (x) => { x.scoring = { ...DEFAULT_SCORING }; } };
+    case 'reflection-outside':
+      return {
+        summary: `Move it to week ${weeks}`,
+        fields: [{ key: 'week', label: 'Week', type: 'number', value: weeks, min: 1, max: weeks }],
+        apply: (x, v) => { const r = x.learning.reflections.find((y) => y.id === d.id); r.week = Math.max(1, Math.min(weeks, Math.round(Number(v.week)))); },
+      };
     default:
       return issue.fix ? { summary: issue.fix.label, fields: [], apply: (x) => issue.fix.patch(x) } : null;
   }

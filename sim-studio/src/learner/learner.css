@@ -313,3 +313,9 @@
 .ring-fill { transition: stroke-dasharray 0.8s ease-out; }
 @media (max-width: 560px) { .barlist-row { grid-template-columns: 110px 1fr 40px; } }
 .pkg-note { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 70; font-size: 12px; padding: 6px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+/* moment navigation */
+.lx-back { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.lx-back:hover { color: var(--ink); }
+.lx-back:disabled { opacity: .5; cursor: default; }
+.lx-next { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding-top: 4px; }

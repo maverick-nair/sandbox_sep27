@@ -4,8 +4,9 @@ import { ILEAD_TEMPLATE, migrateDefinition } from './ilead/index.js';
 import * as ileadContext from './ilead/contextualize.js';
 import * as ileadPacks from './ilead/context-packs.js';
 import * as ileadFixes from './ilead/fixes.js';
+import * as ileadDecisions from './ilead/decisions.js';
 
-export const TEMPLATES = { ilead: { ...ILEAD_TEMPLATE, contextualize: ileadContext, packs: ileadPacks, migrate: migrateDefinition, fixes: ileadFixes } };
+export const TEMPLATES = { ilead: { ...ILEAD_TEMPLATE, contextualize: ileadContext, packs: ileadPacks, migrate: migrateDefinition, fixes: ileadFixes, decisions: ileadDecisions } };
 
 // From the KNOLSKAPE storyline catalogue: simulations queued to become templates.
 export const PLANNED_TEMPLATES = [
