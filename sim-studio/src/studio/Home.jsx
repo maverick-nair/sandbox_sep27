@@ -68,7 +68,7 @@ export default function Home({ store, onOpen, onNew, notify }) {
                   </div>
                   <p className="small muted">For {t.audiences.join(', ').toLowerCase()}.</p>
                   <div className="row" style={{ marginTop: 4 }}>
-                    <Button variant="primary" size="lg" onClick={() => onNew('ilead')}>Use this template</Button>
+                    <Button variant="primary" size="lg" onClick={() => onNew('ilead')} tip="Describe what you need in a few sentences. Genie drafts a tailored iLead simulation step by step for you to review." tipAlign="start">Use this template</Button>
                   </div>
                 </div>
                 <div className="stack" style={{ padding: 20, background: 'var(--surface-2)', '--gap': '8px' }}>
@@ -92,7 +92,7 @@ export default function Home({ store, onOpen, onNew, notify }) {
           <section className="stack" aria-labelledby="mine-h">
             <div className="row spread">
               <h2 id="mine-h">Your simulations</h2>
-              <Button size="sm" variant="ghost" onClick={() => setConfirm('reset')}>Reset sample data</Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirm('reset')} tip="Removes the simulations saved in this browser and restores the migrated iLead sample." tipAlign="end">Reset sample data</Button>
             </div>
             {confirm === 'reset' && (
               <div className="callout warn">
@@ -133,9 +133,9 @@ export default function Home({ store, onOpen, onNew, notify }) {
                             </div>
                           ) : (
                             <div className="row nowrap">
-                              <Button size="sm" onClick={() => onOpen(s.id)}>Open</Button>
-                              <Button size="sm" variant="ghost" onClick={() => { store.duplicate(s.id); notify('Copy created'); }}>Duplicate</Button>
-                              <Button size="sm" variant="ghost" className="danger" onClick={() => setConfirm(s.id)}>Delete</Button>
+                              <Button size="sm" onClick={() => onOpen(s.id)} tip="Open in the Studio to edit, test and publish.">Open</Button>
+                              <Button size="sm" variant="ghost" onClick={() => { store.duplicate(s.id); notify('Copy created'); }} tip="Makes an independent draft copy, useful for a second client or language.">Duplicate</Button>
+                              <Button size="sm" variant="ghost" className="danger" onClick={() => setConfirm(s.id)} tip="Deletes this simulation from this browser. You confirm first." tipAlign="end">Delete</Button>
                             </div>
                           )}
                         </td>

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { validate, healthSummary } from '../engine/validate.js';
-import { Button, Drawer, Modal, Pill, Switch, TextInput, Callout } from './ui.jsx';
+import { Button, Drawer, Modal, Pill, Switch, TextInput, Callout, Tip } from './ui.jsx';
 import Overview from './sections/Overview.jsx';
 import Story from './sections/Story.jsx';
 import Funnel from './sections/Funnel.jsx';
@@ -12,6 +12,16 @@ import Report from './sections/Report.jsx';
 import Settings from './sections/Settings.jsx';
 import Balance from './Balance.jsx';
 import Preview from './Preview.jsx';
+
+// What each main action does, shown as tooltips.
+export const TIPS = {
+  health: 'Checks every rule the simulation depends on, on every change: missing copy, stages without people, events outside the calendar. Lists what to fix before publishing.',
+  balance: 'Four bot leaders play the simulation many times. Shows whether a skilled leader can reach the target and whether guessing cannot, and suggests a fair target.',
+  play: "Play the simulation as a learner would, from the welcome letter to the report. Author x-ray shows each person's true skill and morale.",
+  publish: 'Saves a numbered version that learners get from now on. Runs already in progress keep their version. Blocked while the health check has errors.',
+  engine: 'Reveals the numbers behind the plain controls: impacts, probabilities, formulas and buffers. Off keeps the Studio simple.',
+  all: 'Back to your list of simulations. Your work is saved automatically.',
+};
 
 export const SECTIONS = [
   { id: 'overview', label: 'Overview', group: 'Plan', component: Overview },
@@ -69,31 +79,35 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
         ))}
         <div className="rail-group">
           <span className="eyebrow">Test</span>
-          <button type="button" className="rail-item" onClick={() => setPanel('balance')}>
-            Balance check
-            {sim.balance ? <span className={`badge ${sim.balance.status === 'balanced' && !balanceStale ? '' : 'warn'}`}>{balanceStale ? '!' : sim.balance.status === 'balanced' ? '✓' : '!'}</span> : null}
-          </button>
-          <button type="button" className="rail-item" onClick={() => setPanel('preview')}>Play as learner</button>
+          <Tip text={TIPS.balance} align="right">
+            <button type="button" className="rail-item" onClick={() => setPanel('balance')}>
+              Balance check
+              {sim.balance ? <span className={`badge ${sim.balance.status === 'balanced' && !balanceStale ? '' : 'warn'}`}>{balanceStale ? '!' : sim.balance.status === 'balanced' ? '✓' : '!'}</span> : null}
+            </button>
+          </Tip>
+          <Tip text={TIPS.play} align="right">
+            <button type="button" className="rail-item" onClick={() => setPanel('preview')}>Play as learner</button>
+          </Tip>
         </div>
       </nav>
       <main className="main">
         <div className="page" style={{ paddingTop: 16 }}>
           <div className="row spread" style={{ marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
             <div className="row" style={{ minWidth: 0 }}>
-              <Button variant="ghost" size="sm" onClick={onExit}>All simulations</Button>
+              <Button variant="ghost" size="sm" onClick={onExit} tip={TIPS.all} tipAlign="start">All simulations</Button>
               {sim.status === 'published' ? <Pill tone="accent">Published v{sim.versions.at(-1)?.version}{sim.updatedAt > (sim.publishedAt || sim.versions.at(-1)?.at || 0) ? ' · unpublished changes' : ''}</Pill> : <Pill>Draft</Pill>}
               <span className="small muted">Saved in this browser</span>
             </div>
             <div className="row">
-              <Switch checked={advanced} onChange={setAdvanced} label="Show engine settings" />
-              <Button size="sm" onClick={() => setPanel('health')}>
+              <Tip text={TIPS.engine}><Switch checked={advanced} onChange={setAdvanced} label="Show engine settings" /></Tip>
+              <Button size="sm" onClick={() => setPanel('health')} tip={TIPS.health}>
                 {health.errors ? <span className="badge bad">{health.errors}</span> : null}
                 {health.warnings ? <span className="badge warn">{health.warnings}</span> : null}
                 Health check
               </Button>
-              <Button size="sm" onClick={() => setPanel('balance')}>Balance check</Button>
-              <Button size="sm" onClick={() => setPanel('preview')}>Play as learner</Button>
-              <Button size="sm" variant="primary" onClick={() => setPanel('publish')}>Publish</Button>
+              <Button size="sm" onClick={() => setPanel('balance')} tip={TIPS.balance}>Balance check</Button>
+              <Button size="sm" onClick={() => setPanel('preview')} tip={TIPS.play}>Play as learner</Button>
+              <Button size="sm" variant="primary" onClick={() => setPanel('publish')} tip={TIPS.publish} tipAlign="end">Publish</Button>
             </div>
           </div>
           <Current {...ctx} />
@@ -130,7 +144,7 @@ function HealthDrawer({ issues, onClose, go, update, notify }) {
                   <p className="small ink2">{i.detail}</p>
                   <div className="row">
                     <Button size="sm" onClick={() => go(i.section, i.ref)}>Go to {i.section}</Button>
-                    {i.fix && <Button size="sm" variant="primary" onClick={() => { update(i.fix.patch); notify('Fixed'); }}>{i.fix.label}</Button>}
+                    {i.fix && <Button size="sm" variant="primary" onClick={() => { update(i.fix.patch); notify('Fixed'); }} tip="Applies the suggested change for you. You can change it again later.">{i.fix.label}</Button>}
                   </div>
                 </div>
               ))}
@@ -180,7 +194,7 @@ function PublishModal({ sim, health, store, onClose, notify, openHealth }) {
                     <Button size="sm" variant="primary" onClick={() => { store.restore(sim.id, v.version); notify(`Draft restored from v${v.version}`); onClose(); }}>Restore</Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="ghost" onClick={() => setConfirmRestore(v.version)}>Restore to draft</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmRestore(v.version)} tip="Replaces your current draft with this published version. Published versions are not changed." tipAlign="end">Restore to draft</Button>
                 )}
               </div>
             ))}

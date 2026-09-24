@@ -1,8 +1,22 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { findTokens, knownTokenKeys, renderText, RUNTIME_TOKENS } from '../engine/text.js';
 
-export function Button({ variant = '', size = '', className = '', ...props }) {
-  return <button type="button" className={`btn ${variant} ${size} ${className}`} {...props} />;
+// tip: a short explanation shown on hover and keyboard focus. tipAlign: 'center' | 'start' | 'end'.
+export function Button({ variant = '', size = '', className = '', tip, tipAlign = 'center', ...props }) {
+  const id = useId();
+  const btn = <button type="button" className={`btn ${variant} ${size} ${className}`} aria-describedby={tip ? id : undefined} {...props} />;
+  if (!tip) return btn;
+  return <Tip id={id} text={tip} align={tipAlign}>{btn}</Tip>;
+}
+
+export function Tip({ text, children, align = 'center', id }) {
+  const auto = useId();
+  return (
+    <span className={`tip-wrap tip-${align}`}>
+      {children}
+      <span role="tooltip" id={id || auto} className="tip-bubble">{text}</span>
+    </span>
+  );
 }
 
 export function Field({ label, hint, children, id }) {

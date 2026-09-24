@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useSims } from './studio/store.js';
 import Home from './studio/Home.jsx';
-import Wizard from './studio/Wizard.jsx';
+import CreateFlow from './studio/CreateFlow.jsx';
 import Studio from './studio/Studio.jsx';
 import { Toast } from './studio/ui.jsx';
 
@@ -44,11 +44,12 @@ export default function App() {
         />
       )}
       {route.screen === 'wizard' && (
-        <Wizard
+        <CreateFlow
           templateId={route.templateId || 'ilead'}
           onCancel={() => setRoute({ screen: 'home' })}
-          onCreate={(def, section) => {
+          onCreate={(def, section, balance) => {
             const id = store.create(def);
+            if (balance) store.patchRecord(id, { balance });
             setRoute({ screen: 'studio', simId: id, section });
             setToast('Draft created');
           }}

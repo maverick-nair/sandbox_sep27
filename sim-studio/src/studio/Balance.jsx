@@ -38,7 +38,7 @@ export default function Balance({ sim, def, store, update, onClose, notify }) {
             <span className="small ink2">Runs per bot</span>
             <Seg value={runs} onChange={setRuns} options={[{ value: 10, label: '10' }, { value: 20, label: '20' }, { value: 40, label: '40' }]} label="Runs per bot" />
           </div>
-          <Button variant="primary" onClick={run} disabled={progress !== null}>{progress !== null ? `Playing… ${Math.round(progress * 100)}%` : result ? 'Run again' : 'Run balance check'}</Button>
+          <Button variant="primary" onClick={run} disabled={progress !== null} tip="Plays every bot the chosen number of times with this exact setup. Takes a few seconds." tipAlign="end">{progress !== null ? `Playing… ${Math.round(progress * 100)}%` : result ? 'Run again' : 'Run balance check'}</Button>
         </div>
         {progress !== null && <div className="bar"><span style={{ width: `${progress * 100}%` }} /></div>}
         {stale && <Callout tone="warn" icon="!">The simulation changed after this check. Run it again for current results.</Callout>}
@@ -57,7 +57,7 @@ export default function Balance({ sim, def, store, update, onClose, notify }) {
                 <Callout key={i} tone={f.tone === 'good' ? 'good' : f.tone === 'bad' ? 'bad' : 'warn'} icon={f.tone === 'good' ? '✓' : '!'}>
                   <div className="row spread">
                     <span>{f.text}</span>
-                    {f.fix && <Button size="sm" variant="primary" onClick={() => applyFix(f.fix)}>{f.fix.label}</Button>}
+                    {f.fix && <Button size="sm" variant="primary" onClick={() => applyFix(f.fix)} tip="Applies the change. Run the check again to confirm the effect." tipAlign="end">{f.fix.label}</Button>}
                   </div>
                 </Callout>
               ))}

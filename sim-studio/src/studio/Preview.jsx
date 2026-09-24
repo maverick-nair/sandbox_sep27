@@ -5,7 +5,7 @@ import {
 } from '../engine/engine.js';
 import { computeReport } from '../engine/report.js';
 import { renderText } from '../engine/text.js';
-import { Button, Callout, Pill, StylePill, Switch } from './ui.jsx';
+import { Button, Callout, Pill, StylePill, Switch, Tip } from './ui.jsx';
 import { ReportView } from './sections/Report.jsx';
 
 const rag = (def, v) => (v < def.leadership.rag.red ? 'var(--bad)' : v < def.leadership.rag.green ? 'var(--warn)' : 'var(--good)');
@@ -47,9 +47,9 @@ export default function Preview({ def, onClose }) {
           <span>Performance <strong style={{ color: rag(def, avg.p) }}>{Math.round(avg.p)}</strong></span>
         </div>
         <div className="row" style={{ marginLeft: 'auto' }}>
-          <Switch checked={xray} onChange={setXray} label="Author x-ray" />
-          <Button size="sm" onClick={restart}>Restart</Button>
-          <Button size="sm" variant="primary" onClick={onClose}>Back to Studio</Button>
+          <Tip text="Shows each person's true skill and morale and the style they need. Learners never see this."><Switch checked={xray} onChange={setXray} label="Author x-ray" /></Tip>
+          <Button size="sm" onClick={restart} tip="Starts a fresh run with new random outcomes.">Restart</Button>
+          <Button size="sm" variant="primary" onClick={onClose} tip="Closes the preview. Nothing from this run is saved." tipAlign="end">Back to Studio</Button>
         </div>
       </header>
       <div style={{ overflowY: 'auto' }}>
@@ -165,7 +165,7 @@ function Day({ def, state, xray, act }) {
       </section>
 
       <section className="stack" aria-label="Actions">
-        <div className="row spread"><h2>Actions</h2><Button onClick={() => { setActionId(null); act((s) => proceed(def, s)); }}>End the day</Button></div>
+        <div className="row spread"><h2>Actions</h2><Button onClick={() => { setActionId(null); act((s) => proceed(def, s)); }} tip="Moves to the next day without taking an action. The funnel still runs." tipAlign="end">End the day</Button></div>
         {!action && (
           <div className="grid cols-2" style={{ '--gap': '8px' }}>
             {def.actions.filter((a) => a.enabled).map((a) => {

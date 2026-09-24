@@ -1,3 +1,4 @@
+import { CURRENCIES } from '../../templates/ilead/world.js';
 import { NumberInput, SectionHead, TokenArea, Button, Callout, Switch, Field } from '../ui.jsx';
 
 // What the team converts if nobody improves: a quick, deterministic read of the starting position.
@@ -62,8 +63,8 @@ export default function Funnel({ def, update, advanced, sim, openPanel }) {
               </Field>
               <Field label="Value per conversion" id="value">
                 <div className="row nowrap">
-                  <select className="select" style={{ width: 80 }} value={def.funnel.currency} aria-label="Currency" onChange={(e) => update((d) => { d.funnel.currency = e.target.value; })}>
-                    {['USD', 'EUR', 'GBP', 'INR', 'SGD', 'AED'].map((c) => <option key={c}>{c}</option>)}
+                  <select className="select" style={{ width: 92 }} value={def.funnel.currency} aria-label="Currency" onChange={(e) => update((d) => { d.funnel.currency = e.target.value; })}>
+                    {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                   <NumberInput id="value" className="num-input" style={{ width: 110 }} value={def.funnel.valuePerConversion} min={1} onChange={(v) => update((d) => { d.funnel.valuePerConversion = v; })} />
                 </div>

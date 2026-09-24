@@ -5,6 +5,7 @@
 // The author reviews and accepts. Nothing here touches timing, impacts or pass-on rates.
 
 import { INDUSTRIES, OTHER_INDUSTRY, LOCATIONS, STAGE_SETS, GENERIC_EVENTS, LEGACY_EVENT_ARCHETYPE, OFFERING } from './context-packs.js';
+import { COUNTRIES, REGIONS, TIER_FACTOR, fxFor } from './world.js';
 import { createIleadDefinition } from './index.js';
 import { collectTexts, findTokens } from '../../engine/text.js';
 import { setTextAt } from '../../engine/authoring.js';
@@ -27,8 +28,53 @@ export function industryPack(profile) {
   if (profile.industry === 'other') return { ...OTHER_INDUSTRY, label: profile.customIndustry?.trim() || 'Other', noun: profile.customIndustry?.trim().toLowerCase() || OTHER_INDUSTRY.noun };
   return INDUSTRIES[profile.industry] || OTHER_INDUSTRY;
 }
+// Any country resolves to a location profile. The eight hand-written packs refine the
+// generated one; a fictitious country uses the naming style and currency the author picks.
 export function locationPack(profile) {
-  return LOCATIONS[profile.country] || LOCATIONS[LEGACY_COUNTRY];
+  if (profile.country === 'custom') {
+    const currency = profile.customCurrency || 'USD';
+    return fromCountry({
+      code: 'custom', name: profile.customCountry?.trim() || 'Your country', region: REGIONS[profile.customRegion] ? profile.customRegion : 'anglo',
+      currency, fx: fxFor(currency), tier: 1, cities: [],
+    }, true);
+  }
+  const c = COUNTRIES[profile.country] || COUNTRIES[LEGACY_COUNTRY];
+  const pack = LOCATIONS[c.code];
+  const base = fromCountry(c);
+  return pack ? { ...base, ...pack, cities: c.cities, region: c.region } : base;
+}
+
+function fromCountry(c, fictitious = false) {
+  const r = REGIONS[c.region];
+  const anchor = c.cities[0] || c.name;
+  return {
+    code: c.code,
+    label: c.name,
+    fictitious,
+    region: c.region,
+    currency: c.currency,
+    fx: c.fx,
+    dealFactor: TIER_FACTOR[c.tier] ?? 1,
+    cities: c.cities,
+    destination: r.destination,
+    ceo: r.she[5],
+    board: r.he[14],
+    lunch: r.lunch,
+    institutions: { 'China Bank': `${anchor} Commercial Bank`, 'Manchester Business School': `${anchor} School of Business` },
+    names: { she: r.she, he: r.he },
+  };
+}
+
+// Unique names from a pool; when it runs out, combine given and family names from the same pool.
+function nameFrom(pool, used) {
+  const free = pool.find((n) => !used.has(n));
+  if (free) return free;
+  const parts = pool.map((n) => n.split(' '));
+  for (const a of parts) for (const b of parts) {
+    const n = `${a[0]} ${b.slice(1).join(' ') || b[0]}`;
+    if (!used.has(n)) return n;
+  }
+  return `${pool[0]} ${used.size}`;
 }
 
 // Suggestions used to pre-fill the profile when industry, offering or country changes.
@@ -50,7 +96,7 @@ export function suggestProfile(next, changed, prev = next) {
     maybe('learnerRole', pack.learnerRole[next.offeringType]);
     out.customerType = off.customer;
   }
-  if (changed === 'country' && (oldLoc.cities.includes(prev.city) || !prev.city)) out.city = loc.cities[0];
+  if (changed === 'country' && (oldLoc.cities.includes(prev.city) || !prev.city)) out.city = loc.cities[0] || '';
   return out;
 }
 
@@ -68,6 +114,10 @@ function read(def, t) {
     case 'ref': return collectTexts(def).find((x) => refKey(x.ref) === refKey(t.ref))?.text ?? '';
     default: return '';
   }
+}
+
+export function writeTarget(def, t, value) {
+  return write(def, t, value);
 }
 
 function write(def, t, value) {
@@ -90,7 +140,7 @@ function write(def, t, value) {
 }
 
 export const refKey = (ref) => JSON.stringify(ref);
-const targetKey = (t) => (t.kind === 'ref' ? `ref:${refKey(t.ref)}` : [t.kind, t.key, t.id, t.field].filter(Boolean).join(':'));
+export const targetKey = (t) => (t.kind === 'ref' ? `ref:${refKey(t.ref)}` : [t.kind, t.key, t.id, t.field].filter(Boolean).join(':'));
 
 // ---------- proposals ----------
 
@@ -100,8 +150,18 @@ function niceRound(v) {
   return Math.round(v / mag) * mag;
 }
 
-function welcomeLetter(pack, offeringType) {
+const LETTER_OPENINGS = [
+  (pack, plural) => `As you know, {{company}} is a relatively small ${pack.noun} company with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.`,
+  (pack, plural) => `{{company}} has one ambition: to ${pack.vision}. Our ${plural} {{product_2}} and {{product_3}} built our name, and {{product}} is the launch that will define our year.`,
+  (pack, plural) => `You are joining a ${pack.noun} company that intends to ${pack.vision}. Alongside {{product_2}} and {{product_3}}, we have just launched {{product}}, and it is where our growth must come from.`,
+];
+
+function welcomeLetter(pack, offeringType, variant = 0) {
   const plural = OFFERING[offeringType].plural;
+  if (variant % LETTER_OPENINGS.length) {
+    const opening = LETTER_OPENINGS[variant % LETTER_OPENINGS.length](pack, plural);
+    return `Welcome to {{company}}!\n\n${opening}\n\nYou will lead the team selling {{product}}. The team has lost its way under its previous leader, and the board is counting on you to turn it around this quarter.\n\nThe details of {{product}} and how you will be assessed are attached.\n\nWith every good wish,\n{{ceo}}\nCEO, {{company}}`;
+  }
   return `Welcome on board {{company}}!\n\nAs you know, {{company}} is a relatively small ${pack.noun} company with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.\n\nYour role will be to lead the team selling {{product}}. Your predecessor could not inspire the team and left it in shatters. Our board trusts that your leadership experience will turn the team around.\n\nInformation on {{product}} and the parameters on which you will be assessed are attached.\n\nGood luck!\n{{ceo}}\nCEO, {{company}}`;
 }
 
@@ -118,7 +178,7 @@ export function proposeContext(def, profile) {
   const isLegacyShape = pack.legacy && off === 'product' && cust === 'b2b';
   const tag = {
     industry: pack.label,
-    location: profile.city ? `${profile.city}, ${loc.label}` : loc.label,
+    location: profile.city?.trim() ? `${profile.city.trim()}, ${loc.label}` : loc.label,
     offering: `${off === 'service' ? 'Service' : 'Product'} for ${cust === 'b2c' ? 'consumers' : 'businesses'}`,
     org: 'Your organization',
   };
@@ -144,7 +204,7 @@ export function proposeContext(def, profile) {
   add('organization', 'Other product 2', { kind: 'entity', key: 'product_3' }, offPack.portfolio[1], [tag.industry]);
   add('organization', 'Main competitor', { kind: 'entity', key: 'competitor' }, pack.competitor, [tag.industry]);
   add('organization', 'Previous employer of a team member', { kind: 'entity', key: 'rival' }, pack.rival, [tag.industry]);
-  add('organization', 'Home city', { kind: 'entity', key: 'city' }, profile.city || loc.cities[0], [tag.location]);
+  add('organization', 'Home city', { kind: 'entity', key: 'city' }, profile.city?.trim() || loc.cities[0] || loc.label, [tag.location]);
   add('organization', 'Dream conference destination', { kind: 'entity', key: 'destination' }, loc.destination, [tag.location]);
   add('organization', 'Letter signatory', { kind: 'entity', key: 'ceo' }, loc.ceo, [tag.location]);
   add('organization', 'Board member in the news', { kind: 'entity', key: 'board_member' }, loc.board, [tag.location]);
@@ -166,7 +226,8 @@ export function proposeContext(def, profile) {
     });
 
     // Story.
-    add('story', 'Welcome letter', { kind: 'story', field: 'welcome' }, isLegacyShape ? orig.story.welcome : welcomeLetter(pack, off), [tag.industry, tag.offering]);
+    const letterVariant = profile.letterVariant || 0;
+    add('story', 'Welcome letter', { kind: 'story', field: 'welcome' }, isLegacyShape && !letterVariant ? orig.story.welcome : welcomeLetter(pack, off, letterVariant), [tag.industry, tag.offering]);
     add('story', 'Product brief', { kind: 'story', field: 'overview' }, pack.legacy && off === 'product' ? orig.story.overview : offPack.brief, [tag.industry, tag.offering]);
 
     // Events: industry version of each archetype; legacy industry restores the originals.
@@ -185,15 +246,16 @@ export function proposeContext(def, profile) {
     // People. Standard: skills and profiles use the new stage names. Deep: local names and institutions too.
     const stageNames = isLegacyShape ? null : (pack.stages?.[`${cust}-${off}`] || STAGE_SETS[`${cust}-${off}`]).map((x) => x[0]);
     const legacyTerms = [['Lead Generation', 0], ['Lead Qualification', 1], ['Proposal Design', 2], ['Negotiation', 3], ['Sales Conversion', 4]];
-    const localized = depth === 'deep' && profile.country !== LEGACY_COUNTRY;
-    const pools = { he: [...loc.names.he], she: [...loc.names.she], they: [...loc.names.she, ...loc.names.he] };
-    const used = new Set();
+    const localized = depth === 'deep' && (profile.country !== LEGACY_COUNTRY || (profile.namesVariant || 0) > 0);
+    const rot = (list) => { const k = ((profile.namesVariant || 0) * 5) % list.length; return [...list.slice(k), ...list.slice(0, k)]; };
+    const pools = { he: rot(loc.names.he), she: rot(loc.names.she), they: rot([...loc.names.she, ...loc.names.he]) };
+    const used = new Set([loc.ceo, loc.board]);
     def.actors.forEach((a, i) => {
       const o = orig.actors.find((x) => x.id === a.id);
       let name = o?.name || a.name;
       if (localized) {
         const pool = pools[a.pronoun] || pools.they;
-        name = pool.find((n) => !used.has(n)) || `${pool[i % pool.length]} ${i}`;
+        name = nameFrom(pool, used);
       }
       used.add(name);
       const why = localized ? [tag.location, tag.offering] : [tag.offering];
@@ -268,7 +330,7 @@ export function geniePrompt(def, profile, items, note) {
     `Organization: ${profile.orgName} (${names.company ? `shown as {{company}}` : ''})`,
     `Industry: ${pack.label}${profile.industry === 'other' && profile.customIndustry ? ` (${profile.customIndustry})` : ''}`,
     `Sells: ${profile.offeringType === 'service' ? 'a service' : 'a product'}, ${profile.offeringName} (a ${profile.offeringCategory}), to ${profile.customerType === 'b2c' ? 'consumers' : 'businesses'}`,
-    `Location: ${profile.city || loc.cities[0]}, ${loc.label}`,
+    `Location: ${profile.city?.trim() || loc.cities[0] || loc.label}${profile.city && !loc.cities.includes(profile.city) ? ' (a city the author chose; it may be fictitious)' : ''}, ${loc.label}${loc.fictitious ? ' (a fictitious country; invent consistent local details)' : ''}`,
     `Learner's role: ${profile.learnerRole}`,
     `Context fields available: ${Object.entries(names).map(([k, v]) => `{{${k}}} = ${v}`).join('; ')}`,
     note?.trim() ? `Author's notes: ${note.trim()}` : '',

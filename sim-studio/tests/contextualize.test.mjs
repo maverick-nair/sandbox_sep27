@@ -104,3 +104,47 @@ test('Genie replies become reviewable proposals and bad token use is flagged', (
   assert.equal(props[0].status, 'new');
   assert.equal(props[1].status, 'check');
 });
+
+import { COUNTRIES, REGIONS, CURRENCIES, findCountry } from '../src/templates/ilead/world.js';
+import { locationPack } from '../src/templates/ilead/contextualize.js';
+
+test('every country has 2 to 7 cities, a currency and a naming style', () => {
+  const list = Object.values(COUNTRIES);
+  assert.ok(list.length >= 190, `${list.length} countries`);
+  for (const c of list) {
+    assert.ok(c.cities.length >= 2 && c.cities.length <= 7, `${c.name}: ${c.cities.length} cities`);
+    assert.equal(new Set(c.cities).size, c.cities.length, `${c.name}: duplicate city`);
+    assert.match(c.currency, /^[A-Z]{3}$/, c.name);
+    assert.ok(c.fx > 0, c.name);
+    assert.ok(REGIONS[c.region], `${c.name}: region ${c.region}`);
+    assert.doesNotThrow(() => new Intl.NumberFormat('en', { style: 'currency', currency: c.currency }).format(1));
+  }
+  for (const r of Object.values(REGIONS)) assert.ok(r.she.length >= 6 && r.he.length >= 15, r.label);
+  assert.equal(findCountry('kenya'), 'KE');
+  assert.equal(findCountry('Atlantis'), null);
+});
+
+test('any country tailors cleanly, with unique local names', () => {
+  const def0 = base();
+  for (const code of Object.keys(COUNTRIES)) {
+    const p = { ...def0.context.profile, industry: 'it', country: code, city: '', depth: 'deep' };
+    const def = tailor(p);
+    const names = def.actors.map((a) => a.name);
+    assert.equal(new Set(names).size, names.length, `${code}: unique names`);
+    assert.equal(def.funnel.currency, COUNTRIES[code].currency, code);
+    assert.equal(def.context.entities.find((e) => e.key === 'city').value, COUNTRIES[code].cities[0], `${code}: defaults to largest city`);
+    assert.deepEqual(contextBoundItems(def), [], code);
+  }
+});
+
+test('a fictitious country and city are used exactly as typed', () => {
+  const def0 = base();
+  const p = { ...def0.context.profile, industry: 'banking', country: 'custom', customCountry: 'Aldoria', customRegion: 'nordic', customCurrency: 'EUR', city: 'Port Varen', depth: 'deep' };
+  assert.equal(locationPack(p).label, 'Aldoria');
+  const def = tailor(p);
+  assert.equal(def.funnel.currency, 'EUR');
+  assert.match(renderText(def, def.events.find((e) => e.id === 'tragic-accident').text), /Port Varen/);
+  assert.ok(REGIONS.nordic.she.includes(def.actors.find((a) => a.id === 'beth-killiney').name));
+  const typedCity = tailor({ ...p, country: 'IN', city: 'Navapur Heights' });
+  assert.equal(typedCity.context.entities.find((e) => e.key === 'city').value, 'Navapur Heights');
+});

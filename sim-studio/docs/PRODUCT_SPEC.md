@@ -46,7 +46,7 @@ GenieKreator
 Experience > Simulations
 ├── Template gallery (iLead + storylines, planned templates)
 ├── Your simulations (status, health, version)
-├── Quick start wizard (Purpose → Your organization → Tailor → Review)
+├── Create with Genie (Your brief → Context → Story → People and events → Learning design → Review)
 └── Studio (per simulation)
     ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
     ├── Build: Story and context (Your organization · Context fields · Rewrite list · letters · tour) · Funnel and target · Team · Leadership model · Actions · Events · Report
@@ -57,14 +57,20 @@ Experience > Simulations
 
 ## 5. Key workflows
 
-### 5.1 Tailor iLead to a client (target: under 15 minutes)
+### 5.1 Create a tailored simulation with Genie (target: under 10 minutes)
 
-1. **Use this template** → Quick start.
-2. **Purpose:** name, audience, session length (45, 60 or 90 minutes), difficulty.
-3. **Your organization** (layer 1): industry, organization name, what the team sells (product or service), who buys it (businesses or consumers), the product or service name and what it is, country and city, the learner's role. Changing industry, offering or country pre-fills the fields that follow from it, but never overwrites a name someone typed. The welcome letter previews live.
-4. **Tailor** (layer 2): pick a depth, then review every proposed change grouped by area, each with its reason ("because Banking", "because Mumbai, India", "because a service sold to businesses"). Untick or edit anything.
-5. **Review** → Create draft. Anything still tied to the original storyline opens in the rewrite list, where Genie can rewrite it.
-6. Run the **balance check**, then **Publish** with a change note.
+The author gives direction; Genie does the structuring. One stage per screen, each pre-filled from everything before it.
+
+1. **Your brief.** A few sentences in their own words, the intended outcome (chips or free text) and any constraints (chips such as *No firing*, *Formal tone*, *Local names*, *Fits in 45 minutes*, or free text). Three example briefs show what good looks like.
+2. **Context.** "Here is what we understood": organization, industry, what is sold and to whom, location, learner role, audience. Every value is labelled *From your brief*, *Inferred*, *Suggested* or *Needs you*. Only what cannot be inferred is asked, as plain questions (usually none; at most organization, industry and country). *Edit details* opens the full profile; *Read my brief again* re-reads without losing answers given here.
+3. **Story.** The welcome letter and product brief, shown as learners will read them, with *Edit* and *Regenerate*; stage names editable inline, descriptions regenerable.
+4. **People and events.** The ten-person team (local names on or off, *New names*, editable names, drafted backgrounds) and every scheduled event, each editable; *Regenerate events* and *Regenerate backgrounds* rewrite for the market. Timing and impact never change.
+5. **Learning design.** Debrief focus (the chosen competencies lead the report), session length, difficulty and constraints, all pre-set from the brief. Bots play the simulation in the background and the target is calibrated automatically, with a one-line fairness summary.
+6. **Review → Create draft.** Counts of what was filled in versus what the author set. A full balance check runs on create, so the Studio opens with it attached.
+
+**Consistency.** Every stage is derived from one state (brief, profile, settings, author edits). Changing the country on step 2 updates names, money and events on steps 3 to 5; an author's own edits survive regeneration of other items and re-reading the brief.
+
+**Genie and offline behaviour.** In the hosted GenieKreator, Genie reads the brief (its answer is merged over the rules, which fill any gap) and powers every *Regenerate*. Elsewhere, built-in rules read the brief (industry, offering, buyers, organization name, any country or city, audience, length, difficulty, outcomes, constraints) and *Regenerate* offers alternative versions where one exists; buttons that need Genie explain why in their tooltip.
 
 ### 5.2 Design a harder variant for senior leaders
 
@@ -108,6 +114,8 @@ Two layers, so authors describe their world once and the tool does the rewriting
 
 **Depth** keeps the choice simple: *Light* (names, roles, city, money), *Standard* (plus stages, story, events, profiles), *Deep* (plus local people).
 
+**Location.** Any of 198 countries (searchable), or a fictitious one with a chosen naming style and currency. City offers the country's 2 to 7 largest cities as one-click choices, or any city typed in, real or invented. The 8 detailed country packs refine the generated values; every other country gets currency, an approximate exchange rate, an income-scaled deal value and names from one of 21 regional naming styles.
+
 **Coverage today:** 8 industry packs (Elevators, Banking and financial services, Insurance, Healthcare and medical devices, Pharmaceuticals, IT services and software, Manufacturing, Telecom) × 8 countries (United States, India, UAE, United Kingdom, Singapore, Germany, Australia, Japan). "Other" industries get generic, industry-neutral texts and a prompt to use Genie. A test sweeps every industry and country combination at Standard depth: none leaves a trace of the elevator storyline or introduces a validation error.
 
 **Safety rails**
@@ -116,6 +124,10 @@ Two layers, so authors describe their world once and the tool does the rewriting
 - Re-tailoring proposes only what differs, so moving from Mumbai to Dubai shows 45 location changes, not 100.
 
 **Genie (hosted AI) for what packs cannot cover.** Inside GenieKreator on claude.ai, *Go further with Genie* rewrites a chosen scope (items still tied to the original storyline, story and events, team profiles, or action responses) for the profile plus the author's notes. Genie must keep every field token; answers that drop or invent tokens are flagged. Every Genie change goes through the same review before it applies. Outside the hosted version the panel explains that it is unavailable and the rewrite list remains.
+
+## 6b. Help in context
+
+Every main action carries a tooltip on hover and keyboard focus that says what it does and when to use it: Health check, Balance check, Play as learner, Publish, Show engine settings, Build my simulation, Regenerate, New names, Restore to draft, and others.
 
 ## 7. The iLead model, as implemented
 
@@ -142,7 +154,8 @@ Faithful to the Model Document; see `src/engine/engine.js`.
 | Finding | Resolution |
 |---|---|
 | "Con - Leadership Style" sheet lists Partnering as High skill / **High** morale | Model document wins: High skill / Low morale |
-| All four styles have `NO STRING AVAILABLE` for Low use / High accuracy | Flagged as errors in the Report section |
+| All four styles have `NO STRING AVAILABLE` for Low use / High accuracy: the legacy team never wrote "rarely used but right each time", which does happen | Auto-drafted from what each style is for, in the voice of the neighbouring cells, marked *Auto-drafted, review* |
+| Two team members have "None." as their background | Auto-drafted from their experience, domain skills and skill and morale, so the text still hints at the style they need |
 | Cooldowns differ: model doc says Team building 8 days, Hire 8 days; workbook says 20 and 10 | Workbook kept; open question |
 | Model doc says everyone reacts negatively to a firing; workbook impacts are all zero | Warning with a one-click fix |
 | Three general events have period 0 and never fire | Kept in the library, unscheduled |

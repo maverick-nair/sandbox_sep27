@@ -86,10 +86,12 @@ test('balance: adapting beats guessing, and the default target is reachable', ()
 test('validator surfaces the legacy content gaps', () => {
   const issues = validate(def);
   const titles = issues.map((i) => i.title).join('\n');
-  assert.match(titles, /Missing copy: Style insight/);
+  assert.doesNotMatch(titles, /Missing copy/, 'legacy gaps are auto-drafted');
+  assert.equal(def.meta.drafted.filter((d) => !d.startsWith('bio:')).length, 4);
+  assert.ok(def.actors.every((a) => a.bio), 'every team member has a background');
   assert.match(titles, /Firing has no cost/);
   assert.match(titles, /is not scheduled/);
-  assert.equal(issues.filter((i) => i.severity === 'error' && !/Missing copy/.test(i.title)).length, 0, titles);
+  assert.equal(issues.filter((i) => i.severity === 'error').length, 0, titles);
 });
 
 test('context tokens re-skin the story; industry change flags situation-bound copy', () => {

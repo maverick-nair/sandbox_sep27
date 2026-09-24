@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { INDUSTRIES, LOCATIONS, DEPTHS } from '../templates/ilead/context-packs.js';
-import { AREAS, suggestProfile, industryPack, locationPack, GENIE_SCOPES, genieItems, geniePrompt, genieProposals } from '../templates/ilead/contextualize.js';
-import { contextBoundItems } from '../engine/text.js';
+import { INDUSTRIES, DEPTHS } from '../templates/ilead/context-packs.js';
+import { COUNTRIES, COUNTRY_LIST, CURRENCIES, REGIONS, findCountry } from '../templates/ilead/world.js';
+import { AREAS, applyProposals, suggestProfile, industryPack, locationPack, GENIE_SCOPES, genieItems, geniePrompt, genieProposals } from '../templates/ilead/contextualize.js';
+import { contextBoundItems, renderText } from '../engine/text.js';
 import { Button, Callout, Field, Pill, Seg, TextInput, TokenText } from './ui.jsx';
 
 // ---------- Layer 1: the organization profile ----------
 
 export function ProfileForm({ profile, onChange }) {
   const [touched, setTouched] = useState({});
-  const loc = locationPack(profile);
   const set = (key, value) => {
     setTouched((t) => ({ ...t, [key]: true }));
     onChange({ ...profile, [key]: value });
@@ -50,18 +50,97 @@ export function ProfileForm({ profile, onChange }) {
         <TextInput label={profile.offeringType === 'service' ? 'Service name' : 'Product name'} value={profile.offeringName} onChange={(v) => set('offeringName', v)} />
         <TextInput label="It is a..." hint="A common noun, used in events: home loan, cardiac monitor, managed IT service." value={profile.offeringCategory} onChange={(v) => set('offeringCategory', v)} />
       </div>
-      <div className="grid cols-2">
-        <Field label="Country" id="pf-country">
-          <select id="pf-country" className="select" value={profile.country} onChange={(e) => setDriver('country', e.target.value)}>
-            {Object.entries(LOCATIONS).map(([id, l]) => <option key={id} value={id}>{l.label}</option>)}
-          </select>
-        </Field>
-        <Field label="City" id="pf-city" hint="Events and the team's world are set here.">
-          <input id="pf-city" className="input" list="pf-cities" value={profile.city} onChange={(e) => set('city', e.target.value)} />
-          <datalist id="pf-cities">{loc.cities.map((c) => <option key={c} value={c} />)}</datalist>
-        </Field>
-      </div>
+      <LocationFields profile={profile} onChange={onChange} setDriver={setDriver} markTouched={(k) => setTouched((t) => ({ ...t, [k]: true }))} />
       <TextInput label="Learner's role in the story" value={profile.learnerRole} onChange={(v) => set('learnerRole', v)} hint={`Suggested for ${industryPack(profile).label.toLowerCase()}: ${industryPack(profile).learnerRole[profile.offeringType]}`} />
+    </div>
+  );
+}
+
+// Country: any country in the list, or one the author invents. City: the country's largest
+// cities as one-click choices, or any city typed in, real or fictitious.
+export function LocationFields({ profile, onChange, setDriver, markTouched = () => {} }) {
+  const loc = locationPack(profile);
+  const nameOf = (p) => (p.country === 'custom' ? p.customCountry || '' : COUNTRIES[p.country]?.name || '');
+  const [countryText, setCountryText] = useState(nameOf(profile));
+  useEffect(() => setCountryText(nameOf(profile)), [profile.country, profile.customCountry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const listed = loc.cities.includes(profile.city);
+
+  const typeCountry = (text) => {
+    setCountryText(text);
+    const code = findCountry(text);
+    if (code && code !== profile.country) setDriver('country', code);
+  };
+  const commitCountry = () => {
+    const text = countryText.trim();
+    if (!text) return setCountryText(nameOf(profile));
+    if (findCountry(text)) return undefined;
+    // Not in the list: keep it as the author's own country, borrowing style and currency from the last one.
+    const prevRegion = profile.country === 'custom' ? profile.customRegion : COUNTRIES[profile.country]?.region;
+    const prevCurrency = profile.country === 'custom' ? profile.customCurrency : COUNTRIES[profile.country]?.currency;
+    onChange({ ...profile, country: 'custom', customCountry: text, customRegion: prevRegion || 'anglo', customCurrency: prevCurrency || 'USD', city: listed ? '' : profile.city });
+    return undefined;
+  };
+  // A chosen chip follows the country when it changes; a typed city is the author's and stays.
+  const setCity = (city, typed) => { if (typed) markTouched('city'); onChange({ ...profile, city }); };
+
+  return (
+    <div className="stack" style={{ '--gap': '14px' }}>
+      <Field label="Country" id="pf-country" hint={profile.country === 'custom' ? '' : 'Start typing to search any country. Type a name that is not in the list to use a fictitious country.'}>
+        <input
+          id="pf-country"
+          className="input"
+          list="pf-countries"
+          autoComplete="off"
+          value={countryText}
+          onChange={(e) => typeCountry(e.target.value)}
+          onBlur={commitCountry}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), commitCountry())}
+        />
+        <datalist id="pf-countries">{COUNTRY_LIST.map((c) => <option key={c.code} value={c.name} />)}</datalist>
+      </Field>
+
+      {profile.country === 'custom' ? (
+        <div className="card flat stack" style={{ '--gap': '10px' }}>
+          <div className="row"><Pill tone="warmth">Your own country</Pill><span className="small ink2">{profile.customCountry} is not a real country in our list, so tell us how it should feel.</span></div>
+          <div className="grid cols-2">
+            <Field label="Names and places in the style of" id="pf-region">
+              <select id="pf-region" className="select" value={profile.customRegion} onChange={(e) => onChange({ ...profile, customRegion: e.target.value })}>
+                {Object.entries(REGIONS).map(([id, r]) => <option key={id} value={id}>{r.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Currency" id="pf-currency">
+              <select id="pf-currency" className="select" value={profile.customCurrency} onChange={(e) => onChange({ ...profile, customCurrency: e.target.value })}>
+                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+          </div>
+        </div>
+      ) : (
+        <p className="small muted" style={{ marginTop: -8 }}>Currency {loc.currency} · team names in {REGIONS[loc.region]?.label.toLowerCase()} style</p>
+      )}
+
+      <div className="field">
+        <span className="label">City</span>
+        {loc.cities.length > 0 && (
+          <div className="row" role="radiogroup" aria-label={`Largest cities in ${loc.label}`} style={{ '--gap': '6px' }}>
+            {loc.cities.map((c) => (
+              <button key={c} type="button" role="radio" aria-checked={profile.city === c} className={`btn sm ${profile.city === c ? 'primary' : ''}`} onClick={() => setCity(c, false)}>{c}</button>
+            ))}
+          </div>
+        )}
+        <input
+          id="pf-city"
+          className="input"
+          aria-label="Your own city"
+          placeholder={loc.cities.length ? 'Or type your own city, real or fictitious' : `Type a city in ${loc.label}, real or fictitious`}
+          value={listed ? '' : profile.city}
+          onChange={(e) => setCity(e.target.value, true)}
+        />
+        <span className="hint">
+          {loc.cities.length ? `The ${loc.cities.length} largest cities in ${loc.label}. ` : ''}
+          {profile.city && !listed ? `Using "${profile.city}" exactly as typed in events and the team's world.` : 'Events and the team\'s world are set here.'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -112,6 +191,8 @@ export function ProposalReview({ def, proposals, excluded, setExcluded, edits = 
     return [...m.entries()];
   }, [proposals]);
   const included = proposals.filter((p) => !excluded.has(p.id)).length;
+  // Render every item against the draft as it will be, so names read as the final version.
+  const finalDef = useMemo(() => applyProposals(structuredClone(def), chosen(proposals, excluded, edits)), [def, proposals, excluded, edits]);
   const toggle = (id) => setExcluded((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleArea = (items, on) => setExcluded((s) => { const n = new Set(s); items.forEach((p) => (on ? n.delete(p.id) : n.add(p.id))); return n; });
 
@@ -120,7 +201,7 @@ export function ProposalReview({ def, proposals, excluded, setExcluded, edits = 
   return (
     <div className="stack" style={{ '--gap': '10px' }}>
       <div className="row spread">
-        <span className="ink2"><strong className="num">{included}</strong> of <span className="num">{proposals.length}</span> changes ticked across {areas.length} area{areas.length === 1 ? '' : 's'}.</span>
+        <span className="ink2"><strong className="num">{included}</strong> of <span className="num">{proposals.length}</span> tailored items included across {areas.length} area{areas.length === 1 ? '' : 's'}.</span>
         <div className="row">
           <Button size="sm" variant="ghost" onClick={() => setExcluded(new Set())}>Tick all</Button>
           <Button size="sm" variant="ghost" onClick={() => setExcluded(new Set(proposals.map((p) => p.id)))}>Untick all</Button>
@@ -157,28 +238,22 @@ export function ProposalReview({ def, proposals, excluded, setExcluded, edits = 
                           <span className="small muted">because {p.because.join(', ')}</span>
                         </div>
                       </div>
-                      {short ? (
-                        <div className="row small" style={{ '--gap': '6px' }}>
-                          <span className="muted" style={{ textDecoration: 'line-through' }}>{String(p.before) || 'empty'}</span>
-                          <span className="muted">→</span>
-                          {setEdits && editing === p.id ? (
-                            <input className="input" style={{ maxWidth: 320 }} autoFocus value={after} onChange={(e) => setEdits((x) => ({ ...x, [p.id]: typeof p.after === 'number' ? Number(e.target.value) || 0 : e.target.value }))} onBlur={() => setEditing(null)} aria-label={`Edit ${p.label}`} />
-                          ) : (
-                            <strong>{typeof after === 'number' ? after.toLocaleString() : after}</strong>
-                          )}
-                          {setEdits && editing !== p.id && <Button size="sm" variant="ghost" onClick={() => setEditing(p.id)}>Edit</Button>}
-                        </div>
-                      ) : (
-                        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-                          <div className="small muted" style={{ background: 'var(--surface-2)', borderRadius: 8, padding: 8 }}><span className="eyebrow">Now</span><div><TokenText def={def} text={p.before} /></div></div>
-                          <div className="small" style={{ background: 'var(--accent-soft)', borderRadius: 8, padding: 8 }}>
-                            <div className="row spread"><span className="eyebrow">Proposed</span>{setEdits && <Button size="sm" variant="ghost" onClick={() => setEditing(editing === p.id ? null : p.id)}>{editing === p.id ? 'Done' : 'Edit'}</Button>}</div>
-                            {setEdits && editing === p.id ? (
-                              <textarea className="textarea" rows={5} value={after} onChange={(e) => setEdits((x) => ({ ...x, [p.id]: e.target.value }))} aria-label={`Edit ${p.label}`} />
-                            ) : (
-                              <div><TokenText def={def} text={after} /></div>
-                            )}
+                      {/* Only the tailored result is shown; no replacement history. */}
+                      {setEdits && editing === p.id ? (
+                        short ? (
+                          <input className="input" style={{ maxWidth: 360 }} autoFocus value={after} onChange={(e) => setEdits((x) => ({ ...x, [p.id]: typeof p.after === 'number' ? Number(e.target.value) || 0 : e.target.value }))} onBlur={() => setEditing(null)} onKeyDown={(e) => e.key === 'Enter' && setEditing(null)} aria-label={`Edit ${p.label}`} />
+                        ) : (
+                          <div className="stack" style={{ '--gap': '6px' }}>
+                            <textarea className="textarea" rows={5} autoFocus value={after} onChange={(e) => setEdits((x) => ({ ...x, [p.id]: e.target.value }))} aria-label={`Edit ${p.label}`} />
+                            <div><Button size="sm" onClick={() => setEditing(null)}>Done</Button></div>
                           </div>
+                        )
+                      ) : (
+                        <div className="row nowrap" style={{ alignItems: 'flex-start' }}>
+                          <div className={short ? 'grow' : 'grow small'} style={short ? { fontWeight: 600 } : { lineHeight: 1.55 }}>
+                            {typeof after === 'number' ? after.toLocaleString() : <FinalText def={finalDef} text={after} />}
+                          </div>
+                          {setEdits && <Button size="sm" variant="ghost" onClick={() => setEditing(p.id)} tip="Change this wording yourself">Edit</Button>}
                         </div>
                       )}
                     </div>
@@ -193,6 +268,11 @@ export function ProposalReview({ def, proposals, excluded, setExcluded, edits = 
   );
 }
 
+// The finished sentence as learners will read it, with names filled in from the draft.
+function FinalText({ def, text }) {
+  return <span style={{ whiteSpace: 'pre-wrap' }}>{renderText(def, text, { actor: 'a team member', pronoun: 'they', stage: def.stages[0]?.name, style: def.leadership.styles[0]?.name })}</span>;
+}
+
 export function chosen(proposals, excluded, edits = {}) {
   return proposals.filter((p) => !excluded.has(p.id)).map((p) => (edits[p.id] !== undefined ? { ...p, after: edits[p.id] } : p));
 }
@@ -203,7 +283,7 @@ export function defaultExcluded(proposals) {
 
 // ---------- Genie: hosted AI for anything the packs do not cover ----------
 
-function useSample() {
+export function useSample() {
   const [sample, setSample] = useState(undefined);
   useEffect(() => {
     let live = true;

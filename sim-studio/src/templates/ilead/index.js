@@ -5,6 +5,7 @@
 // surfaced in the Studio so an author or the product team can confirm it.
 
 import legacy from './legacy-content.json' with { type: 'json' };
+import { fillMissingInsights, draftBio } from './insights.js';
 
 export const STYLES = [
   { id: 'directing', name: 'Directing', legacy: 'Executor', skill: 'low', morale: 'low', color: 'var(--style-directing)' },
@@ -44,7 +45,7 @@ export const ASSUMPTIONS = [
 // Differences between the two legacy sources, resolved in favour of the workbook unless noted.
 export const LEGACY_FINDINGS = [
   { id: 'partnering', severity: 'fixed', text: 'The "Con - Leadership Style" sheet lists Partnering as High skill, High morale. The model document says High skill, Low morale. The template uses the model document.' },
-  { id: 'nostring', severity: 'open', text: 'All four styles have "$$$$$-------NO STRING AVAILABLE--------$$$$$$" as the Low use, High accuracy report insight. Flagged in the report section for an author to write.' },
+  { id: 'nostring', severity: 'fixed', text: 'All four styles have "$$$$$-------NO STRING AVAILABLE--------$$$$$$" as the Low use, High accuracy report insight: the legacy team never wrote the case where a learner rarely used a style but was right each time. The template drafts it from what each style is for, marked Auto-drafted in the report for a quick review.' },
   { id: 'cooldowns', severity: 'open', text: 'Cooldowns differ: the model document says Team building 8 days and Hire 8 days; the workbook says 20 and 10. The template keeps the workbook values.' },
   { id: 'fire', severity: 'open', text: 'The model document says everyone reacts negatively when a member is fired, but every Fire member impact in the workbook is zero. Flagged as a warning.' },
   { id: 'unscheduled', severity: 'open', text: 'Three general events (New microprocessor, Tablet PC issue, Training Request) have period 0 and never fire. Kept in the library, switched off.' },
@@ -281,6 +282,18 @@ function buildTriggers() {
 }
 
 export function createIleadDefinition() {
+  const def = buildDefinition();
+  def.meta.drafted = fillMissingInsights(def.report, def.leadership.styles.map((st) => st.id));
+  for (const a of def.actors) {
+    if (!a.bio) {
+      a.bio = draftBio(a, def.leadership.highThreshold);
+      def.meta.drafted.push(`bio:${a.id}`);
+    }
+  }
+  return def;
+}
+
+function buildDefinition() {
   const ratios = { lead: 0.62, qualify: 0.5, proposal: 0.3, negotiate: 0.5, convert: 0.5 };
   return {
     schema: 1,
@@ -324,6 +337,9 @@ export function createIleadDefinition() {
         offeringCategory: 'elevator',
         customerType: 'b2b',
         country: 'US',
+        customCountry: '',
+        customRegion: 'anglo',
+        customCurrency: 'USD',
         city: 'New York',
         learnerRole: 'Sales Director',
         depth: 'standard',
@@ -409,5 +425,7 @@ export function migrateDefinition(def) {
     d.context.profile = { ...fresh.context.profile, orgName: val('company'), offeringName: val('product'), learnerRole: val('learner_role') };
   }
   d.context.generated ||= {};
+  d.meta.drafted = [...new Set([...(d.meta.drafted || []), ...fillMissingInsights(d.report, d.leadership.styles.map((st) => st.id))])];
+  for (const a of d.actors) if (!a.bio) { a.bio = draftBio(a, d.leadership.highThreshold); d.meta.drafted.push(`bio:${a.id}`); }
   return d;
 }

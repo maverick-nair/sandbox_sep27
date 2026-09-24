@@ -9,10 +9,11 @@ const USE = ['Low', 'Moderate', 'High'];
 export default function Report({ def, update, advanced }) {
   const [tab, setTab] = useState('competencies');
   const missing = Object.values(def.report.styleInsights).reduce((n, g) => n + Object.values(g).filter((v) => !v || MISSING.test(v)).length, 0);
+  const drafted = (def.meta.drafted || []).length;
   const tabs = [
     ['competencies', 'Competencies'],
     ['outcome', 'Outcome and adaptability'],
-    ['styles', `Style insights${missing ? ` (${missing} missing)` : ''}`],
+    ['styles', `Style insights${missing ? ` (${missing} missing)` : drafted ? ` (${drafted} drafted)` : ''}`],
     ['actions', 'Action insights'],
     ['reflect', 'Reflection'],
     ['sample', 'Sample report'],
@@ -142,10 +143,12 @@ function StyleInsights({ def, update }) {
                   const key = `${u}Use${a}Accuracy`;
                   const v = grid[key] || '';
                   const bad = !v || MISSING.test(v);
+                  const drafted = (def.meta.drafted || []).includes(`${styleId}:${key}`);
                   return (
                     <td key={a} style={{ verticalAlign: 'top', background: bad ? 'var(--bad-soft)' : undefined }}>
                       {bad && <Pill tone="bad">Write this</Pill>}
-                      <textarea className="textarea" rows={5} aria-label={`${u} use, ${a} accuracy`} value={bad ? '' : v} placeholder={bad ? 'Legacy text was missing. Write the insight for this combination.' : ''} onChange={(e) => update((d) => { d.report.styleInsights[styleId][key] = e.target.value; })} style={{ marginTop: bad ? 6 : 0, fontSize: 12.5 }} />
+                      {drafted && !bad && <Pill tone="warmth">Auto-drafted, review</Pill>}
+                      <textarea className="textarea" rows={5} aria-label={`${u} use, ${a} accuracy`} value={bad ? '' : v} placeholder={bad ? 'Legacy text was missing. Write the insight for this combination.' : ''} onChange={(e) => update((d) => { d.report.styleInsights[styleId][key] = e.target.value; d.meta.drafted = (d.meta.drafted || []).filter((x) => x !== `${styleId}:${key}`); })} style={{ marginTop: bad || drafted ? 6 : 0, fontSize: 12.5 }} />
                     </td>
                   );
                 })}
