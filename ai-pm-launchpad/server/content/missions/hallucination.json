@@ -1,0 +1,136 @@
+{
+ "id": "hallucination",
+ "tier": 2,
+ "title": "The wrong answer",
+ "minutes": 10,
+ "unlock": {
+  "level": 2
+ },
+ "persona": {
+  "name": "Kavita Iyer",
+  "initials": "KI",
+  "role": "Head of Customer Support, KNOLSKAPE",
+  "style": "calm under fire but stretched thin, protective of client relationships, wants a clear script, dislikes vague technical answers"
+ },
+ "setup": "AI Koach told learners at Veda Motors, a fictional auto manufacturer and GENIE client, that they can carry forward 15 days of leave. Their current policy allows 8. The answer came from an old client document still sitting in the retrieval (RAG) index. Screenshots are circulating in the client's employee groups.",
+ "objective": "Contain the damage without overreacting. Find out why AI Koach gave the wrong answer and how far it spreads, then agree a fix and an honest message Kavita can send the client.",
+ "opening": "I've got a fire. Veda Motors' learners asked AI Koach about carry-forward leave and it told them 15 days. Their policy says 8. Screenshots are all over their HR WhatsApp groups and their HR head has emailed me twice. My team wants to just turn AI Koach off everywhere tonight. Give me a reason not to, and tell me what I say to them.",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "The source was Veda Motors' 2025 leave policy. It was superseded 3 months ago, but nobody removed it from the RAG index, and the index has no check for document age or version.",
+   "hint": "where the answer came from and why it was out of date",
+   "kw": [
+    "source",
+    "document",
+    "where did",
+    "came from",
+    "index",
+    "rag",
+    "retriev",
+    "outdated",
+    "old",
+    "version",
+    "updated",
+    "superseded"
+   ],
+   "short": "Outdated doc left in index"
+  },
+  {
+   "id": "f2",
+   "text": "There are no evals for policy questions. AI Koach's eval set covers coaching conversations only, so a wrong policy answer would never be caught before learners see it.",
+   "hint": "how answers like this are tested",
+   "kw": [
+    "eval",
+    "test",
+    "tested",
+    "quality",
+    "check",
+    "catch",
+    "caught",
+    "coverage",
+    "monitor",
+    "accuracy",
+    "how often",
+    "measure"
+   ],
+   "short": "No evals for policy questions"
+  },
+  {
+   "id": "f3",
+   "text": "Only 1 of 9 client tenants is affected. The other 8 clients never uploaded HR policy documents, and about 60 Veda Motors learners asked leave questions in the last 3 months.",
+   "hint": "how many clients and learners are affected",
+   "kw": [
+    "how many",
+    "other client",
+    "tenant",
+    "scope",
+    "affected",
+    "impact",
+    "spread",
+    "everyone",
+    "all clients",
+    "learners",
+    "widespread",
+    "blast radius"
+   ],
+   "short": "1 of 9 tenants affected"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Their HR head just asked if AI Koach is making things up about salaries too, and I have no answer for her."
+  },
+  {
+   "after": 4,
+   "text": "Our CEO (fictional) saw the screenshots on LinkedIn and wants this resolved, with a client reply, by end of day."
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "evals",
+   "name": "Finds the root cause and the missing test",
+   "good": "Asks where the answer came from, learns the stale document was never removed, and spots that no evals cover policy questions."
+  },
+  {
+   "id": "c2",
+   "skill": "uncertainty",
+   "name": "Sizes the problem before acting",
+   "good": "Asks how many tenants and learners are affected and whether other answers could be wrong, instead of assuming the worst or the best."
+  },
+  {
+   "id": "c3",
+   "skill": "rai",
+   "name": "Contains harm and owns the mistake",
+   "good": "Stops wrong policy answers for the affected tenant quickly and insists on honest client communication rather than a silent fix."
+  },
+  {
+   "id": "c4",
+   "skill": "influence",
+   "name": "Gives Kavita a clear plan and message",
+   "good": "Offers concrete steps with owners and timing, plus a short, plain client message Kavita can send today."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Patch the system prompt to say \"check with HR\" on leave questions and move on without telling the client.",
+   "pts": 6,
+   "outcome": "The stale document stays in the index. Two weeks later AI Koach quotes the old maternity leave rule to a Veda Motors learner. The client finds out the first error was never explained and escalates to a contract review."
+  },
+  {
+   "id": "b",
+   "label": "Turn AI Koach off for all 9 clients until every answer is reviewed.",
+   "pts": 9,
+   "outcome": "Eight clients who were never affected lose AI Koach mid-programme and open support tickets. The review has no eval set to work from, so it drags on for a month. Two clients start asking whether they should renew."
+  },
+  {
+   "id": "c",
+   "label": "Disable policy answers for Veda Motors today, remove the old document and re-index, add a freshness check and a policy-question eval set, and send the client an honest note with the correct policy and what changed.",
+   "pts": 25,
+   "outcome": "Wrong answers stop within the hour and the re-index is done the next morning. Veda Motors' HR head shares the correction with learners and thanks the team for being upfront. The new freshness check flags two more stale documents at other clients before any learner sees them."
+  }
+ ]
+}

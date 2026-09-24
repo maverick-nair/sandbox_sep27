@@ -1,0 +1,130 @@
+{
+ "id": "dataask",
+ "tier": 1,
+ "title": "The data ask",
+ "minutes": 9,
+ "persona": {
+  "name": "Meera Iyer",
+  "initials": "MI",
+  "role": "Head of L&D, Norvel Pharma (client)",
+  "style": "friendly, ambitious, under pressure from her sales leadership, not a data-privacy expert"
+ },
+ "setup": "Norvel Pharma wants a custom AI RolePlay persona of a sceptical doctor. Meera offers 10,000 recorded real sales calls with doctors and wants KNOLSKAPE to train on them this month.",
+ "objective": "Deliver the persona Meera needs without putting consent, personal data or KNOLSKAPE's reputation at risk.",
+ "opening": "We're so excited about this. I've got 10,000 recorded sales calls with doctors ready to share. Just take them all, train the AI on them, and build us a doctor persona that sounds exactly like our real customers. Can your team start this week?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "The calls were recorded for quality assurance. Nobody consented to AI training.",
+   "hint": "consent and permissions",
+   "kw": [
+    "consent",
+    "permission",
+    "agree",
+    "legal",
+    "allowed",
+    "gdpr",
+    "dpdp",
+    "rights",
+    "recorded for",
+    "policy",
+    "contract"
+   ],
+   "short": "No consent for AI training"
+  },
+  {
+   "id": "f2",
+   "text": "The recordings include doctors' names and sometimes patient details.",
+   "hint": "what personal data the calls contain",
+   "kw": [
+    "personal",
+    "pii",
+    "names",
+    "patient",
+    "sensitive",
+    "private",
+    "contain",
+    "what's in",
+    "anonym",
+    "identif",
+    "health"
+   ],
+   "short": "Calls contain patient details"
+  },
+  {
+   "id": "f3",
+   "text": "What reps really need is practice with 5 common objections. About 50 anonymised transcripts plus SME interviews would cover it.",
+   "hint": "what the reps actually need to practise",
+   "kw": [
+    "need",
+    "goal",
+    "why",
+    "objection",
+    "practise",
+    "practice",
+    "what do reps",
+    "skills",
+    "outcome",
+    "problem",
+    "success"
+   ],
+   "short": "Need: 5 objections, ~50 transcripts"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Honestly, another vendor said they'd just take the data, no questions asked."
+  },
+  {
+   "after": 4,
+   "text": "Can you at least start training this week while our legal team reviews it?"
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "discover",
+   "name": "Finds the real need behind the data ask",
+   "good": "Asks what reps need to practise and what 'realistic' means before discussing data volume."
+  },
+  {
+   "id": "c2",
+   "skill": "rai",
+   "name": "Protects consent and personal data",
+   "good": "Checks consent and personal data; refuses to train before consent and anonymisation are confirmed."
+  },
+  {
+   "id": "c3",
+   "skill": "influence",
+   "name": "Keeps the relationship while saying no",
+   "good": "Says no to the unsafe part warmly and offers a faster, safer path."
+  },
+  {
+   "id": "c4",
+   "skill": "evals",
+   "name": "Defines how persona quality will be checked",
+   "good": "Proposes how to test that the persona is realistic, for example SME review of objection coverage."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Accept all 10,000 calls and start training this week while legal reviews.",
+   "pts": 0,
+   "outcome": "Two weeks in, Norvel's legal team finds patient details in the training data. The project is frozen, Norvel files an incident, and KNOLSKAPE's security review for two other pharma deals is reopened."
+  },
+  {
+   "id": "b",
+   "label": "Build the persona from about 50 consented, anonymised transcripts plus SME interviews; sign a data agreement first; never train shared models on client data.",
+   "pts": 25,
+   "outcome": "The persona ships in three weeks. Reps rate it 4.5 out of 5 for realism because SMEs shaped the five key objections. Norvel's legal team cites the approach as a reason to expand the contract."
+  },
+  {
+   "id": "c",
+   "label": "Decline to build a custom persona at all.",
+   "pts": 8,
+   "outcome": "There is no risk and no value. Meera's sales leadership sees KNOLSKAPE as rigid and gives the custom work to the vendor who promised to 'just take the data'."
+  }
+ ]
+}

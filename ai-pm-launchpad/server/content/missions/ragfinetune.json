@@ -1,0 +1,135 @@
+{
+ "id": "ragfinetune",
+ "tier": 2,
+ "title": "Fine-tune or not",
+ "minutes": 10,
+ "unlock": {
+  "level": 2
+ },
+ "persona": {
+  "name": "Rohan Deshpande",
+  "initials": "RD",
+  "role": "Senior ML Engineer, AI Microlearn",
+  "style": "deeply technical, excited by model work, confident in his approach, open to data but dismissive of shortcuts"
+ },
+ "setup": "AI Microlearn generates short lessons from each client's own content. Clients complain that some lessons are wrong or generic. Rohan wants 6 weeks and a budget to fine-tune a model on client content to fix it.",
+ "objective": "Decide how to fix lesson quality. Find out why the lessons fail, compare the cost and speed of each path, and agree a plan backed by evidence.",
+ "opening": "I've scoped the fix for AI Microlearn. We fine-tune a model on our clients' content, six weeks, and the lessons will finally sound like they know the business. I've already lined up the GPUs and a contractor for data prep. I need your approval today so we can start Monday. Retrieval is a band-aid. Fine-tuning is the real fix. Are you in?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "Client content changes every week: new products, new SOPs, new policies. A fine-tuned model would be out of date within days of training.",
+   "hint": "how often client content changes",
+   "kw": [
+    "change",
+    "update",
+    "often",
+    "weekly",
+    "fresh",
+    "new content",
+    "stale",
+    "retrain",
+    "current",
+    "latest",
+    "frequency"
+   ],
+   "short": "Client content changes weekly"
+  },
+  {
+   "id": "f2",
+   "text": "Rohan reviewed 50 failed lessons: 41 failed because the model lacked the client's facts, and only 6 were about tone or style.",
+   "hint": "why lessons are failing today",
+   "kw": [
+    "fail",
+    "why",
+    "root cause",
+    "error",
+    "wrong",
+    "generic",
+    "missing",
+    "context",
+    "style",
+    "tone",
+    "analysis",
+    "examples"
+   ],
+   "short": "Failures: missing context, not style"
+  },
+  {
+   "id": "f3",
+   "text": "The fine-tune would cost about ₹18 lakh in compute and data prep, plus 6 weeks. A retrieval prototype with an eval set could be ready in 1 week for under ₹2 lakh.",
+   "hint": "the cost and time of each option",
+   "kw": [
+    "cost",
+    "budget",
+    "lakh",
+    "price",
+    "expensive",
+    "spend",
+    "how long",
+    "time",
+    "weeks",
+    "prototype",
+    "compute",
+    "gpu"
+   ],
+   "short": "₹18 lakh vs 1-week prototype"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "The contractor needs a yes by tonight or we lose the slot for two months."
+  },
+  {
+   "after": 4,
+   "text": "Our biggest AI Microlearn client (fictional) just said they will cancel if lessons are not better by next quarter, so we cannot afford to experiment."
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "discover",
+   "name": "Diagnoses the real failure",
+   "good": "Asks why lessons fail and how often client content changes before accepting fine-tuning as the fix."
+  },
+  {
+   "id": "c2",
+   "skill": "evals",
+   "name": "Asks for evidence and an eval set",
+   "good": "Wants a labelled set of failed lessons and a shared quality measure so both approaches can be compared fairly."
+  },
+  {
+   "id": "c3",
+   "skill": "economics",
+   "name": "Compares cost, time and upkeep",
+   "good": "Weighs ₹18 lakh and 6 weeks against a 1-week prototype, including the cost of retraining as content changes."
+  },
+  {
+   "id": "c4",
+   "skill": "influence",
+   "name": "Keeps Rohan on board",
+   "good": "Respects Rohan's expertise and gives fine-tuning a clear path back if the evidence shows a style gap."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Approve the 6-week fine-tune as Rohan proposed.",
+   "pts": 5,
+   "outcome": "₹18 lakh and six weeks later the lessons sound more polished but still miss the latest client facts. Two clients update their SOPs during training, so the model is stale on day one. The team now owes a retraining cycle every month."
+  },
+  {
+   "id": "b",
+   "label": "Build a 1-week retrieval prototype with an eval set of the 50 failed lessons, then revisit fine-tuning only if evidence shows a remaining style gap.",
+   "pts": 25,
+   "outcome": "The prototype fixes 36 of the 41 missing-context failures on the eval set in one week. Rohan's team uses the same set to show a small tone gap for two clients, and a narrow style tune is scoped for later at a fraction of the cost."
+  },
+  {
+   "id": "c",
+   "label": "Reject fine-tuning and tell Rohan to add more detail to the prompt instead.",
+   "pts": 8,
+   "outcome": "Rohan feels overruled and disengages. Longer prompts help a little, but without client facts the lessons stay generic. Nobody measures the change, so the argument restarts a month later."
+  }
+ ]
+}

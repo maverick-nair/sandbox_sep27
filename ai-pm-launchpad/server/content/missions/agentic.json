@@ -1,0 +1,133 @@
+{
+ "id": "agentic",
+ "tier": 3,
+ "title": "The agentic roadmap",
+ "minutes": 12,
+ "unlock": {
+  "passes": 5
+ },
+ "persona": {
+  "name": "Vikram Rao",
+  "initials": "VR",
+  "role": "CEO, KNOLSKAPE (fictional)",
+  "style": "visionary, competitive, impatient, respects conviction backed by evidence"
+ },
+ "setup": "Vikram wants GENIE to launch fully autonomous learning agents next quarter: agents that enrol employees, message their managers and change development plans based on performance data, with no human approval.",
+ "objective": "Shape an agentic roadmap the board will back, that clients can trust and that stays on the right side of regulation. Hold your position under pressure.",
+ "opening": "This is the big one. Next quarter I want GENIE agents that act on their own: spot a readiness gap, enrol the person, message their manager, rewrite the plan. No approvals slowing it down. Our competitors are circling. I need you to tell me how fast we can ship it.",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "Several clients are in the EU, where AI that makes decisions about employees can fall under the AI Act's high-risk rules.",
+   "hint": "regulation for clients in the EU",
+   "kw": [
+    "regulat",
+    "eu",
+    "legal",
+    "compliance",
+    "ai act",
+    "law",
+    "gdpr",
+    "europe",
+    "risk",
+    "employment"
+   ],
+   "short": "EU AI Act high-risk exposure"
+  },
+  {
+   "id": "f2",
+   "text": "In the AI Koach pilot, nudges sent without manager visibility pushed opt-outs to 34%.",
+   "hint": "what pilots showed about user trust",
+   "kw": [
+    "pilot",
+    "trust",
+    "users",
+    "employees",
+    "data",
+    "evidence",
+    "opt",
+    "adoption",
+    "feel",
+    "reaction",
+    "learned",
+    "results"
+   ],
+   "short": "Opt-outs hit 34% without managers"
+  },
+  {
+   "id": "f3",
+   "text": "The board's real question is proof of outcomes: measurable readiness gains, not autonomy for its own sake.",
+   "hint": "what the board actually wants",
+   "kw": [
+    "board",
+    "why",
+    "goal",
+    "outcome",
+    "want",
+    "success",
+    "measure",
+    "investor",
+    "problem",
+    "value",
+    "prove"
+   ],
+   "short": "Board wants proof of outcomes"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Our biggest competitor just announced 'fully autonomous L&D'. We can't look slow."
+  },
+  {
+   "after": 4,
+   "text": "I don't want a list of risks. Give me a yes and a date."
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "discover",
+   "name": "Finds what the board actually needs",
+   "good": "Asks about the board's goal, client evidence and what success means before debating autonomy."
+  },
+  {
+   "id": "c2",
+   "skill": "rai",
+   "name": "Surfaces regulatory and trust risks",
+   "good": "Names employment-related regulation and trust signals, and designs human approval for high-impact actions."
+  },
+  {
+   "id": "c3",
+   "skill": "influence",
+   "name": "Holds a position with a staged plan",
+   "good": "Gives the CEO a date for a staged launch rather than a flat yes or no, under pressure."
+  },
+  {
+   "id": "c4",
+   "skill": "economics",
+   "name": "Ties the roadmap to measurable value",
+   "good": "Links each stage to readiness outcomes and client value the board can see."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Commit to fully autonomous agents next quarter.",
+   "pts": 4,
+   "outcome": "The launch makes headlines. Within weeks, an EU client's works council objects to automated decisions about employees, opt-outs climb and the board asks why pilot data was ignored."
+  },
+  {
+   "id": "b",
+   "label": "Stage it: next quarter agents recommend and managers approve; measure readiness gains in 2 clients; automate low-risk nudges with opt-out and audit logs; EU clients after legal review.",
+   "pts": 25,
+   "outcome": "GENIE ships 'agents with a human hand on the wheel' on time. Two clients show a 22% faster readiness gain, which becomes the board story. Low-risk autonomy follows in the next quarter with trust intact."
+  },
+  {
+   "id": "c",
+   "label": "Pause agentic work for a year until regulation settles.",
+   "pts": 8,
+   "outcome": "KNOLSKAPE avoids risk but cedes the narrative. The board questions the product vision, and competitors define what 'agentic L&D' means."
+  }
+ ]
+}

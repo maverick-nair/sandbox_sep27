@@ -1,0 +1,17 @@
+{
+  "name": "ai-pm-launchpad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KNOLSKAPE AI PM Launchpad: game-based practice for AI product managers with Claude-played stakeholders.",
+  "main": "server/index.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/unit.test.js tests/api.test.js",
+    "test:e2e": "node --disable-warning=ExperimentalWarning tests/e2e.cjs",
+    "seed:demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
+    "validate:content": "node --disable-warning=ExperimentalWarning -e \"const k=require('./server/content').load();console.log('OK', k.missions.length, 'missions,', k.path.length, 'path nodes')\""
+  },
+  "dependencies": { "@anthropic-ai/sdk": "0.128.0" },
+  "devDependencies": { "axe-core": "4.13.0" }
+}

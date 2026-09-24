@@ -1,0 +1,133 @@
+{
+ "id": "evalgate",
+ "tier": 1,
+ "title": "The eval gate",
+ "minutes": 9,
+ "persona": {
+  "name": "Arjun Mehta",
+  "initials": "AM",
+  "role": "ML Lead, Conversation AI",
+  "style": "sharp, proud of the model, defensive about delays, respects evidence"
+ },
+ "setup": "Arjun's team built an LLM auto-scorer that grades learners' Conversation AI sales roleplays. He wants to ship it to every client this Friday, replacing human assessor scoring.",
+ "objective": "Decide whether the scorer is ready. Find out how quality was measured, check it is fair across learners, and make a launch call you can defend.",
+ "opening": "Good news: the auto-scorer is done. It's fast, it's cheap, and the LLM judge rates it 91% accurate. I want to switch every client from human assessors to auto-scoring this Friday. You're the PM, so I just need your sign-off. We good?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "Agreement with human assessors is only 0.62. The 91% is the LLM judge grading its own family of model.",
+   "hint": "how accuracy was measured against humans",
+   "kw": [
+    "human",
+    "assessor",
+    "agreement",
+    "accurate",
+    "accuracy",
+    "measured",
+    "how do you know",
+    "91",
+    "compare",
+    "judge",
+    "ground truth",
+    "kappa",
+    "correlat"
+   ],
+   "short": "Human agreement only 0.62"
+  },
+  {
+   "id": "f2",
+   "text": "For non-native English speakers, agreement drops to 0.48, so they get unfairly low scores.",
+   "hint": "differences between learner groups",
+   "kw": [
+    "fair",
+    "bias",
+    "accent",
+    "non-native",
+    "segment",
+    "group",
+    "subgroup",
+    "english",
+    "demographic",
+    "everyone",
+    "different learners",
+    "language"
+   ],
+   "short": "Non-native speakers: 0.48"
+  },
+  {
+   "id": "f3",
+   "text": "The eval set is 80 calls, all from a single pharma client.",
+   "hint": "the size and source of the eval set",
+   "kw": [
+    "eval set",
+    "dataset",
+    "data set",
+    "sample",
+    "how many",
+    "which calls",
+    "test set",
+    "examples",
+    "client",
+    "representative",
+    "size"
+   ],
+   "short": "Eval set: 80 calls, 1 client"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Look, 91% is better than most humans manage on a bad day. Isn't that good enough?"
+  },
+  {
+   "after": 4,
+   "text": "Also, marketing already posted 'AI scoring you can trust' on LinkedIn. We can't walk that back."
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "evals",
+   "name": "Interrogates how quality was measured",
+   "good": "Asks for agreement with human assessors, the eval set size and source, and challenges the self-graded 91%."
+  },
+  {
+   "id": "c2",
+   "skill": "rai",
+   "name": "Checks fairness across learner groups",
+   "good": "Asks how scores differ for accents, languages or other groups and treats a gap as a blocker for high-stakes use."
+  },
+  {
+   "id": "c3",
+   "skill": "influence",
+   "name": "Makes a clear, defensible launch call",
+   "good": "States a decision with thresholds (for example agreement of 0.75 or more) and what would change it."
+  },
+  {
+   "id": "c4",
+   "skill": "uncertainty",
+   "name": "Reframes the claim honestly",
+   "good": "Suggests how to describe the scorer to clients without over-claiming, for example practice feedback, not certification."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Ship auto-scoring to every client on Friday as planned.",
+   "pts": 3,
+   "outcome": "Scores go live. Within a month, two clients notice non-native speakers failing certification at twice the usual rate. One client pauses Conversation AI and asks for a bias review."
+  },
+  {
+   "id": "b",
+   "label": "Ship it as practice feedback only, keep human scoring for certification, grow the eval set to 300 calls from 3 or more clients, and require 0.75 agreement with no group gap before scores count.",
+   "pts": 25,
+   "outcome": "Learners get instant practice feedback, which they love. In five weeks the bigger eval set exposes and fixes the accent gap; agreement reaches 0.78 and certification scoring switches over with evidence behind it."
+  },
+  {
+   "id": "c",
+   "label": "Stop the launch and rebuild the scorer with a fine-tuned model.",
+   "pts": 10,
+   "outcome": "The rebuild takes a quarter. The team loses momentum, and the new model has the same untested blind spots because the eval set never changed."
+  }
+ ]
+}

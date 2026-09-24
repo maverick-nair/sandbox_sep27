@@ -1,0 +1,132 @@
+{
+ "id": "margin",
+ "tier": 2,
+ "title": "The margin question",
+ "minutes": 10,
+ "unlock": {
+  "level": 2
+ },
+ "persona": {
+  "name": "Rahul Khanna",
+  "initials": "RK",
+  "role": "CFO, KNOLSKAPE",
+  "style": "precise, numbers-first, polite but blunt, dislikes vague answers"
+ },
+ "setup": "AI RolePlay costs about ₹38 in model usage per session. Clients pay ₹1,200 per learner per year for unlimited sessions, and heavy users run 60 sessions a year. Rahul wants to cut costs before the board meets.",
+ "objective": "Protect margin without breaking the learning experience. Understand the cost drivers, protect quality with evidence, and give Rahul a number and a plan.",
+ "opening": "I'll be direct. At ₹38 a session and ₹1,200 a learner, a heavy user costs us ₹2,280 a year. We lose money on them. I want to either switch every session to the cheapest model or cap learners at 20 sessions. Which one, and by Thursday?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "The top 10% of learners create 55% of all sessions.",
+   "hint": "how usage is spread across learners",
+   "kw": [
+    "usage",
+    "who",
+    "distribution",
+    "heavy",
+    "how many learners",
+    "top",
+    "average",
+    "spread",
+    "users",
+    "pattern",
+    "segment"
+   ],
+   "short": "Top 10% make 55% of sessions"
+  },
+  {
+   "id": "f2",
+   "text": "In evals, the cheaper model drops persona quality from 4.3 to 3.6 out of 5, but only on complex scenarios.",
+   "hint": "what evals say about the cheaper model",
+   "kw": [
+    "quality",
+    "eval",
+    "test",
+    "cheaper model",
+    "worse",
+    "impact",
+    "experience",
+    "benchmark",
+    "score",
+    "compare"
+   ],
+   "short": "Cheap model hurts complex scenarios"
+  },
+  {
+   "id": "f3",
+   "text": "About 60% of each prompt is the same scenario context repeated every turn, which could be cached.",
+   "hint": "what makes up the ₹38 per session",
+   "kw": [
+    "breakdown",
+    "token",
+    "why so expensive",
+    "cost made",
+    "drivers",
+    "prompt",
+    "context",
+    "cach",
+    "what drives",
+    "composition",
+    "where does"
+   ],
+   "short": "60% of prompt is cacheable"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "The board meets Thursday. I need one number, not a research project."
+  },
+  {
+   "after": 4,
+   "text": "Why don't we just charge clients per session like a utility?"
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "economics",
+   "name": "Breaks down the cost drivers",
+   "good": "Asks what makes up the cost and how usage is distributed; spots caching and routing levers."
+  },
+  {
+   "id": "c2",
+   "skill": "evals",
+   "name": "Protects quality with evidence",
+   "good": "Asks what evals show before switching models; limits cheaper models to where quality holds."
+  },
+  {
+   "id": "c3",
+   "skill": "influence",
+   "name": "Gives the CFO a clear number and plan",
+   "good": "Commits to a specific plan with an estimated saving and a date."
+  },
+  {
+   "id": "c4",
+   "skill": "uncertainty",
+   "name": "Explains trade-offs plainly",
+   "good": "States what is known, what is estimated and what will be checked, in plain numbers."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Switch every session to the cheapest model now.",
+   "pts": 8,
+   "outcome": "Costs drop 45%. Complex-scenario learners notice flat, repetitive personas; satisfaction falls and two clients raise it at renewal."
+  },
+  {
+   "id": "b",
+   "label": "Cache the repeated context, route simple scenarios to the cheaper model and keep complex ones on the current model, add a fair-use tier for the top 10%, and re-run evals before rollout.",
+   "pts": 25,
+   "outcome": "Caching and routing cut the average session cost to about ₹17 with no quality drop on complex scenarios. The fair-use tier affects few clients and becomes an upsell. Rahul takes a credible margin plan to the board."
+  },
+  {
+   "id": "c",
+   "label": "Cap every learner at 20 sessions a year.",
+   "pts": 7,
+   "outcome": "Costs fall, but the most engaged learners, often your clients' champions, hit the cap in month four. Practice drops, and the product loses its 'unlimited practice' promise."
+  }
+ ]
+}

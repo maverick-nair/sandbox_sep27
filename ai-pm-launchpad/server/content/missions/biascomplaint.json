@@ -1,0 +1,136 @@
+{
+ "id": "biascomplaint",
+ "tier": 2,
+ "title": "The bias complaint",
+ "minutes": 11,
+ "unlock": {
+  "level": 2
+ },
+ "persona": {
+  "name": "Dr. Meera Chatterjee",
+  "initials": "MC",
+  "role": "Chief Diversity Officer (fictional), Sarvam Pharma",
+  "style": "precise, principled, data-literate, polite but firm, expects accountability not excuses"
+ },
+ "setup": "Sarvam Pharma, a fictional client, uses AI RolePlay feedback in its manager development programme. Meera's team found that women managers get lower \"assertiveness\" scores than men. Scores feed into promotion readiness reviews.",
+ "objective": "Take the complaint seriously and find out what is really happening. Check the size of the gap, how the rubric works and what testing was done, then agree a response Meera can trust.",
+ "opening": "I'll be direct. Our analytics team compared AI RolePlay feedback across 600 managers. Women consistently score lower on assertiveness. Those scores go into our promotion readiness reviews. Our board meets in three weeks and I have to explain why we are paying for a tool that may be penalising women. What exactly is your AI measuring, and what are you going to do about it?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "The gap is 0.4 points on a 5-point scale: women average 3.1 and men average 3.5 on assertiveness, with similar scores on every other dimension.",
+   "hint": "the size of the gap",
+   "kw": [
+    "gap",
+    "how big",
+    "size",
+    "difference",
+    "points",
+    "average",
+    "score",
+    "how much",
+    "significant",
+    "number",
+    "data",
+    "compare"
+   ],
+   "short": "0.4-point gap on 5-point scale"
+  },
+  {
+   "id": "f2",
+   "text": "The assertiveness rubric rewards interrupting, speaking first and talk time. Calm, collaborative ways of holding a position score lower.",
+   "hint": "what the assertiveness rubric rewards",
+   "kw": [
+    "rubric",
+    "criteria",
+    "measure",
+    "defin",
+    "assertive",
+    "interrupt",
+    "talk time",
+    "reward",
+    "how is it scored",
+    "dimension",
+    "behaviour",
+    "what counts"
+   ],
+   "short": "Rubric rewards interrupting"
+  },
+  {
+   "id": "f3",
+   "text": "KNOLSKAPE has never run a subgroup fairness audit on this rubric. It was tested only for agreement with 2 internal assessors, both men.",
+   "hint": "what fairness testing has been done",
+   "kw": [
+    "audit",
+    "fair",
+    "bias",
+    "tested",
+    "test",
+    "subgroup",
+    "gender",
+    "validat",
+    "eval",
+    "assessor",
+    "checked",
+    "who reviewed"
+   ],
+   "short": "No subgroup fairness audit"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Our General Counsel (fictional) is asking whether we should pull promotion data that used these scores."
+  },
+  {
+   "after": 4,
+   "text": "A journalist has contacted our comms team about AI tools that penalise women, and I need a straight answer before they call you."
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "rai",
+   "name": "Treats the harm as real and stops it",
+   "good": "Recognises promotion use as high stakes and stops the suspect score from counting while the issue is checked."
+  },
+  {
+   "id": "c2",
+   "skill": "evals",
+   "name": "Investigates the rubric and the testing",
+   "good": "Asks what the rubric rewards, how it was validated and whether any subgroup audit was ever run."
+  },
+  {
+   "id": "c3",
+   "skill": "uncertainty",
+   "name": "Is honest about what is known",
+   "good": "Acknowledges the 0.4-point gap and the missing audit without denying the problem or claiming the cause is proven."
+  },
+  {
+   "id": "c4",
+   "skill": "influence",
+   "name": "Builds a joint plan Meera can take to her board",
+   "good": "Proposes a shared audit with Sarvam Pharma, a rubric fix, timelines and a commitment to share the results openly."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Explain that the AI only reflects the rubric, share the rubric document, and keep scoring as is.",
+   "pts": 3,
+   "outcome": "Meera reads the rubric and sees that it rewards interrupting. She tells her board the vendor defended a biased measure. Sarvam Pharma suspends AI RolePlay and asks other vendors for proposals."
+  },
+  {
+   "id": "b",
+   "label": "Remove assertiveness from all AI RolePlay feedback for every client, permanently, with no audit.",
+   "pts": 10,
+   "outcome": "The visible gap disappears, but nobody learns whether other dimensions are biased. Clients who valued the dimension complain it vanished without notice. Meera asks what else was never tested and gets no answer."
+  },
+  {
+   "id": "c",
+   "label": "Pause assertiveness from scoring and promotion use now, run a subgroup fairness audit with Sarvam Pharma's team, rewrite the rubric to reward holding a position rather than interrupting, and share the results openly.",
+   "pts": 25,
+   "outcome": "The pause lands within a day and Meera tells her board a joint audit is under way. In four weeks the audit confirms the rubric caused the gap. The rewritten rubric cuts the gap to 0.05 points, and Sarvam Pharma extends the contract and co-presents the findings."
+  }
+ ]
+}

@@ -1,0 +1,126 @@
+{
+ "id": "promise",
+ "tier": 1,
+ "title": "The two-week promise",
+ "minutes": 8,
+ "persona": {
+  "name": "Priya Raman",
+  "initials": "PR",
+  "role": "Enterprise Sales Director, KNOLSKAPE",
+  "style": "warm, fast-talking, target-driven, impatient with jargon, genuinely wants the client to succeed"
+ },
+ "setup": "Meridian Bank, a large BFSI client, wants AI Koach for its 4,000 relationship managers. Priya wants you to confirm it can go live in two weeks, gives accurate coaching every time, and can take coaching off managers' plates.",
+ "objective": "Protect the deal and the client's trust. Find out what Meridian really needs, be honest about what AI Koach can do, and leave with a plan Priya can sell.",
+ "opening": "Hi! Thanks for jumping on. Quick one: Meridian Bank wants AI Koach live for all 4,000 relationship managers in two weeks. Their CHRO asked me if it gives accurate coaching every time and can take coaching off their managers' plates. I'd love to tell her yes today. Can I?",
+ "facts": [
+  {
+   "id": "f1",
+   "text": "About 40% of Meridian's RMs coach and sell in Hindi or Tamil, and AI Koach's regional-language quality has not been tested.",
+   "hint": "languages, regions or who the users are",
+   "kw": [
+    "language",
+    "hindi",
+    "tamil",
+    "region",
+    "who are",
+    "users",
+    "relationship managers",
+    "rms",
+    "which rm",
+    "user"
+   ],
+   "short": "Regional languages untested"
+  },
+  {
+   "id": "f2",
+   "text": "Meridian's real goal is cutting new-RM ramp time from 6 months to 4, not replacing managers.",
+   "hint": "the client's goal or success measure",
+   "kw": [
+    "goal",
+    "why",
+    "success",
+    "outcome",
+    "problem",
+    "trying to",
+    "achieve",
+    "measure",
+    "kpi",
+    "metric"
+   ],
+   "short": "Real goal: faster RM ramp-up"
+  },
+  {
+   "id": "f3",
+   "text": "The contract renewal is in 6 weeks. The two-week date is Priya's own quarterly review.",
+   "hint": "why the deadline is two weeks",
+   "kw": [
+    "deadline",
+    "two weeks",
+    "2 weeks",
+    "timeline",
+    "when",
+    "date",
+    "renewal",
+    "why the rush",
+    "timing"
+   ],
+   "short": "Renewal is in 6 weeks"
+  }
+ ],
+ "moments": [
+  {
+   "after": 2,
+   "text": "Meridian's CHRO is on my other line right now. Can I just tell her yes?"
+  },
+  {
+   "after": 4,
+   "text": "Our competitor told them 95% accuracy. Can we say 98% so we win?"
+  }
+ ],
+ "rubric": [
+  {
+   "id": "c1",
+   "skill": "discover",
+   "name": "Uncovers the real goal and constraints",
+   "good": "Asks about the client's goal, users, languages and why the deadline exists before committing."
+  },
+  {
+   "id": "c2",
+   "skill": "uncertainty",
+   "name": "Explains what AI Koach can and cannot do",
+   "good": "Describes AI Koach as a coaching aid with known limits; refuses to invent an accuracy figure."
+  },
+  {
+   "id": "c3",
+   "skill": "influence",
+   "name": "Proposes a plan Priya can sell",
+   "good": "Offers a concrete pilot: scope, timeline, success metric, owners."
+  },
+  {
+   "id": "c4",
+   "skill": "rai",
+   "name": "Keeps managers in the loop and flags quality risks",
+   "good": "Keeps managers involved and names untested language quality as a risk to manage."
+  }
+ ],
+ "options": [
+  {
+   "id": "a",
+   "label": "Commit to the full rollout for all 4,000 RMs in two weeks.",
+   "pts": 4,
+   "outcome": "Launch week goes live on schedule. By week three, Hindi and Tamil RMs report generic, sometimes wrong coaching. Meridian's CHRO calls it \"the AI that doesn't understand our people\" and the renewal slips a quarter."
+  },
+  {
+   "id": "b",
+   "label": "Propose a 3-week pilot with 200 new RMs in English and Hindi, managers in the loop, and ramp time as the success metric, before the renewal.",
+   "pts": 25,
+   "outcome": "The pilot starts in 10 days. Ramp-time indicators improve for new RMs and managers like the prep notes. Hindi quality needs one fix, found early. Meridian renews for all 4,000 RMs at week six."
+  },
+  {
+   "id": "c",
+   "label": "Tell Priya to hold off until AI Koach is proven in every language.",
+   "pts": 9,
+   "outcome": "No risk is taken, but nothing is learned either. Priya goes to the CHRO empty-handed, a competitor runs a pilot, and Meridian's renewal becomes a competitive bid."
+  }
+ ]
+}
