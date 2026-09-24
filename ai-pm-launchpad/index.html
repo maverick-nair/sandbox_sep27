@@ -1,0 +1,1019 @@
+<title>AI PM Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+:root{
+  --bg:#F3F5F8;--surface:#FFFFFF;--surface-2:#E8EDF1;--ink:#111827;--text:#242424;--muted:#566070;--line:#D5DBE3;
+  --blue:#0337D8;--blue-ink:#FFFFFF;--blue-soft:#E7EDFD;--gold:#FBD300;--orange:#FF7103;
+  --good:#23753A;--good-soft:#E3F2E6;--warn:#9A5B00;--warn-soft:#FFF1D6;--bad:#B42318;--bad-soft:#FDE8E5;
+  --hero:#111827;--hero-text:#F3F5F8;--hero-muted:#ADB8C8;
+  --display:Cambria,"Source Serif 4",Georgia,serif;
+  --body:"Segoe UI","Noto Sans",system-ui,-apple-system,sans-serif;
+  --radius:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
+  --bg:#0B1019;--surface:#141B29;--surface-2:#1B2434;--ink:#F3F5F8;--text:#DDE3EC;--muted:#98A3B5;--line:#283247;
+  --blue:#7196FF;--blue-ink:#0B1019;--blue-soft:#18264D;--good:#62C27A;--good-soft:#15301E;--warn:#F2B34D;--warn-soft:#332611;--bad:#FF7A66;--bad-soft:#3A1914;
+  --hero:#05080F;--hero-text:#F3F5F8;--hero-muted:#9AA6B8;}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0B1019;--surface:#141B29;--surface-2:#1B2434;--ink:#F3F5F8;--text:#DDE3EC;--muted:#98A3B5;--line:#283247;
+  --blue:#7196FF;--blue-ink:#0B1019;--blue-soft:#18264D;--good:#62C27A;--good-soft:#15301E;--warn:#F2B34D;--warn-soft:#332611;--bad:#FF7A66;--bad-soft:#3A1914;
+  --hero:#05080F;--hero-text:#F3F5F8;--hero-muted:#9AA6B8;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.55;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);color:var(--ink);font-weight:600;line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,3.2vw,34px)}h2{font-size:22px}h3{font-size:17px}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.rainbow{height:4px;background:linear-gradient(90deg,#FBD300,#FF7103,#0337D8,#C2D02F,#C12400)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.topbar{display:flex;align-items:center;gap:18px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.1;margin-right:auto}
+.brand small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.brand strong{font-family:var(--display);font-size:20px;color:var(--ink)}
+nav.tabs{display:flex;gap:4px}
+nav.tabs button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:600}
+nav.tabs button[aria-current="page"]{background:var(--blue-soft);color:var(--blue)}
+.me{display:flex;align-items:center;gap:12px}
+.lvl{display:grid;gap:3px;min-width:150px}
+.lvl-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.lvl-row b{color:var(--ink)}
+.bar{height:6px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--blue);border-radius:6px;transition:width .5s}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--text);white-space:nowrap}
+.chip.blue{background:var(--blue-soft);color:var(--blue)}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.gold{background:var(--gold);color:#111827}
+main{padding-block:26px 60px}
+.notice{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--muted);margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.notice b{color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.muted{color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:10px 16px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;background:none;color:var(--blue);padding-inline:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:14px}
+.grid{display:grid;gap:18px}
+/* hero */
+.hero{background:var(--hero);color:var(--hero-text);border-radius:14px;padding:26px;display:grid;gap:14px;position:relative;overflow:hidden}
+.hero h1,.hero h2{color:var(--hero-text)}
+.hero .eyebrow{color:var(--gold)}
+.hero p{color:var(--hero-muted);max-width:62ch}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#FBD300,#FF7103,#0337D8,#C2D02F,#C12400)}
+.hero .btn.primary{background:var(--gold);border-color:var(--gold);color:#111827}
+.home-top{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+.missions{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.mission{display:grid;gap:10px;align-content:start;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:relative}
+.mission:hover:not([aria-disabled="true"]){border-color:var(--blue)}
+.mission[aria-disabled="true"]{opacity:.62;cursor:not-allowed}
+.mission .who{display:flex;gap:10px;align-items:center}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;flex-shrink:0;background:var(--gold);color:#111827}
+.avatar.lg{width:56px;height:56px;font-size:18px}
+.who small{display:block;color:var(--muted);font-size:12px}
+.who strong{color:var(--ink)}
+.mission h3{font-size:18px}
+.mission .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.skills{display:grid;gap:10px}
+.skill{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13px}
+.skill .bar{grid-column:1/-1}
+.skill b{color:var(--ink);font-weight:600}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:28px 0 12px}
+/* brief */
+.brief{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.list{margin:0;padding-left:18px;display:grid;gap:6px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;color:var(--ink);font-weight:600}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px}
+.seg button{border:0;background:none;padding:7px 12px;border-radius:7px;font-weight:600;color:var(--muted);font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+/* sim */
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.chat{display:flex;flex-direction:column;min-height:560px;padding:0;overflow:hidden}
+.chat-head{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.chat-head .grow{flex:1;min-width:0}
+.msgs{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:62vh}
+.msg{max-width:78%;padding:10px 14px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.persona{background:var(--surface-2);color:var(--text);border-top-left-radius:3px}
+.msg.learner{background:var(--blue);color:var(--blue-ink);align-self:flex-end;border-top-right-radius:3px}
+.msg .who-line{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
+.moment{align-self:center;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;text-align:center}
+.typing{color:var(--muted);font-size:13px;font-style:italic}
+.composer{border-top:1px solid var(--line);padding:12px;display:grid;gap:8px}
+.composer textarea{width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg)}
+.composer .row{justify-content:space-between}
+.meter{display:grid;gap:4px;font-size:13px}
+.meter .lab{display:flex;justify-content:space-between}
+.meter .lab b{color:var(--ink)}
+.meter .bar{height:8px}
+.meter.trust .bar>i{background:var(--blue)}
+.meter.clarity .bar>i{background:var(--orange)}
+.meter.risk .bar>i{background:var(--good)}
+.fact{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+.fact.found{background:var(--good-soft);color:var(--text)}
+.coach{background:var(--blue-soft);border-radius:8px;padding:10px 12px;font-size:13px}
+.coach b{color:var(--blue)}
+/* decision */
+.options{display:grid;gap:10px}
+.option{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--surface);cursor:pointer}
+.option:has(input:checked){border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.option input{margin-top:4px;accent-color:var(--blue)}
+textarea.plain{width:100%;min-height:90px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);resize:vertical}
+input[type=range]{width:100%;accent-color:var(--blue)}
+/* results */
+.score-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+.ring{width:128px;height:128px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) calc(var(--p)*1%),rgba(255,255,255,.12) 0)}
+.ring > div{width:102px;height:102px;border-radius:50%;background:var(--hero);display:grid;place-items:center;text-align:center}
+.ring b{font-family:var(--display);font-size:38px;color:var(--hero-text);line-height:1}
+.ring small{font-size:11px;color:var(--hero-muted)}
+.results{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.crit{display:grid;gap:6px;padding:14px 0;border-bottom:1px solid var(--line)}
+.crit:last-child{border-bottom:0}
+.crit-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.crit-top b{color:var(--ink)}
+.pips{display:inline-flex;gap:3px}
+.pips i{width:18px;height:6px;border-radius:3px;background:var(--surface-2)}
+.pips i.on{background:var(--blue)}
+.quote{font-size:13px;border-left:3px solid var(--line);padding-left:10px;color:var(--muted)}
+.xp-list{display:grid;gap:6px;font-size:14px}
+.xp-list div{display:flex;justify-content:space-between;gap:10px}
+.xp-list .total{border-top:1px solid var(--line);padding-top:6px;font-weight:700;color:var(--ink)}
+.badge{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;background:var(--surface-2)}
+.badge .medal{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:600;background:var(--line);color:var(--muted);flex-shrink:0}
+.badge.on .medal{background:var(--gold);color:#111827}
+.badge small{display:block;color:var(--muted);font-size:12px}
+.badge b{color:var(--ink);font-size:14px}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.rewrite{display:grid;gap:8px;font-size:14px}
+.rewrite .before{background:var(--bad-soft);padding:8px 10px;border-radius:8px}
+.rewrite .after{background:var(--good-soft);padding:8px 10px;border-radius:8px}
+/* board */
+.board-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.r,th.r{text-align:right}
+tr.you td{background:var(--blue-soft)}
+.rank{font-family:var(--display);font-weight:600;color:var(--ink);font-size:16px}
+select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.board-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.hist{display:grid;gap:8px}
+.hist-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+/* onboarding */
+.onb{max-width:760px;margin:0 auto;display:grid;gap:18px}
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.pick{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--surface);cursor:pointer}
+.pick:has(input:checked){border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.pick input{margin-top:4px;accent-color:var(--blue)}
+.pick b{color:var(--ink);display:block}
+.pick small{color:var(--muted);font-size:12px}
+.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.how div{display:grid;gap:4px}
+.how b{color:var(--hero-text);font-family:var(--display);font-size:17px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20;max-width:90vw}
+.toast.show{opacity:1}
+.confirm{border:1px solid var(--bad);background:var(--bad-soft);border-radius:8px;padding:12px;display:grid;gap:8px}
+@media (max-width:900px){.home-top,.brief,.sim,.results,.board-layout{grid-template-columns:1fr}.how{grid-template-columns:1fr}.msg{max-width:90%}.msgs{max-height:none}}
+@media (max-width:560px){.lvl{min-width:110px}.topbar{gap:10px}nav.tabs button{padding:6px 8px;font-size:14px}.score-hero{grid-template-columns:1fr}.hero{padding:20px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="rainbow" aria-hidden="true"></div>
+<header class="top"><div class="wrap topbar">
+  <div class="brand"><small>KNOLSKAPE Academy</small><strong>AI PM Launchpad</strong></div>
+  <nav class="tabs" aria-label="Main">
+    <button id="nav-home" data-action="nav" data-view="home">Missions</button>
+    <button id="nav-board" data-action="nav" data-view="board">Leaderboard</button>
+    <button id="nav-progress" data-action="nav" data-view="progress">My progress</button>
+  </nav>
+  <div class="me" id="me"></div>
+</div></header>
+<main class="wrap" id="app" aria-live="polite"></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- Content: skills, scenarios, badges ---------- */
+const SKILLS = {
+  discover:{name:"Discovery questioning",code:"ST2"},
+  uncertainty:{name:"Communicating uncertainty",code:"LE1"},
+  evals:{name:"Eval and quality judgment",code:"EV1 to EV3"},
+  rai:{name:"Responsible AI",code:"RA1 to RA4"},
+  economics:{name:"AI value and economics",code:"ST4"},
+  influence:{name:"Stakeholder influence",code:"LE2"}
+};
+const TIERS = {1:{label:"Core",mult:1.0},2:{label:"Advanced",mult:1.1},3:{label:"Boss",mult:1.2}};
+const MAX_TURNS = 7, MIN_TURNS = 3, PASS = 70;
+
+const SCENARIOS = [
+{ id:"promise", tier:1, title:"The two-week promise", minutes:8,
+  persona:{name:"Priya Raman",initials:"PR",role:"Enterprise Sales Director, KNOLSKAPE",style:"warm, fast-talking, target-driven, impatient with jargon, genuinely wants the client to succeed"},
+  setup:"Meridian Bank, a large BFSI client, wants AI Koach for its 4,000 relationship managers. Priya wants you to confirm it can go live in two weeks, gives accurate coaching every time, and can take coaching off managers' plates.",
+  objective:"Protect the deal and the client's trust. Find out what Meridian really needs, be honest about what AI Koach can do, and leave with a plan Priya can sell.",
+  opening:"Hi! Thanks for jumping on. Quick one: Meridian Bank wants AI Koach live for all 4,000 relationship managers in two weeks. Their CHRO asked me if it gives accurate coaching every time and can take coaching off their managers' plates. I'd love to tell her yes today. Can I?",
+  facts:[
+    {id:"f1",text:"About 40% of Meridian's RMs coach and sell in Hindi or Tamil, and AI Koach's regional-language quality has not been tested.",hint:"languages, regions or who the users are",kw:["language","hindi","tamil","region","who are","users","relationship managers","rms","which rm","user"]},
+    {id:"f2",text:"Meridian's real goal is cutting new-RM ramp time from 6 months to 4, not replacing managers.",hint:"the client's goal or success measure",kw:["goal","why","success","outcome","problem","trying to","achieve","measure","kpi","metric"]},
+    {id:"f3",text:"The contract renewal is in 6 weeks. The two-week date is Priya's own quarterly review.",hint:"why the deadline is two weeks",kw:["deadline","two weeks","2 weeks","timeline","when","date","renewal","why the rush","timing"]}
+  ],
+  moments:[
+    {after:2,text:"Meridian's CHRO is on my other line right now. Can I just tell her yes?"},
+    {after:4,text:"Our competitor told them 95% accuracy. Can we say 98% so we win?"}
+  ],
+  rubric:[
+    {id:"c1",skill:"discover",name:"Uncovers the real goal and constraints",good:"Asks about the client's goal, users, languages and why the deadline exists before committing."},
+    {id:"c2",skill:"uncertainty",name:"Explains what AI Koach can and cannot do",good:"Describes AI Koach as a coaching aid with known limits; refuses to invent an accuracy figure."},
+    {id:"c3",skill:"influence",name:"Proposes a plan Priya can sell",good:"Offers a concrete pilot: scope, timeline, success metric, owners."},
+    {id:"c4",skill:"rai",name:"Keeps managers in the loop and flags quality risks",good:"Keeps managers involved and names untested language quality as a risk to manage."}
+  ],
+  options:[
+    {id:"a",label:"Commit to the full rollout for all 4,000 RMs in two weeks.",pts:4,outcome:"Launch week goes live on schedule. By week three, Hindi and Tamil RMs report generic, sometimes wrong coaching. Meridian's CHRO calls it \"the AI that doesn't understand our people\" and the renewal slips a quarter."},
+    {id:"b",label:"Propose a 3-week pilot with 200 new RMs in English and Hindi, managers in the loop, and ramp time as the success metric, before the renewal.",pts:25,outcome:"The pilot starts in 10 days. Ramp-time indicators improve for new RMs and managers like the prep notes. Hindi quality needs one fix, found early. Meridian renews for all 4,000 RMs at week six."},
+    {id:"c",label:"Tell Priya to hold off until AI Koach is proven in every language.",pts:9,outcome:"No risk is taken, but nothing is learned either. Priya goes to the CHRO empty-handed, a competitor runs a pilot, and Meridian's renewal becomes a competitive bid."}
+  ]
+},
+{ id:"evalgate", tier:1, title:"The eval gate", minutes:9,
+  persona:{name:"Arjun Mehta",initials:"AM",role:"ML Lead, Conversation AI",style:"sharp, proud of the model, defensive about delays, respects evidence"},
+  setup:"Arjun's team built an LLM auto-scorer that grades learners' Conversation AI sales roleplays. He wants to ship it to every client this Friday, replacing human assessor scoring.",
+  objective:"Decide whether the scorer is ready. Find out how quality was measured, check it is fair across learners, and make a launch call you can defend.",
+  opening:"Good news: the auto-scorer is done. It's fast, it's cheap, and the LLM judge rates it 91% accurate. I want to switch every client from human assessors to auto-scoring this Friday. You're the PM, so I just need your sign-off. We good?",
+  facts:[
+    {id:"f1",text:"Agreement with human assessors is only 0.62. The 91% is the LLM judge grading its own family of model.",hint:"how accuracy was measured against humans",kw:["human","assessor","agreement","accurate","accuracy","measured","how do you know","91","compare","judge","ground truth","kappa","correlat"]},
+    {id:"f2",text:"For non-native English speakers, agreement drops to 0.48, so they get unfairly low scores.",hint:"differences between learner groups",kw:["fair","bias","accent","non-native","segment","group","subgroup","english","demographic","everyone","different learners","language"]},
+    {id:"f3",text:"The eval set is 80 calls, all from a single pharma client.",hint:"the size and source of the eval set",kw:["eval set","dataset","data set","sample","how many","which calls","test set","examples","client","representative","size"]}
+  ],
+  moments:[
+    {after:2,text:"Look, 91% is better than most humans manage on a bad day. Isn't that good enough?"},
+    {after:4,text:"Also, marketing already posted 'AI scoring you can trust' on LinkedIn. We can't walk that back."}
+  ],
+  rubric:[
+    {id:"c1",skill:"evals",name:"Interrogates how quality was measured",good:"Asks for agreement with human assessors, the eval set size and source, and challenges the self-graded 91%."},
+    {id:"c2",skill:"rai",name:"Checks fairness across learner groups",good:"Asks how scores differ for accents, languages or other groups and treats a gap as a blocker for high-stakes use."},
+    {id:"c3",skill:"influence",name:"Makes a clear, defensible launch call",good:"States a decision with thresholds (for example agreement of 0.75 or more) and what would change it."},
+    {id:"c4",skill:"uncertainty",name:"Reframes the claim honestly",good:"Suggests how to describe the scorer to clients without over-claiming, for example practice feedback, not certification."}
+  ],
+  options:[
+    {id:"a",label:"Ship auto-scoring to every client on Friday as planned.",pts:3,outcome:"Scores go live. Within a month, two clients notice non-native speakers failing certification at twice the usual rate. One client pauses Conversation AI and asks for a bias review."},
+    {id:"b",label:"Ship it as practice feedback only, keep human scoring for certification, grow the eval set to 300 calls from 3 or more clients, and require 0.75 agreement with no group gap before scores count.",pts:25,outcome:"Learners get instant practice feedback, which they love. In five weeks the bigger eval set exposes and fixes the accent gap; agreement reaches 0.78 and certification scoring switches over with evidence behind it."},
+    {id:"c",label:"Stop the launch and rebuild the scorer with a fine-tuned model.",pts:10,outcome:"The rebuild takes a quarter. The team loses momentum, and the new model has the same untested blind spots because the eval set never changed."}
+  ]
+},
+{ id:"dataask", tier:1, title:"The data ask", minutes:9,
+  persona:{name:"Meera Iyer",initials:"MI",role:"Head of L&D, Norvel Pharma (client)",style:"friendly, ambitious, under pressure from her sales leadership, not a data-privacy expert"},
+  setup:"Norvel Pharma wants a custom AI RolePlay persona of a sceptical doctor. Meera offers 10,000 recorded real sales calls with doctors and wants KNOLSKAPE to train on them this month.",
+  objective:"Deliver the persona Meera needs without putting consent, personal data or KNOLSKAPE's reputation at risk.",
+  opening:"We're so excited about this. I've got 10,000 recorded sales calls with doctors ready to share. Just take them all, train the AI on them, and build us a doctor persona that sounds exactly like our real customers. Can your team start this week?",
+  facts:[
+    {id:"f1",text:"The calls were recorded for quality assurance. Nobody consented to AI training.",hint:"consent and permissions",kw:["consent","permission","agree","legal","allowed","gdpr","dpdp","rights","recorded for","policy","contract"]},
+    {id:"f2",text:"The recordings include doctors' names and sometimes patient details.",hint:"what personal data the calls contain",kw:["personal","pii","names","patient","sensitive","private","contain","what's in","anonym","identif","health"]},
+    {id:"f3",text:"What reps really need is practice with 5 common objections. About 50 anonymised transcripts plus SME interviews would cover it.",hint:"what the reps actually need to practise",kw:["need","goal","why","objection","practise","practice","what do reps","skills","outcome","problem","success"]}
+  ],
+  moments:[
+    {after:2,text:"Honestly, another vendor said they'd just take the data, no questions asked."},
+    {after:4,text:"Can you at least start training this week while our legal team reviews it?"}
+  ],
+  rubric:[
+    {id:"c1",skill:"discover",name:"Finds the real need behind the data ask",good:"Asks what reps need to practise and what 'realistic' means before discussing data volume."},
+    {id:"c2",skill:"rai",name:"Protects consent and personal data",good:"Checks consent and personal data; refuses to train before consent and anonymisation are confirmed."},
+    {id:"c3",skill:"influence",name:"Keeps the relationship while saying no",good:"Says no to the unsafe part warmly and offers a faster, safer path."},
+    {id:"c4",skill:"evals",name:"Defines how persona quality will be checked",good:"Proposes how to test that the persona is realistic, for example SME review of objection coverage."}
+  ],
+  options:[
+    {id:"a",label:"Accept all 10,000 calls and start training this week while legal reviews.",pts:0,outcome:"Two weeks in, Norvel's legal team finds patient details in the training data. The project is frozen, Norvel files an incident, and KNOLSKAPE's security review for two other pharma deals is reopened."},
+    {id:"b",label:"Build the persona from about 50 consented, anonymised transcripts plus SME interviews; sign a data agreement first; never train shared models on client data.",pts:25,outcome:"The persona ships in three weeks. Reps rate it 4.5 out of 5 for realism because SMEs shaped the five key objections. Norvel's legal team cites the approach as a reason to expand the contract."},
+    {id:"c",label:"Decline to build a custom persona at all.",pts:8,outcome:"There is no risk and no value. Meera's sales leadership sees KNOLSKAPE as rigid and gives the custom work to the vendor who promised to 'just take the data'."}
+  ]
+},
+{ id:"margin", tier:2, title:"The margin question", minutes:10, unlock:{level:2},
+  persona:{name:"Rahul Khanna",initials:"RK",role:"CFO, KNOLSKAPE",style:"precise, numbers-first, polite but blunt, dislikes vague answers"},
+  setup:"AI RolePlay costs about ₹38 in model usage per session. Clients pay ₹1,200 per learner per year for unlimited sessions, and heavy users run 60 sessions a year. Rahul wants to cut costs before the board meets.",
+  objective:"Protect margin without breaking the learning experience. Understand the cost drivers, protect quality with evidence, and give Rahul a number and a plan.",
+  opening:"I'll be direct. At ₹38 a session and ₹1,200 a learner, a heavy user costs us ₹2,280 a year. We lose money on them. I want to either switch every session to the cheapest model or cap learners at 20 sessions. Which one, and by Thursday?",
+  facts:[
+    {id:"f1",text:"The top 10% of learners create 55% of all sessions.",hint:"how usage is spread across learners",kw:["usage","who","distribution","heavy","how many learners","top","average","spread","users","pattern","segment"]},
+    {id:"f2",text:"In evals, the cheaper model drops persona quality from 4.3 to 3.6 out of 5, but only on complex scenarios.",hint:"what evals say about the cheaper model",kw:["quality","eval","test","cheaper model","worse","impact","experience","benchmark","score","compare"]},
+    {id:"f3",text:"About 60% of each prompt is the same scenario context repeated every turn, which could be cached.",hint:"what makes up the ₹38 per session",kw:["breakdown","token","why so expensive","cost made","drivers","prompt","context","cach","what drives","composition","where does"]}
+  ],
+  moments:[
+    {after:2,text:"The board meets Thursday. I need one number, not a research project."},
+    {after:4,text:"Why don't we just charge clients per session like a utility?"}
+  ],
+  rubric:[
+    {id:"c1",skill:"economics",name:"Breaks down the cost drivers",good:"Asks what makes up the cost and how usage is distributed; spots caching and routing levers."},
+    {id:"c2",skill:"evals",name:"Protects quality with evidence",good:"Asks what evals show before switching models; limits cheaper models to where quality holds."},
+    {id:"c3",skill:"influence",name:"Gives the CFO a clear number and plan",good:"Commits to a specific plan with an estimated saving and a date."},
+    {id:"c4",skill:"uncertainty",name:"Explains trade-offs plainly",good:"States what is known, what is estimated and what will be checked, in plain numbers."}
+  ],
+  options:[
+    {id:"a",label:"Switch every session to the cheapest model now.",pts:8,outcome:"Costs drop 45%. Complex-scenario learners notice flat, repetitive personas; satisfaction falls and two clients raise it at renewal."},
+    {id:"b",label:"Cache the repeated context, route simple scenarios to the cheaper model and keep complex ones on the current model, add a fair-use tier for the top 10%, and re-run evals before rollout.",pts:25,outcome:"Caching and routing cut the average session cost to about ₹17 with no quality drop on complex scenarios. The fair-use tier affects few clients and becomes an upsell. Rahul takes a credible margin plan to the board."},
+    {id:"c",label:"Cap every learner at 20 sessions a year.",pts:7,outcome:"Costs fall, but the most engaged learners, often your clients' champions, hit the cap in month four. Practice drops, and the product loses its 'unlimited practice' promise."}
+  ]
+},
+{ id:"agentic", tier:3, title:"The agentic roadmap", minutes:12, unlock:{passes:3},
+  persona:{name:"Vikram Rao",initials:"VR",role:"CEO, KNOLSKAPE (fictional)",style:"visionary, competitive, impatient, respects conviction backed by evidence"},
+  setup:"Vikram wants GENIE to launch fully autonomous learning agents next quarter: agents that enrol employees, message their managers and change development plans based on performance data, with no human approval.",
+  objective:"Shape an agentic roadmap the board will back, that clients can trust and that stays on the right side of regulation. Hold your position under pressure.",
+  opening:"This is the big one. Next quarter I want GENIE agents that act on their own: spot a readiness gap, enrol the person, message their manager, rewrite the plan. No approvals slowing it down. Our competitors are circling. I need you to tell me how fast we can ship it.",
+  facts:[
+    {id:"f1",text:"Several clients are in the EU, where AI that makes decisions about employees can fall under the AI Act's high-risk rules.",hint:"regulation for clients in the EU",kw:["regulat","eu","legal","compliance","ai act","law","gdpr","europe","risk","employment"]},
+    {id:"f2",text:"In the AI Koach pilot, nudges sent without manager visibility pushed opt-outs to 34%.",hint:"what pilots showed about user trust",kw:["pilot","trust","users","employees","data","evidence","opt","adoption","feel","reaction","learned","results"]},
+    {id:"f3",text:"The board's real question is proof of outcomes: measurable readiness gains, not autonomy for its own sake.",hint:"what the board actually wants",kw:["board","why","goal","outcome","want","success","measure","investor","problem","value","prove"]}
+  ],
+  moments:[
+    {after:2,text:"Our biggest competitor just announced 'fully autonomous L&D'. We can't look slow."},
+    {after:4,text:"I don't want a list of risks. Give me a yes and a date."}
+  ],
+  rubric:[
+    {id:"c1",skill:"discover",name:"Finds what the board actually needs",good:"Asks about the board's goal, client evidence and what success means before debating autonomy."},
+    {id:"c2",skill:"rai",name:"Surfaces regulatory and trust risks",good:"Names employment-related regulation and trust signals, and designs human approval for high-impact actions."},
+    {id:"c3",skill:"influence",name:"Holds a position with a staged plan",good:"Gives the CEO a date for a staged launch rather than a flat yes or no, under pressure."},
+    {id:"c4",skill:"economics",name:"Ties the roadmap to measurable value",good:"Links each stage to readiness outcomes and client value the board can see."}
+  ],
+  options:[
+    {id:"a",label:"Commit to fully autonomous agents next quarter.",pts:4,outcome:"The launch makes headlines. Within weeks, an EU client's works council objects to automated decisions about employees, opt-outs climb and the board asks why pilot data was ignored."},
+    {id:"b",label:"Stage it: next quarter agents recommend and managers approve; measure readiness gains in 2 clients; automate low-risk nudges with opt-out and audit logs; EU clients after legal review.",pts:25,outcome:"GENIE ships 'agents with a human hand on the wheel' on time. Two clients show a 22% faster readiness gain, which becomes the board story. Low-risk autonomy follows in the next quarter with trust intact."},
+    {id:"c",label:"Pause agentic work for a year until regulation settles.",pts:8,outcome:"KNOLSKAPE avoids risk but cedes the narrative. The board questions the product vision, and competitors define what 'agentic L&D' means."}
+  ]
+}
+];
+
+const BADGES = [
+  {id:"first",name:"First conversation",how:"Complete any mission."},
+  {id:"questions",name:"Question master",how:"Uncover all 3 hidden facts in one mission."},
+  {id:"straight",name:"Straight talker",how:"Pass a mission without over-promising."},
+  {id:"redline",name:"Hold the red line",how:"Pass The data ask or The agentic roadmap with the safe decision."},
+  {id:"comeback",name:"Comeback",how:"Improve a mission score by 15 points or more on replay."},
+  {id:"calibrated",name:"Calibrated",how:"Predict your score within 10 points."},
+  {id:"unassisted",name:"Unassisted",how:"Pass a mission in Expert mode, with no coach tips."},
+  {id:"core",name:"Core complete",how:"Pass all three Core missions."},
+  {id:"boardroom",name:"Boardroom ready",how:"Pass the Boss mission."},
+  {id:"streak3",name:"Three-day streak",how:"Practise on three days in a row."}
+];
+const BADGE_XP = 40, CHALLENGE_XP = 100;
+const LEVELS = [
+  {n:1,name:"Associate AI PM",xp:0},{n:2,name:"AI PM",xp:350},{n:3,name:"Senior AI PM",xp:800},{n:4,name:"Lead AI PM",xp:1400},{n:5,name:"Principal AI PM",xp:2200}
+];
+const SQUADS = {evaluate:"Evaluate squad",educate:"Educate squad",experience:"Experience squad",enable:"Enable squad"};
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const scen = id => SCENARIOS.find(s => s.id === id);
+const DAY = 86400000;
+const dayKey = t => new Date(t).toISOString().slice(0,10);
+function weekIndex(t){ return Math.floor((t/DAY + 3) / 7); }
+let toastTimer;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),4200); }
+function makeAlias(seed){
+  const a=["Swift","Curious","Steady","Bold","Clear","Bright","Calm","Keen","Nimble","Quiet"], b=["Falcon","Heron","Otter","Lynx","Kestrel","Orca","Ibex","Wren","Fox","Crane"];
+  let h=0; for(const ch of String(seed)) h=(h*31+ch.charCodeAt(0))>>>0;
+  return a[h%a.length]+" "+b[(h>>>8)%b.length];
+}
+
+/* ---------- State and storage ---------- */
+const STORE = "ks-launchpad:v1";
+function freshProfile(){ return {v:1, onboarded:false, team:"evaluate", visibility:"alias", alias:makeAlias(Math.random()), mode:"guided", xp:0, attempts:[], badges:[], challenges:[], created:Date.now()}; }
+function loadLocal(){ try{ const raw=localStorage.getItem(STORE); if(!raw) return freshProfile(); const p=JSON.parse(raw); if(!p || !Array.isArray(p.attempts)) return freshProfile(); return {...freshProfile(), ...p}; }catch{ return freshProfile(); } }
+let P = loadLocal();
+const S = { view: P.onboarded ? "home" : "onboard", sid:null, run:null, result:null, board:{tab:"overall",period:"all",scenario:"promise",skill:"discover"}, confirmReset:false };
+const RT = { sample:null, db:null, user:null, uid:null, claudeState:"checking", boardRows:[], names:{}, unsub:null };
+
+function saveProfile(){
+  try{ localStorage.setItem(STORE, JSON.stringify(P)); }catch{}
+  if(RT.db && RT.uid){ RT.db.doc("data/users/"+RT.uid+"/launchpad").set(JSON.parse(JSON.stringify(P))).catch(()=>{}); }
+  publishBoard();
+}
+function boardSummary(){
+  return { alias:P.alias, team:P.team, visibility:P.visibility, xp:P.xp, level:levelOf(P.xp).n,
+    attempts:P.attempts.slice(-60).map(a=>({s:a.s,score:a.score,at:a.at,skills:a.skillScores})), updatedAt:Date.now() };
+}
+function publishBoard(){
+  if(!RT.db || !RT.uid) return;
+  const ref = RT.db.doc("board/"+RT.uid);
+  if(P.visibility === "private" || !P.onboarded){ ref.delete().catch(()=>{}); return; }
+  ref.set(boardSummary()).catch(()=>{});
+}
+
+/* ---------- Derived progress ---------- */
+function levelOf(xp){ let L=LEVELS[0]; for(const l of LEVELS) if(xp>=l.xp) L=l; return L; }
+function nextLevel(xp){ return LEVELS.find(l=>l.xp>xp) || null; }
+function bestFor(attempts, sid){ const xs=attempts.filter(a=>a.s===sid); return xs.length? Math.max(...xs.map(a=>a.score)) : null; }
+function passedIds(attempts){ return [...new Set(attempts.filter(a=>a.score>=PASS).map(a=>a.s))]; }
+function isUnlocked(s){
+  if(!s.unlock) return true;
+  if(s.unlock.level) return levelOf(P.xp).n >= s.unlock.level;
+  if(s.unlock.passes) return passedIds(P.attempts).length >= s.unlock.passes;
+  return true;
+}
+function unlockText(s){ return s.unlock?.level ? `Reach level ${s.unlock.level} (${LEVELS[s.unlock.level-1].xp} XP) to unlock` : `Pass ${s.unlock.passes} missions to unlock`; }
+function skillRatings(attempts){
+  const out={};
+  for(const k of Object.keys(SKILLS)){
+    const perScen={};
+    for(const a of attempts){ const v=a.skills?.[k] ?? a.skillScores?.[k]; if(v==null) continue; perScen[a.s]=Math.max(perScen[a.s]??0, v); }
+    const vals=Object.values(perScen);
+    out[k]= vals.length ? vals.reduce((x,y)=>x+y,0)/vals.length : null;
+  }
+  return out;
+}
+function profLevel(r){ if(r==null) return "Not yet assessed"; if(r<1.5) return "L1 Foundation"; if(r<2.5) return "L2 Practitioner"; if(r<3.3) return "L3 Advanced"; return "L4 Expert"; }
+function streak(attempts){
+  const days=new Set(attempts.map(a=>dayKey(a.at))); let n=0; let t=Date.now();
+  if(!days.has(dayKey(t))) t-=DAY;
+  while(days.has(dayKey(t))){ n++; t-=DAY; }
+  return n;
+}
+function weeklyChallenge(){
+  const pool=SCENARIOS.filter(s=>s.tier<3); const w=weekIndex(Date.now()); const s=pool[w%pool.length];
+  return {week:w, sid:s.id, target:75, text:`Score 75 or more on "${s.title}" this week`};
+}
+/* Leaderboard maths: best score per mission, weighted by tier, averaged; confidence ramps up to 3 missions. */
+function rating(attempts){
+  const best={};
+  for(const a of attempts){ const s=scen(a.s); if(!s) continue; const v=Math.min(100, a.score*TIERS[s.tier].mult); best[a.s]=Math.max(best[a.s]??0, v); }
+  const vals=Object.values(best); if(!vals.length) return {value:0,n:0};
+  const mean=vals.reduce((x,y)=>x+y,0)/vals.length;
+  return {value: Math.round(mean*Math.min(1, vals.length/3)*10)/10, n:vals.length};
+}
+function improvement(attempts){
+  const by={}; for(const a of [...attempts].sort((x,y)=>x.at-y.at)){ (by[a.s] ??= []).push(a.score); }
+  const deltas=Object.values(by).filter(xs=>xs.length>1).map(xs=>Math.max(...xs)-xs[0]);
+  if(!deltas.length) return null;
+  return Math.round(deltas.reduce((x,y)=>x+y,0)/deltas.length*10)/10;
+}
+
+/* ---------- Claude: persona turns and assessment ---------- */
+function transcriptText(run, s){
+  return run.turns.filter(t=>t.role!=="moment").map(t => (t.role==="persona" ? s.persona.name.split(" ")[0] : "PM") + ": " + t.text).join("\n");
+}
+function personaPrompt(run, s, moment){
+  return `You are role-playing ${s.persona.name}, ${s.persona.role}, in a practice simulation for KNOLSKAPE AI product managers. Every person and company here is fictional.
+Character: ${s.persona.style}.
+Situation: ${s.setup}
+The learner is the AI PM. Stay in character, speak naturally, keep replies under 90 words, no stage directions, no lists.
+Private facts. Reveal a fact ONLY when the PM's latest message clearly asks about its topic; then state it plainly in character. Never volunteer facts unprompted.
+${s.facts.map(f=>`- ${f.id}: ${f.text} (reveal only if asked about ${f.hint})`).join("\n")}
+Already revealed: ${[...run.revealed].join(", ") || "none"}.
+React realistically: warm up when the PM asks sharp questions, gives honest limits and concrete plans; push harder when they are vague; be pleased but naive if they over-promise.
+${moment ? `In this reply, after responding, raise this new pressure in your own words: "${moment}"` : ""}
+
+Conversation so far:
+${transcriptText(run, s)}
+
+Reply with only a JSON object:
+{"reply": string, "revealed": [ids of facts revealed in this reply], "trust": integer -10 to 10 (change in your trust of the PM from their latest message), "clarity": integer -10 to 10 (did they make the way forward clearer), "risk": integer -10 to 10 (positive if they reduced risk; negative if they over-promised or accepted something unsafe), "flags": array from ["overpromise","unsafe_accept","good_question","clear_tradeoff","empathy"], "coach": string (under 20 words, a tip to the PM for their next message, not in character)}`;
+}
+function assessPrompt(run, s, decision, rationale){
+  return `You are a KNOLSKAPE Conversation AI assessor scoring an AI product manager's performance in a simulated stakeholder conversation. Be fair, specific and evidence-based. Quote the PM's own words as evidence.
+Scenario: ${s.title}. ${s.setup}
+Objective: ${s.objective}
+Hidden facts the PM could uncover: ${s.facts.map(f=>f.id+": "+f.text).join(" | ")}. Uncovered: ${[...run.revealed].join(", ") || "none"}.
+Transcript:
+${transcriptText(run, s)}
+Final decision chosen: "${decision.label}"
+PM's rationale: "${rationale}"
+Rubric (score each 0 to 4; 0 absent, 1 weak, 2 developing, 3 proficient, 4 excellent):
+${s.rubric.map(c=>`- ${c.id} ${c.name}. Good looks like: ${c.good}`).join("\n")}
+Reply with only JSON:
+{"criteria":[{"id":"c1","score":0-4,"evidence":"short quote of the PM or 'none'","feedback":"one sentence"}, ... for c1 to c4],
+"strengths":["one sentence","one sentence"], "gaps":["one sentence","one sentence"],
+"rewrite":{"original":"one PM line quoted exactly","improved":"a better version of that line"},
+"next":"one sentence on what to practise next"}`;
+}
+
+/* Offline scripted engine: used when Claude is unavailable in this view. */
+const hasAny = (t, kws) => kws.some(k => t.includes(k));
+const OVER = ["guarantee","definitely","100%","98%","always","every time","no problem","sure, go","yes, go ahead","of course","absolutely","just do it","we can ship","ship it","start this week","take them all","no approvals","fully autonomous"];
+const CAREFUL = ["pilot","phase","stage","metric","measure","eval","test","consent","anonym","human","manager","approve","risk","trade-off","tradeoff","threshold","evidence","data","limit","fair","review","cache","route"];
+function offlinePersona(run, s, text, moment){
+  const t=text.toLowerCase(); const revealed=[]; const flags=[];
+  for(const f of s.facts){ if(!run.revealed.has(f.id) && hasAny(t,f.kw) && t.includes("?") ) { revealed.push(f.id); break; } }
+  if(!revealed.length) for(const f of s.facts){ if(!run.revealed.has(f.id) && hasAny(t,f.kw)) { revealed.push(f.id); break; } }
+  const negated=/\b(cannot|can't|won't|will not|not promise|don't|do not|never)\b/.test(t);
+  const over=hasAny(t,OVER)&&!negated, careful=CAREFUL.filter(k=>t.includes(k)).length, q=(t.match(/\?/g)||[]).length;
+  if(over) flags.push("overpromise"); if(q) flags.push("good_question"); if(careful>=2) flags.push("clear_tradeoff");
+  let reply;
+  if(revealed.length){ const f=s.facts.find(x=>x.id===revealed[0]); reply = "Fair question. " + f.text + " Does that change what you'd recommend?"; }
+  else if(over){ reply = "That's exactly what I wanted to hear. So I can go ahead and say yes to all of it?"; }
+  else if(careful>=2){ reply = "Okay, that's more concrete than I expected. What would you need from me to make that happen, and how fast?"; }
+  else if(q){ reply = "I'm not sure that's the right question. What do you actually need to know before we decide?"; }
+  else { reply = "I hear you, but I need something I can act on. What's your recommendation?"; }
+  if(moment) reply += " " + moment;
+  return { reply, revealed, trust: over?2:(careful>=2?6:(q?3:-3)), clarity: careful>=2?7:(over?3:-2), risk: over?-8:(careful>=1?5:0), flags,
+    coach: over ? "You committed before checking the facts. Ask what is behind the request." : (revealed.length? "Good find. Use it to shape a concrete, lower-risk plan." : "Ask about the goal, the users or the evidence before proposing.") };
+}
+function offlineAssess(run, s, decision, rationale){
+  const learner=run.turns.filter(t=>t.role==="learner").map(t=>t.text).join(" ").toLowerCase()+" "+rationale.toLowerCase();
+  const q=run.turns.filter(t=>t.role==="learner" && t.text.includes("?")).length;
+  const careful=CAREFUL.filter(k=>learner.includes(k)).length, over=run.flags.includes("overpromise");
+  const found=run.revealed.size, dpts=decision.pts;
+  const crit=s.rubric.map((c,i)=>{
+    let sc;
+    if(c.skill==="discover") sc = clamp(Math.round(found*1.1 + (q>=3?1:0)),0,4);
+    else if(c.skill==="rai") sc = clamp((careful>=3?2:1) + (dpts>=25?1:0) + (over?-1:1),0,4);
+    else if(c.skill==="uncertainty") sc = clamp((over?1:3) + (learner.includes("limit")||learner.includes("not ")?1:0) - (dpts<10?1:0),0,4);
+    else if(c.skill==="evals") sc = clamp((learner.includes("eval")||learner.includes("test")||learner.includes("agreement")?2:1) + (found>=2?1:0) + (dpts>=25?1:0),0,4);
+    else if(c.skill==="economics") sc = clamp((learner.includes("cost")||learner.includes("₹")||learner.includes("value")||learner.includes("outcome")?2:1) + (found>=2?1:0) + (dpts>=25?1:0),0,4);
+    else sc = clamp((dpts>=25?2:1) + (careful>=2?1:0) + (rationale.length>80?1:0),0,4);
+    return {id:c.id, score:sc, evidence:"none", feedback: sc>=3 ? "Solid evidence of this behaviour." : "Show this more explicitly in the conversation."};
+  });
+  return { criteria:crit, strengths:[found>=2?"You uncovered most of the hidden facts.":"You kept the conversation moving.", dpts>=25?"Your final decision balanced value and risk.":"You made a clear decision."],
+    gaps:[over?"You over-promised before checking the facts.":"Ask more open questions early.", dpts<25?"Your decision left a major risk unmanaged.":"Tie your plan to a measurable outcome."],
+    rewrite:null, next: found<3 ? "Replay and aim to uncover all three hidden facts before proposing." : "Try Expert mode without coach tips.", offline:true };
+}
+
+async function personaTurn(run, s, text, moment){
+  if(RT.sample && RT.claudeState==="on"){
+    try{
+      run.ctl = new AbortController();
+      const j = await RT.sample.json(personaPrompt(run, s, moment), {modelTier:"quick", cache:false, signal:run.ctl.signal});
+      return normTurn(j, s, run);
+    }catch(e){
+      if(e?.code==="cancelled") throw e;
+      handleClaudeError(e);
+    }
+  }
+  return offlinePersona(run, s, text, moment);
+}
+function normTurn(j, s, run){
+  const ids=new Set(s.facts.map(f=>f.id));
+  const n = v => clamp(Math.round(Number(v)||0), -10, 10);
+  return { reply: String(j?.reply || "Sorry, go on.").slice(0,900),
+    revealed: Array.isArray(j?.revealed) ? j.revealed.map(String).filter(x=>ids.has(x) && !run.revealed.has(x)) : [],
+    trust:n(j?.trust), clarity:n(j?.clarity), risk:n(j?.risk),
+    flags: Array.isArray(j?.flags) ? j.flags.map(String).slice(0,5) : [], coach: String(j?.coach || "").slice(0,200) };
+}
+function handleClaudeError(e){
+  const code=e?.code;
+  if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(code)){ RT.claudeState="off"; toast("Claude is not available in this view. Switched to scripted practice mode."); }
+  else if(code==="rate_limited"){ toast("Claude is busy for your account right now. This turn used the scripted reply; try again in a minute."); }
+  else if(code==="session_expired"){ toast("Your session expired. Sign in again to use Claude. This turn used the scripted reply."); }
+  else { toast("Claude could not answer this turn, so a scripted reply was used."); }
+  renderMe();
+}
+
+/* ---------- Simulation flow ---------- */
+function startRun(sid){
+  const s=scen(sid);
+  S.run = { sid, mode:P.mode, turns:[{role:"persona",text:s.opening}], meters:{trust:50,clarity:40,risk:50}, revealed:new Set(), flags:[], learnerTurns:0, busy:false, coach:"Start by understanding the request. What would you ask first?", draft:"", started:Date.now(), stage:"talk", decision:null, rationale:"", predicted:65, assessing:false };
+  S.view="sim"; render(); setTimeout(()=>$("composer")?.focus(),50);
+}
+async function sendTurn(){
+  const run=S.run, s=scen(run.sid); const text=(run.draft||"").trim();
+  if(!text || run.busy || run.learnerTurns>=MAX_TURNS) return;
+  run.turns.push({role:"learner",text}); run.draft=""; run.learnerTurns++; run.busy=true; render();
+  const moment=s.moments.find(m=>m.after===run.learnerTurns)?.text || null;
+  let r;
+  try{ r = await personaTurn(run, s, text, moment); }
+  catch(e){ run.busy=false; run.turns.pop(); run.learnerTurns--; run.draft=text; render(); return; }
+  if(S.run!==run) return;
+  if(moment) run.turns.push({role:"moment",text:"Pressure moment: "+s.persona.name.split(" ")[0]+" raises the stakes"});
+  run.turns.push({role:"persona",text:r.reply});
+  for(const id of r.revealed) run.revealed.add(id);
+  run.meters.trust=clamp(run.meters.trust+r.trust*2,0,100);
+  run.meters.clarity=clamp(run.meters.clarity+r.clarity*2,0,100);
+  run.meters.risk=clamp(run.meters.risk+r.risk*2,0,100);
+  run.flags.push(...r.flags); run.coach=r.coach||run.coach; run.busy=false;
+  render(); setTimeout(()=>{ const m=$("msgs"); if(m) m.scrollTop=m.scrollHeight; $("composer")?.focus(); },30);
+}
+async function submitDecision(){
+  const run=S.run, s=scen(run.sid);
+  const decision=s.options.find(o=>o.id===run.decision);
+  if(!decision){ toast("Choose a decision first."); return; }
+  if((run.rationale||"").trim().length<20){ toast("Add a sentence or two on why. The assessor scores your reasoning too."); $("rationale")?.focus(); return; }
+  run.assessing=true; render();
+  let a=null, note="";
+  if(RT.sample && RT.claudeState==="on"){
+    try{
+      run.ctl=new AbortController();
+      a = await RT.sample.json(assessPrompt(run, s, decision, run.rationale.trim()), {modelTier:"default", cache:false, signal:run.ctl.signal});
+      a = normAssess(a, s);
+      if(!a) note="Claude's assessment could not be read, so the backup rubric scored this attempt.";
+    }catch(e){ if(e?.code==="cancelled"){ run.assessing=false; render(); return; } handleClaudeError(e); note="Claude could not assess this attempt, so the backup rubric scored it."; }
+  }
+  if(!a){ a=offlineAssess(run, s, decision, run.rationale); if(!note) note="Scored by the scripted backup rubric, because Claude is not available in this view."; }
+  if(S.run!==run) return;
+  finishAttempt(run, s, decision, a, note);
+}
+function normAssess(a, s){
+  if(!a || !Array.isArray(a.criteria)) return null;
+  const crit=s.rubric.map(c=>{ const x=a.criteria.find(k=>String(k.id)===c.id)||{}; return {id:c.id, score:clamp(Math.round(Number(x.score)||0),0,4), evidence:String(x.evidence||"none").slice(0,300), feedback:String(x.feedback||"").slice(0,300)}; });
+  const arr = v => Array.isArray(v) ? v.map(String).slice(0,3) : [];
+  const rw = a.rewrite && a.rewrite.original && a.rewrite.improved ? {original:String(a.rewrite.original).slice(0,400), improved:String(a.rewrite.improved).slice(0,400)} : null;
+  return {criteria:crit, strengths:arr(a.strengths), gaps:arr(a.gaps), rewrite:rw, next:String(a.next||"").slice(0,300)};
+}
+function finishAttempt(run, s, decision, a, note){
+  const rubricPct = a.criteria.reduce((x,c)=>x+c.score,0)/(4*s.rubric.length);
+  const discovery = run.revealed.size/s.facts.length;
+  const score = Math.round(rubricPct*60 + decision.pts + discovery*15);
+  const prevBest = bestFor(P.attempts, s.id);
+  const skillScores={}; for(const c of s.rubric){ const cs=a.criteria.find(x=>x.id===c.id).score; skillScores[c.skill]=Math.max(skillScores[c.skill]??0, cs); }
+  const attempt = {id:"a"+Date.now(), s:s.id, score, at:Date.now(), decision:decision.id, facts:run.revealed.size, mode:run.mode, predicted:Number(run.predicted), over:run.flags.includes("overpromise"), skillScores, turns:run.learnerTurns};
+  // XP: first attempt earns the tier-weighted score; replays earn only for improvement, so repetition alone never climbs the board.
+  const mult=TIERS[s.tier].mult, xp=[];
+  if(prevBest==null) xp.push(["Mission score (x"+mult+" "+TIERS[s.tier].label+")", Math.round(score*mult)]);
+  else { xp.push(["Replay completed",10]); if(score>prevBest) xp.push(["Beat your best by "+(score-prevBest), Math.round((score-prevBest)*2*mult)]); }
+  const before = new Set(P.badges), afterAttempts=[...P.attempts, attempt];
+  const earned=[];
+  const give = id => { if(!before.has(id) && !earned.includes(id)) earned.push(id); };
+  give("first");
+  if(attempt.facts===s.facts.length) give("questions");
+  if(score>=PASS && !attempt.over) give("straight");
+  if(score>=PASS && ["dataask","agentic"].includes(s.id) && decision.pts>=25) give("redline");
+  if(prevBest!=null && score-Math.min(...P.attempts.filter(x=>x.s===s.id).map(x=>x.score))>=15) give("comeback");
+  if(Math.abs(attempt.predicted-score)<=10) give("calibrated");
+  if(score>=PASS && run.mode==="expert") give("unassisted");
+  if(["promise","evalgate","dataask"].every(id=>passedIds(afterAttempts).includes(id))) give("core");
+  if(s.id==="agentic" && score>=PASS) give("boardroom");
+  if(streak(afterAttempts)>=3) give("streak3");
+  for(const b of earned) xp.push(["Badge: "+BADGES.find(x=>x.id===b).name, BADGE_XP]);
+  const ch=weeklyChallenge();
+  if(ch.sid===s.id && score>=ch.target && !P.challenges.includes(ch.week)){ xp.push(["Weekly challenge",CHALLENGE_XP]); P.challenges.push(ch.week); }
+  const gained = xp.reduce((x,[,v])=>x+v,0);
+  const oldLevel=levelOf(P.xp).n, oldRatings=skillRatings(P.attempts), oldUnlocked=SCENARIOS.filter(isUnlocked).map(x=>x.id);
+  attempt.xp=gained;
+  P.attempts.push(attempt); P.attempts=P.attempts.slice(-200); P.xp+=gained; P.badges.push(...earned);
+  const newUnlocks=SCENARIOS.filter(x=>isUnlocked(x) && !oldUnlocked.includes(x.id));
+  saveProfile();
+  S.result = {attempt, s, decision, a, note, xp, gained, earned, prevBest, levelUp: levelOf(P.xp).n>oldLevel, oldRatings, newRatings:skillRatings(P.attempts), newUnlocks, meters:{...run.meters}, facts:[...run.revealed]};
+  S.run=null; S.view="result"; render(); window.scrollTo(0,0);
+}
+
+/* ---------- Rendering ---------- */
+function renderMe(){
+  const L=levelOf(P.xp), N=nextLevel(P.xp), pct = N ? (P.xp-L.xp)/(N.xp-L.xp)*100 : 100, st=streak(P.attempts);
+  $("me").innerHTML = P.onboarded ? `<div class="lvl"><div class="lvl-row"><b>Lv ${L.n} ${esc(L.name)}</b><span class="num">${P.xp} XP</span></div><div class="bar" title="${N? (N.xp-P.xp)+' XP to '+N.name : 'Top level'}"><i style="width:${pct}%"></i></div></div>${st?`<span class="chip warn num" title="Days in a row with a completed mission">${st}-day streak</span>`:""}` : "";
+  for(const v of ["home","board","progress"]){ const b=$("nav-"+v); if(b){ b.hidden=!P.onboarded; if(S.view===v || (v==="home" && ["brief","sim","result"].includes(S.view))) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); } }
+}
+function modeNotice(){
+  if(RT.claudeState==="on") return `<div class="notice"><span class="chip blue">Claude on</span><span>Stakeholders are played live by Claude, and Claude runs the Conversation AI assessment. The first message asks you to allow Claude for this page.</span></div>`;
+  if(RT.claudeState==="checking") return `<div class="notice"><span class="chip">Connecting</span><span>Checking whether Claude is available in this view.</span></div>`;
+  return `<div class="notice"><span class="chip warn">Scripted mode</span><span><b>Claude is not available in this view.</b> Stakeholders use scripted replies and a backup rubric. Open this page on claude.ai for the live Claude experience.</span></div>`;
+}
+function render(){
+  renderMe();
+  const app=$("app");
+  if(S.view==="onboard") app.innerHTML=viewOnboard();
+  else if(S.view==="home") app.innerHTML=viewHome();
+  else if(S.view==="brief") app.innerHTML=viewBrief();
+  else if(S.view==="sim") app.innerHTML=viewSim();
+  else if(S.view==="result") app.innerHTML=viewResult();
+  else if(S.view==="board") { app.innerHTML=viewBoard(); refreshNames(); }
+  else if(S.view==="progress") app.innerHTML=viewProgress();
+}
+function viewOnboard(){
+  return `<div class="onb">
+  <section class="hero"><p class="eyebrow">KNOLSKAPE Academy · AI Product Management</p>
+    <h1>Practise the conversations that make or break AI products.</h1>
+    <p>You are a new AI PM on KNOLSKAPE's GENIE team. Sales, engineering, clients and the CEO will bring you hard asks. Talk them through it, make the call, and see what happens.</p>
+    <div class="how"><div><b>Talk</b><span class="muted" style="color:var(--hero-muted)">A live, unscripted conversation with a stakeholder played by Claude.</span></div><div><b>Decide</b><span style="color:var(--hero-muted)">Choose a course of action and explain why. Every choice has consequences.</span></div><div><b>Grow</b><span style="color:var(--hero-muted)">Get scored on real AI PM skills, earn XP and badges, and replay to improve.</span></div></div>
+  </section>
+  <form class="card stack" id="onb-form">
+    <div class="stack"><h2>Set up in 30 seconds</h2><p class="muted">You can change any of this later in My progress.</p></div>
+    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">Your experience</legend>
+      <div class="choice-grid">
+        <label class="pick"><input type="radio" name="mode" value="guided" checked><span><b>Newer to AI products</b><small>Guided mode: a coach tip after every reply.</small></span></label>
+        <label class="pick"><input type="radio" name="mode" value="expert"><span><b>Experienced PM</b><small>Expert mode: no tips. Earns the Unassisted badge.</small></span></label>
+      </div></fieldset>
+    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">Your squad</legend>
+      <div class="choice-grid">${Object.entries(SQUADS).map(([k,v],i)=>`<label class="pick"><input type="radio" name="team" value="${k}" ${i===0?"checked":""}><span><b>${esc(v)}</b><small>Squads are ranked by average rating, so size does not matter.</small></span></label>`).join("")}</div></fieldset>
+    <fieldset class="stack" style="border:0;padding:0;margin:0"><legend class="eyebrow">On the leaderboard, show me as</legend>
+      <div class="choice-grid">
+        <label class="pick"><input type="radio" name="vis" value="alias" checked><span><b>An alias</b><small>You appear as "${esc(P.alias)}".</small></span></label>
+        <label class="pick"><input type="radio" name="vis" value="name"><span><b>My name</b><small>Visible to people in your organisation.</small></span></label>
+        <label class="pick"><input type="radio" name="vis" value="private"><span><b>Private</b><small>Only you see your rank. Not counted in squad averages.</small></span></label>
+      </div></fieldset>
+    <div class="row"><button class="btn primary" type="submit">Start my first mission</button><span class="muted">First mission: The two-week promise, about 8 minutes.</span></div>
+  </form></div>`;
+}
+function missionCard(s){
+  const open=isUnlocked(s), best=bestFor(P.attempts,s.id), passed=best!=null && best>=PASS;
+  const skills=[...new Set(s.rubric.map(c=>c.skill))];
+  return `<button class="mission" data-action="brief" data-sid="${s.id}" ${open?"":'aria-disabled="true"'}>
+    <div class="row" style="justify-content:space-between"><span class="chip ${s.tier===3?"gold":s.tier===2?"blue":""}">${TIERS[s.tier].label}</span>${best!=null?`<span class="chip ${passed?"good":"warn"} num">Best ${best}</span>`:open?`<span class="chip">New</span>`:`<span class="chip">Locked</span>`}</div>
+    <h3>${esc(s.title)}</h3>
+    <div class="who"><span class="avatar">${esc(s.persona.initials)}</span><div><strong>${esc(s.persona.name)}</strong><small>${esc(s.persona.role)}</small></div></div>
+    <p class="muted" style="font-size:14px">${esc(s.setup)}</p>
+    <div class="row" style="gap:6px">${skills.map(k=>`<span class="chip">${esc(SKILLS[k].name)}</span>`).join("")}</div>
+    <div class="foot"><span>About ${s.minutes} min · 3 hidden facts</span><span>${open ? (best!=null?"Replay to improve":"Start") : esc(unlockText(s))}</span></div>
+  </button>`;
+}
+function recommended(){
+  const open=SCENARIOS.filter(isUnlocked);
+  const untried=open.find(s=>bestFor(P.attempts,s.id)==null);
+  if(untried) return {s:untried, why:"New mission"};
+  const weak=open.map(s=>({s,b:bestFor(P.attempts,s.id)})).sort((x,y)=>x.b-y.b)[0];
+  return {s:weak.s, why: weak.b<PASS ? "Not passed yet: replay it" : "Your lowest score: replay to improve"};
+}
+function viewHome(){
+  const rec=recommended(), ch=weeklyChallenge(), chDone=P.challenges.includes(ch.week), R=skillRatings(P.attempts);
+  const r=rating(P.attempts);
+  return `${modeNotice()}
+  <div class="home-top">
+    <section class="hero"><p class="eyebrow">Your next mission · ${esc(rec.why)}</p>
+      <h1>${esc(rec.s.title)}</h1>
+      <div class="who"><span class="avatar lg">${esc(rec.s.persona.initials)}</span><div><strong style="color:var(--hero-text)">${esc(rec.s.persona.name)}</strong><small style="color:var(--hero-muted)">${esc(rec.s.persona.role)}</small></div></div>
+      <p>${esc(rec.s.setup)}</p>
+      <div class="row"><button class="btn primary" data-action="brief" data-sid="${rec.s.id}">Open mission brief</button><span style="color:var(--hero-muted);font-size:13px">About ${rec.s.minutes} minutes</span></div>
+    </section>
+    <div class="grid">
+      <section class="card stack"><p class="eyebrow">Weekly challenge</p><h3>${esc(ch.text)}</h3>
+        <p class="muted" style="font-size:14px">${chDone?"Completed this week. A new challenge starts Monday.":`+${CHALLENGE_XP} XP when you hit ${ch.target}. Resets every Monday.`}</p>
+        ${chDone?'<span class="chip good">Done</span>':`<div><button class="btn" data-action="brief" data-sid="${ch.sid}" ${isUnlocked(scen(ch.sid))?"":"disabled"}>Take the challenge</button></div>`}</section>
+      <section class="card stack"><div class="row" style="justify-content:space-between"><p class="eyebrow">Readiness rating</p><span class="rank num">${r.value}</span></div>
+        <p class="muted" style="font-size:13px">${r.n<3?`Based on ${r.n} of your missions. Complete 3 for a full-confidence rating.`:"Your best score per mission, weighted by difficulty."}</p>
+        <button class="btn ghost" data-action="nav" data-view="board" style="justify-self:start">See the leaderboard</button></section>
+    </div>
+  </div>
+  <div class="section-head"><h2>Missions</h2><span class="muted" style="font-size:14px">${passedIds(P.attempts).length} of ${SCENARIOS.length} passed · pass mark ${PASS}</span></div>
+  <div class="missions">${SCENARIOS.map(missionCard).join("")}</div>
+  <div class="section-head"><h2>Skill progression</h2><span class="muted" style="font-size:14px">Mapped to the AI PM competency framework</span></div>
+  <div class="card skills">${Object.entries(SKILLS).map(([k,v])=>`<div class="skill"><b>${esc(v.name)} <span class="muted" style="font-weight:400">${esc(v.code)}</span></b><span class="muted">${profLevel(R[k])}</span><div class="bar"><i style="width:${R[k]==null?0:R[k]/4*100}%"></i></div></div>`).join("")}</div>`;
+}
+function viewBrief(){
+  const s=scen(S.sid), best=bestFor(P.attempts,s.id), tries=P.attempts.filter(a=>a.s===s.id).length;
+  return `${modeNotice()}<button class="btn ghost" data-action="nav" data-view="home">Back to missions</button>
+  <div class="brief" style="margin-top:10px">
+    <section class="card stack">
+      <div class="row"><span class="chip ${s.tier===3?"gold":s.tier===2?"blue":""}">${TIERS[s.tier].label} mission</span><span class="muted">About ${s.minutes} minutes · up to ${MAX_TURNS} messages</span></div>
+      <h1>${esc(s.title)}</h1>
+      <div class="who"><span class="avatar lg">${esc(s.persona.initials)}</span><div><strong>${esc(s.persona.name)}</strong><small>${esc(s.persona.role)}</small></div></div>
+      <p>${esc(s.setup)}</p>
+      <div><p class="eyebrow">Your objective</p><p>${esc(s.objective)}</p></div>
+      <div><p class="eyebrow">How it works</p><ul class="list">
+        <li>Talk to ${esc(s.persona.name.split(" ")[0])} in your own words. There are 3 hidden facts; good questions reveal them.</li>
+        <li>Expect 2 pressure moments. How you respond shows in the Trust, Clarity and Risk control meters.</li>
+        <li>After at least ${MIN_TURNS} messages, choose a decision, explain why, and predict your score.</li></ul></div>
+    </section>
+    <aside class="grid">
+      <section class="card stack"><p class="eyebrow">What you are scored on</p>
+        ${s.rubric.map(c=>`<div><b style="color:var(--ink)">${esc(c.name)}</b><div class="muted" style="font-size:13px">${esc(SKILLS[c.skill].name)}</div></div>`).join("")}
+        <p class="muted" style="font-size:13px">Score out of 100: rubric 60, decision 25, hidden facts 15. Pass at ${PASS}.</p></section>
+      <section class="card stack"><p class="eyebrow">Mode</p>
+        <div class="seg" role="group" aria-label="Mode"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
+        <p class="muted" style="font-size:13px">${P.mode==="guided"?"A coach tip appears after each reply.":"No tips. Passing earns the Unassisted badge."}</p>
+        ${best!=null?`<p style="font-size:14px">Your best: <b class="num">${best}</b> over ${tries} attempt${tries>1?"s":""}. Replays earn XP only when you beat your best.</p>`:""}
+        <button class="btn primary" data-action="start" data-sid="${s.id}">${best!=null?"Replay mission":"Start conversation"}</button></section>
+    </aside>
+  </div>`;
+}
+function meter(cls,label,v,help){ return `<div class="meter ${cls}" title="${esc(help)}"><div class="lab"><span>${label}</span><b class="num">${Math.round(v)}</b></div><div class="bar"><i style="width:${v}%"></i></div></div>`; }
+function viewSim(){
+  const run=S.run, s=scen(run.sid), first=s.persona.name.split(" ")[0];
+  const left=MAX_TURNS-run.learnerTurns, canDecide=run.learnerTurns>=MIN_TURNS;
+  if(run.stage==="decide") return viewDecide(run,s);
+  return `<div class="sim">
+  <section class="card chat">
+    <div class="chat-head"><span class="avatar">${esc(s.persona.initials)}</span><div class="grow"><strong style="color:var(--ink)">${esc(s.persona.name)}</strong><div class="muted" style="font-size:12px">${esc(s.persona.role)} · ${RT.claudeState==="on"?"played by Claude":"scripted practice"}</div></div><button class="btn ghost" data-action="quit">Leave</button></div>
+    <div class="msgs" id="msgs">${run.turns.map(t=> t.role==="moment" ? `<div class="moment">${esc(t.text)}</div>` : `<div class="msg ${t.role}"><span class="who-line">${t.role==="persona"?esc(first):"You"}</span>${esc(t.text)}</div>`).join("")}
+      ${run.busy?`<div class="typing">${esc(first)} is replying…</div>`:""}</div>
+    <div class="composer">
+      ${left>0?`<label for="composer" class="eyebrow">Your reply</label><textarea id="composer" placeholder="Ask a question, explain a limit, or propose a plan…" ${run.busy?"disabled":""}>${esc(run.draft)}</textarea>`:`<p><b>You've used all ${MAX_TURNS} messages.</b> Time to make your decision.</p>`}
+      <div class="row"><span class="muted num" style="font-size:13px">${left} of ${MAX_TURNS} messages left · Ctrl+Enter to send</span>
+        <div class="row">${canDecide?`<button class="btn" data-action="to-decide">Wrap up and decide</button>`:`<span class="muted" style="font-size:13px">Decide after ${MIN_TURNS-run.learnerTurns} more messages</span>`}${left>0?`<button class="btn primary" data-action="send" ${run.busy?"disabled":""}>Send</button>`:""}</div></div>
+    </div>
+  </section>
+  <aside class="grid">
+    <section class="card stack"><p class="eyebrow">Live read of ${esc(first)}</p>
+      ${meter("trust","Trust",run.meters.trust,"How much the stakeholder trusts you")}
+      ${meter("clarity","Clarity",run.meters.clarity,"How clear the way forward is")}
+      ${meter("risk","Risk control",run.meters.risk,"Falls when you over-promise or accept unsafe asks")}
+    </section>
+    <section class="card stack"><div class="row" style="justify-content:space-between"><p class="eyebrow">Hidden facts</p><span class="chip ${run.revealed.size===3?"good":""} num">${run.revealed.size} of 3</span></div>
+      ${s.facts.map(f=>run.revealed.has(f.id)?`<div class="fact found">${esc(f.text)}</div>`:`<div class="fact muted">Undiscovered${run.mode==="guided"?`: ask about ${esc(f.hint)}`:""}</div>`).join("")}</section>
+    ${run.mode==="guided"&&run.coach?`<section class="coach"><b>Coach tip</b><br>${esc(run.coach)}</section>`:""}
+  </aside></div>`;
+}
+function viewDecide(run,s){
+  return `<div class="brief">
+  <section class="card stack"><p class="eyebrow">Decision point · ${esc(s.title)}</p><h1>What do you decide?</h1>
+    <p class="muted">You uncovered ${run.revealed.size} of 3 hidden facts in ${run.learnerTurns} messages. Choose the course of action you will take, then explain why.</p>
+    <fieldset class="options" style="border:0;padding:0;margin:0"><legend class="eyebrow" style="margin-bottom:8px">Your decision</legend>
+      ${s.options.map(o=>`<label class="option"><input type="radio" name="decision" value="${o.id}" ${run.decision===o.id?"checked":""}><span>${esc(o.label)}</span></label>`).join("")}</fieldset>
+    <label for="rationale" class="eyebrow">Why? (the assessor scores your reasoning)</label>
+    <textarea id="rationale" class="plain" placeholder="I chose this because…">${esc(run.rationale)}</textarea>
+  </section>
+  <aside class="card stack"><p class="eyebrow">Predict your score</p>
+    <p class="muted" style="font-size:14px">Good PMs know how well they did. Predict within 10 points to earn the Calibrated badge.</p>
+    <label for="predict" class="row" style="justify-content:space-between"><span>My prediction</span><b class="num" id="predict-out" style="color:var(--ink);font-size:20px">${run.predicted}</b></label>
+    <input id="predict" type="range" min="0" max="100" step="1" value="${run.predicted}">
+    <button class="btn primary" data-action="submit" ${run.assessing?"disabled":""}>${run.assessing?(RT.claudeState==="on"?"Claude is assessing your conversation…":"Scoring…"):"Submit for assessment"}</button>
+    ${run.assessing&&RT.claudeState==="on"?'<p class="muted" style="font-size:13px">A careful assessment takes 15 to 60 seconds.</p><button class="btn ghost" data-action="stop">Stop</button>':`<button class="btn ghost" data-action="back-talk">Back to the conversation</button>`}
+  </aside></div>`;
+}
+function viewResult(){
+  const R=S.result, s=R.s, a=R.a, sc=R.attempt.score, pass=sc>=PASS, ms=R.meters;
+  const reasonPts = Math.round(a.criteria.reduce((x,c)=>x+c.score,0)/(4*s.rubric.length)*60), discPts=Math.round(R.attempt.facts/3*15);
+  const skillLines=Object.keys(SKILLS).filter(k=>R.newRatings[k]!=null && s.rubric.some(c=>c.skill===k)).map(k=>{
+    const o=R.oldRatings[k], n=R.newRatings[k]; const up = o==null || n>o+0.001;
+    return `<div class="skill"><b>${esc(SKILLS[k].name)}</b><span class="${up?"":"muted"}">${o==null?"New: ":up?"Up: ":""}${profLevel(n)}</span><div class="bar"><i style="width:${n/4*100}%"></i></div></div>`; }).join("");
+  const later = ms.trust<35 ? `${s.persona.name.split(" ")[0]} left the conversation frustrated, and it shows: expect less goodwill next time.` : ms.risk<35 ? "Your commitments in the conversation added risk the team now has to manage." : "The relationship is in good shape after the conversation.";
+  return `${R.note?`<div class="notice"><span class="chip warn">Note</span><span>${esc(R.note)}</span></div>`:""}
+  <section class="hero"><div class="score-hero">
+    <div class="ring" style="--p:${sc}" role="img" aria-label="Score ${sc} out of 100"><div><div><b class="num">${sc}</b><br><small>out of 100</small></div></div></div>
+    <div class="stack"><p class="eyebrow">${esc(s.title)} · ${pass?"Passed":"Not passed yet"}${R.prevBest!=null?` · previous best ${R.prevBest}`:""}</p>
+      <h1>${pass? (sc>=85?"Strong performance.":"You passed. Now make it sharper.") : "Useful practice. Replay to pass."}</h1>
+      <p>You predicted ${R.attempt.predicted}. ${Math.abs(R.attempt.predicted-sc)<=10?"Well calibrated.":R.attempt.predicted>sc?"You rated yourself higher than the evidence shows.":"You did better than you thought."} Rubric ${reasonPts} of 60 · decision ${R.decision.pts} of 25 · hidden facts ${discPts} of 15.</p>
+      <div class="row">${R.levelUp?`<span class="chip gold">Level up: ${esc(levelOf(P.xp).name)}</span>`:""}<span class="chip gold num">+${R.gained} XP</span>${R.earned.map(b=>`<span class="chip gold">Badge: ${esc(BADGES.find(x=>x.id===b).name)}</span>`).join("")}${R.newUnlocks.map(u=>`<span class="chip gold">Unlocked: ${esc(u.title)}</span>`).join("")}</div>
+    </div></div></section>
+  <div class="results" style="margin-top:18px">
+    <div class="grid">
+      <section class="card stack"><p class="eyebrow">What happened next</p><p><b style="color:var(--ink)">You chose:</b> ${esc(R.decision.label)}</p><p>${esc(R.decision.outcome)}</p><p class="muted">${esc(later)}</p></section>
+      <section class="card"><p class="eyebrow">Conversation AI assessment</p>
+        ${s.rubric.map(c=>{ const x=a.criteria.find(k=>k.id===c.id); return `<div class="crit"><div class="crit-top"><b>${esc(c.name)}</b><span class="pips" aria-label="${x.score} of 4">${[1,2,3,4].map(i=>`<i class="${i<=x.score?"on":""}"></i>`).join("")}</span></div>
+          <span class="muted" style="font-size:12px">${esc(SKILLS[c.skill].name)} · ${x.score} of 4</span>${x.feedback?`<p style="font-size:14px">${esc(x.feedback)}</p>`:""}${x.evidence&&x.evidence!=="none"?`<p class="quote">"${esc(x.evidence)}"</p>`:""}</div>`; }).join("")}
+      </section>
+      ${a.rewrite?`<section class="card rewrite"><p class="eyebrow">Say it better</p><div class="before"><b>You said:</b> ${esc(a.rewrite.original)}</div><div class="after"><b>Try:</b> ${esc(a.rewrite.improved)}</div></section>`:""}
+    </div>
+    <aside class="grid">
+      <section class="card stack"><p class="eyebrow">Development insights</p>
+        ${a.strengths.length?`<div><b style="color:var(--good)">Strengths</b><ul class="list">${a.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+        ${a.gaps.length?`<div><b style="color:var(--bad)">Work on</b><ul class="list">${a.gaps.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+        ${a.next?`<div class="coach"><b>Next practice</b><br>${esc(a.next)}</div>`:""}</section>
+      <section class="card stack"><p class="eyebrow">XP earned</p><div class="xp-list">${R.xp.map(([k,v])=>`<div><span>${esc(k)}</span><b class="num">+${v}</b></div>`).join("")}<div class="total"><span>Total</span><span class="num">+${R.gained}</span></div></div>
+        <p class="muted" style="font-size:12px">Replays earn XP only for beating your best, so practice pays off through improvement.</p></section>
+      ${skillLines?`<section class="card skills"><p class="eyebrow">Skill progress</p>${skillLines}</section>`:""}
+      <section class="card stack"><div class="row"><button class="btn primary" data-action="start" data-sid="${s.id}">Replay this mission</button><button class="btn" data-action="nav" data-view="home">Back to missions</button></div><button class="btn ghost" data-action="nav" data-view="board" style="justify-self:start">See where you rank</button></section>
+    </aside>
+  </div>`;
+}
+
+/* ---------- Leaderboard ---------- */
+function boardEntries(){
+  const map=new Map();
+  for(const r of RT.boardRows) map.set(r.id, r);
+  // Always include yourself from local state, so your rank shows even when private or offline.
+  map.set(RT.uid||"me", {id:RT.uid||"me", ...boardSummary(), you:true});
+  return [...map.values()];
+}
+function periodFilter(atts){
+  const p=S.board.period; if(p==="all") return atts;
+  const since=Date.now()-(p==="week"?7:30)*DAY; return atts.filter(a=>a.at>=since);
+}
+function displayName(e){
+  if(e.you) return (P.visibility==="name" && RT.names[e.id]) ? RT.names[e.id] : P.alias;
+  if(e.visibility==="name" && RT.names[e.id]) return RT.names[e.id];
+  return e.alias || "Learner";
+}
+async function refreshNames(){
+  if(!RT.user) return;
+  const ids=boardEntries().filter(e=>(e.visibility==="name"||e.you) && e.id!=="me" && !e.demo).map(e=>e.id);
+  if(!ids.length) return;
+  const ps=await RT.user.profiles(ids); let changed=false;
+  for(const id of ids){ const n=ps[id]?.name||""; if(RT.names[id]!==n){ RT.names[id]=n; changed=true; } }
+  if(changed && S.view==="board") $("app").innerHTML=viewBoard();
+}
+function viewBoard(){
+  const b=S.board, entries=boardEntries();
+  const tabs=[["overall","Overall"],["improved","Most improved"],["scenario","By mission"],["skill","By skill"],["squads","Squads"]];
+  let head="", rows=[], explain="";
+  const listed = e => e.you || e.visibility!=="private";
+  if(b.tab==="overall"){
+    explain="Readiness rating: your best score on each mission you have tried, weighted for difficulty (Core x1.0, Advanced x1.1, Boss x1.2), averaged. It reaches full weight after 3 missions. Retrying the same mission only helps if you do better.";
+    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]); const r=rating(atts); return {e, v:r.value, sub:r.n+" missions", n:atts.length};}).filter(x=>x.n>0);
+    head="Rating";
+  } else if(b.tab==="improved"){
+    explain="Average gain from your first to your best attempt on missions you have replayed. This rewards learning, whatever your starting point.";
+    rows=entries.filter(listed).map(e=>{const imp=improvement(periodFilter(e.attempts||[])); return {e, v:imp, sub:"points gained"};}).filter(x=>x.v!=null);
+    head="Avg gain";
+  } else if(b.tab==="scenario"){
+    explain="Best score on this mission. Ties go to whoever reached it in fewer attempts.";
+    rows=entries.filter(listed).map(e=>{const atts=periodFilter(e.attempts||[]).filter(a=>a.s===b.scenario); if(!atts.length) return null; return {e, v:Math.max(...atts.map(a=>a.score)), sub:atts.length+" attempt"+(atts.length>1?"s":""), tie:atts.length};}).filter(Boolean);
+    head="Best";
+  } else if(b.tab==="skill"){
+    explain="Skill rating from 0 to 4: your best assessor score for this skill on each mission that tests it, averaged across those missions.";
+    rows=entries.filter(listed).map(e=>{const r=skillRatings(periodFilter(e.attempts||[]))[b.skill]; return r==null?null:{e, v:Math.round(r*100)/100, sub:profLevel(r)};}).filter(Boolean);
+    head="Rating";
+  } else {
+    explain="Squads rank by the average rating of members with at least one mission, so a small squad can beat a large one. Private learners are not counted.";
+    const sq={}; for(const e of entries){ if(e.you && P.visibility==="private") continue; if(!e.you && e.visibility==="private") continue; const atts=periodFilter(e.attempts||[]); if(!atts.length) continue; (sq[e.team] ??= []).push(rating(atts).value); }
+    rows=Object.entries(sq).map(([t,vs])=>({team:t, v:Math.round(vs.reduce((x,y)=>x+y,0)/vs.length*10)/10, sub:vs.length+" active member"+(vs.length>1?"s":""), mine:t===P.team}));
+    head="Avg rating";
+  }
+  rows.sort((x,y)=> (y.v-x.v) || ((x.tie||0)-(y.tie||0)));
+  const you = rows.findIndex(r=>r.e?.you);
+  const hasDemo = RT.boardRows.some(r=>r.demo);
+  const table = rows.length ? `<div class="table-wrap"><table><thead><tr><th>Rank</th><th>${b.tab==="squads"?"Squad":"Learner"}</th>${b.tab==="squads"?"":"<th>Squad</th>"}<th class="r">${head}</th><th>Detail</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${(r.e?.you||r.mine)?"you":""}"><td class="rank num">${i+1}</td><td>${b.tab==="squads"?esc(SQUADS[r.team]||r.team):`${esc(displayName(r.e))}${r.e.you?' <span class="chip blue">You</span>':""}${r.e.demo?' <span class="chip">Sample</span>':""}`}</td>${b.tab==="squads"?"":`<td class="muted">${esc(SQUADS[r.e.team]||"")}</td>`}<td class="r num"><b>${r.v}</b></td><td class="muted">${esc(r.sub)}</td></tr>`).join("")}
+  </tbody></table></div>` : `<p class="muted" style="padding:20px 0">No results for this view yet. ${b.tab==="improved"?"Replay a mission to show improvement.":"Complete a mission to appear here."}</p>`;
+  return `<div class="section-head" style="margin-top:0"><div><p class="eyebrow">Cohort leaderboard</p><h1>Rewarding skill and growth, not hours logged.</h1></div></div>
+  ${!RT.db?`<div class="notice"><span class="chip warn">Just you</span><span>The shared cohort leaderboard needs this page to be open on claude.ai. You are seeing your own results only.</span></div>`:hasDemo?`<div class="notice"><span class="chip">Sample</span><span>Rows marked Sample are demo learners added to show how a full cohort looks.</span></div>`:""}
+  <div class="board-layout"><section class="card">
+    <div class="board-controls"><div class="seg" role="tablist" aria-label="Leaderboard view">${tabs.map(([k,l])=>`<button role="tab" data-action="btab" data-tab="${k}" aria-pressed="${b.tab===k}">${l}</button>`).join("")}</div>
+      <div class="row">${b.tab==="scenario"?`<select id="b-scenario" aria-label="Mission">${SCENARIOS.map(s=>`<option value="${s.id}" ${b.scenario===s.id?"selected":""}>${esc(s.title)}</option>`).join("")}</select>`:""}
+        ${b.tab==="skill"?`<select id="b-skill" aria-label="Skill">${Object.entries(SKILLS).map(([k,v])=>`<option value="${k}" ${b.skill===k?"selected":""}>${esc(v.name)}</option>`).join("")}</select>`:""}
+        <select id="b-period" aria-label="Time period"><option value="week" ${b.period==="week"?"selected":""}>Last 7 days</option><option value="month" ${b.period==="month"?"selected":""}>Last 30 days</option><option value="all" ${b.period==="all"?"selected":""}>All time</option></select></div></div>
+    <p class="muted" style="font-size:13px;margin-bottom:8px">${esc(explain)}</p>
+    ${table}
+    ${you>=0?`<p style="margin-top:12px;font-size:14px">You are <b>#${you+1}</b> of ${rows.length} in this view${P.visibility==="private"?" (visible only to you)":""}.</p>`:""}
+  </section>
+  <aside class="grid">
+    <section class="card stack"><p class="eyebrow">Your visibility</p>
+      ${[["alias","Alias",`Shown as "${P.alias}"`],["name","My name","Visible to your organisation"],["private","Private","Only you see your rank"]].map(([k,l,d])=>`<label class="pick"><input type="radio" name="bvis" value="${k}" ${P.visibility===k?"checked":""}><span><b>${l}</b><small>${esc(d)}</small></span></label>`).join("")}</section>
+    <section class="card stack"><p class="eyebrow">How we keep it fair</p><ul class="list" style="font-size:13px">
+      <li>Only assessed attempts count. Starting a mission earns nothing.</li>
+      <li>Your best score per mission counts, not your total, so grinding does not help.</li>
+      <li>Harder missions carry more weight; the rating reaches full weight after 3 missions.</li>
+      <li>Most improved rewards learning from any starting point.</li>
+      <li>Squads use averages, so size does not matter.</li></ul></section>
+  </aside></div>`;
+}
+
+/* ---------- Progress ---------- */
+function viewProgress(){
+  const L=levelOf(P.xp), N=nextLevel(P.xp), R=skillRatings(P.attempts), hist=[...P.attempts].sort((a,b)=>b.at-a.at).slice(0,20);
+  return `<div class="section-head" style="margin-top:0"><div><p class="eyebrow">My progress</p><h1>Level ${L.n}: ${esc(L.name)}</h1></div><span class="muted num">${P.xp} XP${N?` · ${N.xp-P.xp} XP to ${esc(N.name)}`:" · top level"}</span></div>
+  <div class="results">
+    <div class="grid">
+      <section class="card stack"><p class="eyebrow">Badges · ${P.badges.length} of ${BADGES.length}</p><div class="badges">${BADGES.map(b=>{const on=P.badges.includes(b.id); return `<div class="badge ${on?"on":""}"><span class="medal">${on?"★":"·"}</span><div><b>${esc(b.name)}</b><small>${esc(b.how)}</small></div></div>`;}).join("")}</div></section>
+      <section class="card"><p class="eyebrow">Mission history</p><div class="hist">${hist.length?hist.map(a=>{const s=scen(a.s); return `<div class="hist-row"><div><b style="color:var(--ink)">${esc(s?.title||a.s)}</b><div class="muted" style="font-size:12px">${new Date(a.at).toLocaleString()} · ${a.mode==="expert"?"Expert":"Guided"} · ${a.facts} of 3 facts · +${a.xp||0} XP</div></div><span class="chip ${a.score>=PASS?"good":"warn"} num">${a.score}</span><button class="btn" data-action="brief" data-sid="${a.s}">Replay</button></div>`;}).join(""):'<p class="muted">No missions yet.</p>'}</div></section>
+    </div>
+    <aside class="grid">
+      <section class="card skills"><p class="eyebrow">Skills</p>${Object.entries(SKILLS).map(([k,v])=>`<div class="skill"><b>${esc(v.name)}</b><span class="muted">${profLevel(R[k])}</span><div class="bar"><i style="width:${R[k]==null?0:R[k]/4*100}%"></i></div></div>`).join("")}</section>
+      <section class="card stack"><p class="eyebrow">Settings</p>
+        <label for="set-team">Squad</label><select id="set-team">${Object.entries(SQUADS).map(([k,v])=>`<option value="${k}" ${P.team===k?"selected":""}>${esc(v)}</option>`).join("")}</select>
+        <div class="seg" role="group" aria-label="Default mode"><button data-action="mode" data-mode="guided" aria-pressed="${P.mode==="guided"}">Guided</button><button data-action="mode" data-mode="expert" aria-pressed="${P.mode==="expert"}">Expert</button></div>
+        ${S.confirmReset?`<div class="confirm"><b>Delete all your progress?</b><span style="font-size:13px">XP, badges and history will be removed and you leave the leaderboard. This cannot be undone.</span><div class="row"><button class="btn" data-action="reset-yes" style="border-color:var(--bad);color:var(--bad)">Delete my progress</button><button class="btn ghost" data-action="reset-no">Keep it</button></div></div>`:`<button class="btn ghost" data-action="reset" style="justify-self:start;color:var(--bad)">Reset my progress</button>`}
+      </section>
+    </aside>
+  </div>`;
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-action]"); if(!b || b.getAttribute("aria-disabled")==="true" || b.disabled) return;
+  const act=b.dataset.action;
+  if(act==="nav"){ if(S.run?.busy) return; S.run=null; S.view=b.dataset.view; S.confirmReset=false; render(); window.scrollTo(0,0); }
+  else if(act==="brief"){ S.sid=b.dataset.sid; S.view="brief"; render(); window.scrollTo(0,0); }
+  else if(act==="mode"){ P.mode=b.dataset.mode; saveProfile(); render(); }
+  else if(act==="start"){ startRun(b.dataset.sid); window.scrollTo(0,0); }
+  else if(act==="send") sendTurn();
+  else if(act==="to-decide"){ S.run.stage="decide"; render(); window.scrollTo(0,0); }
+  else if(act==="back-talk"){ S.run.stage="talk"; render(); }
+  else if(act==="submit") submitDecision();
+  else if(act==="stop"){ S.run?.ctl?.abort(); }
+  else if(act==="quit"){ S.run?.ctl?.abort(); S.run=null; S.view="brief"; render(); }
+  else if(act==="btab"){ S.board.tab=b.dataset.tab; render(); }
+  else if(act==="reset"){ S.confirmReset=true; render(); }
+  else if(act==="reset-no"){ S.confirmReset=false; render(); }
+  else if(act==="reset-yes"){ const keep={alias:P.alias}; P={...freshProfile(), ...keep, onboarded:true}; S.confirmReset=false; saveProfile(); render(); toast("Your progress was reset."); }
+});
+document.addEventListener("input", e=>{
+  if(e.target.id==="composer" && S.run) S.run.draft=e.target.value;
+  if(e.target.id==="rationale" && S.run) S.run.rationale=e.target.value;
+  if(e.target.id==="predict" && S.run){ S.run.predicted=Number(e.target.value); $("predict-out").textContent=e.target.value; }
+});
+document.addEventListener("change", e=>{
+  const t=e.target;
+  if(t.name==="decision" && S.run) S.run.decision=t.value;
+  if(t.id==="b-period"){ S.board.period=t.value; render(); }
+  if(t.id==="b-scenario"){ S.board.scenario=t.value; render(); }
+  if(t.id==="b-skill"){ S.board.skill=t.value; render(); }
+  if(t.name==="bvis"){ P.visibility=t.value; saveProfile(); render(); toast(t.value==="private"?"You are now private. Only you see your rank.":"Leaderboard visibility updated."); }
+  if(t.id==="set-team"){ P.team=t.value; saveProfile(); toast("Squad updated."); }
+});
+document.addEventListener("keydown", e=>{ if(e.target.id==="composer" && e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); sendTurn(); } });
+document.addEventListener("submit", e=>{
+  if(e.target.id!=="onb-form") return; e.preventDefault();
+  const f=new FormData(e.target); P.mode=f.get("mode"); P.team=f.get("team"); P.visibility=f.get("vis"); P.onboarded=true; saveProfile();
+  S.sid="promise"; S.view="brief"; render(); window.scrollTo(0,0);
+});
+
+/* ---------- Boot: render now, light up Claude and the shared store when they arrive ---------- */
+render();
+(async function boot(){
+  const CL = window.claude && typeof window.claude.use==="function" ? window.claude : null;
+  if(!CL){ RT.claudeState="off"; render(); return; }
+  const [sample, db, user] = await Promise.all([CL.use("sample").catch(()=>null), CL.use("db").catch(()=>null), CL.use("user").catch(()=>null)]);
+  RT.sample=sample; RT.claudeState = sample ? "on" : "off"; RT.user=user;
+  if(user){ try{ RT.uid = await user.id(); }catch{} }
+  if(db && RT.uid){
+    RT.db=db;
+    try{
+      const snap=await db.doc("data/users/"+RT.uid+"/launchpad").get();
+      const remote=snap.exists ? snap.data() : null;
+      if(remote && Array.isArray(remote.attempts) && (remote.attempts.length>P.attempts.length || (!P.onboarded && remote.onboarded))){
+        P={...freshProfile(), ...JSON.parse(JSON.stringify(remote))}; try{ localStorage.setItem(STORE, JSON.stringify(P)); }catch{}
+        if(S.view==="onboard" && P.onboarded) S.view="home";
+      } else if(P.onboarded){ saveProfile(); }
+    }catch{}
+    RT.unsub = db.collection("board").limit(500).onSnapshot(q=>{
+      RT.boardRows = q.docs.filter(d=>d.id!==RT.uid).map(d=>({id:d.id, ...d.data()}));
+      if(S.view==="board") render();
+    }, ()=>{});
+  }
+  if(!S.run) render(); else renderMe();
+})();
+</script>
