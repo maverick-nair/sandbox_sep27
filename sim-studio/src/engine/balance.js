@@ -1,5 +1,6 @@
 // Balance check: many seeded playthroughs per bot, summarised into a verdict an author can act on.
-import { BOTS, playBot } from './bots.js';
+import { BOTS, playBot, playSynthetic } from './bots.js';
+import { bandOf } from './decisions.js';
 
 const quantile = (xs, q) => {
   const s = [...xs].sort((a, b) => a - b);
@@ -29,9 +30,47 @@ export function summarise(def, results) {
       accuracy: mean(rs.map((r) => r.accuracy)),
       leavers: mean(rs.map((r) => r.leavers)),
       samples: ach,
+      overall: quantile(rs.map((r) => r.overall ?? 0), 0.5),
+      decisionScore: mean(rs.map((r) => r.decisionScore ?? 0)),
+      trajectory: medianTrajectory(rs.map((r) => r.trajectory || [])),
     };
   }
   return { bots, ...verdict(def, bots) };
+}
+
+function medianTrajectory(list) {
+  const n = Math.max(0, ...list.map((t) => t.length));
+  return Array.from({ length: n }, (_, i) => Math.round(quantile(list.map((t) => t[i] ?? t.at(-1) ?? 0), 0.5) * 10) / 10);
+}
+
+// Synthetic learners: people between the guessing and the adaptive bot. Each makes the adaptive
+// choice with a probability (their skill), drawn around a typical first-time manager. Their overall
+// scores become the benchmark learners see in their debrief.
+export function syntheticSkill(i, n) {
+  const u = (i + 0.5) / n;
+  // A smooth S-shaped spread: most learners in the middle, a few very weak or very strong.
+  const z = Math.log(u / (1 - u)) / 3.2;
+  return Math.max(0.02, Math.min(0.95, 0.42 + z * 0.55));
+}
+
+export function summariseSynthetic(def, runs) {
+  const scores = runs.map((r) => r.overall);
+  const pass = def.delivery?.passScore ?? 65;
+  const decisions = {};
+  for (const r of runs) for (const [id, sc] of Object.entries(r.decisions || {})) (decisions[id] ||= []).push(sc);
+  return {
+    n: runs.length,
+    scores,
+    skill: runs.map((r) => Math.round(r.skill * 100) / 100),
+    achieved: runs.map((r) => Math.round(r.achieved * 100) / 100),
+    median: quantile(scores, 0.5),
+    p10: quantile(scores, 0.1),
+    p90: quantile(scores, 0.9),
+    passRate: runs.length ? runs.filter((r) => r.overall >= pass).length / runs.length : 0,
+    hitRate: runs.length ? runs.filter((r) => r.achieved >= 1).length / runs.length : 0,
+    trajectory: medianTrajectory(runs.map((r) => r.trajectory || [])),
+    decisions: Object.fromEntries(Object.entries(decisions).map(([id, xs]) => [id, { n: xs.length, avg: Math.round(mean(xs)), bands: ['strong', 'mixed', 'weak'].map((b) => xs.filter((x) => bandOf(x) === b).length) }])),
+  };
 }
 
 function verdict(def, bots) {
@@ -83,20 +122,31 @@ export function runBalance(def, { runs = 20, bots = Object.keys(BOTS), seed = 10
 }
 
 // Same as runBalance, but yields to the browser between runs and reports progress.
-export async function runBalanceAsync(def, { runs = 20, bots = Object.keys(BOTS), seed = 1000 } = {}, onProgress) {
+export async function runBalanceAsync(def, { runs = 20, bots = Object.keys(BOTS), seed = 1000, learners = 0 } = {}, onProgress) {
   const results = [];
-  const total = runs * bots.length;
+  const total = runs * bots.length + learners;
+  let done = 0;
+  const tick = async () => {
+    done += 1;
+    if (done % 4 === 0) {
+      onProgress?.(done / total);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  };
   for (const b of bots) {
     for (let i = 0; i < runs; i++) {
       results.push(stripState(playBot(def, b, seed + i)));
-      if (results.length % 4 === 0) {
-        onProgress?.(results.length / total);
-        await new Promise((r) => setTimeout(r, 0));
-      }
+      await tick();
     }
   }
+  const syn = [];
+  for (let i = 0; i < learners; i++) {
+    syn.push(stripState(playSynthetic(def, seed + 5000 + i, syntheticSkill(i, learners))));
+    await tick();
+  }
   onProgress?.(1);
-  return summarise(def, results);
+  const summary = summarise(def, results);
+  return learners ? { ...summary, synthetic: summariseSynthetic(def, syn) } : summary;
 }
 
 function stripState(r) {

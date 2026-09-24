@@ -160,7 +160,7 @@ export function DotStrip({ rows, title, max = 100, markers = [] }) {
       <Legend items={rows.map((r) => ({ label: r.label, color: r.color }))} />
       <div className="chart-box">
         <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={title} style={{ width: '100%', height: 'auto', display: 'block' }} onMouseLeave={() => setHover(null)}>
-          {[0, 25, 50, 75, 100].filter((t) => t <= max).map((t) => (
+          {Array.from({ length: Math.floor(max / (max > 150 ? 50 : 25)) + 1 }, (_, i) => i * (max > 150 ? 50 : 25)).map((t) => (
             <g key={t}><line x1={X(t)} x2={X(t)} y1={4} y2={h - 20} className="chart-grid" /><text x={X(t)} y={h - 6} textAnchor="middle" className="chart-tick">{t}</text></g>
           ))}
           {markers.map((m) => <g key={m.label}><line x1={X(m.value)} x2={X(m.value)} y1={0} y2={h - 20} stroke="var(--ink)" strokeDasharray="4 3" strokeWidth="1.5" opacity="0.7" /><text x={X(m.value) + 4} y={10} className="chart-label muted">{m.label}</text></g>)}

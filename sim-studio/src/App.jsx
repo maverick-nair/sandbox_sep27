@@ -106,7 +106,7 @@ export default function App() {
           />
         )}
         {route.screen === 'studio' && sim && (
-          <Studio key={sim.id} sim={sim} store={store} results={results} initialSection={route.section} notify={setToast} onExit={home} onPlay={(opts) => setRoute({ screen: 'play', simId: sim.id, ...opts })} />
+          <Studio key={sim.id} sim={sim} store={store} results={results} initialSection={route.section} notify={setToast} onExit={home} onPlay={(opts = {}) => setRoute({ screen: 'play', simId: sim.id, back: { screen: 'studio', simId: sim.id, section: opts.section || 'results' }, ...opts })} />
         )}
         {route.screen === 'play' && <LearnerRoute sim={sim} route={route} results={results} onExit={() => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); setRoute(route.back || { screen: 'home' }); }} notify={setToast} />}
       </ErrorBoundary>
@@ -133,7 +133,7 @@ function LearnerRoute({ sim, route, results, onExit, notify }) {
       def={live.def}
       mode="live"
       saveKey={`gk-play-${sim.id}-v${live.version}${route.lti ? `-${route.lti.userId}` : ''}`}
-      delivery={live.def.delivery}
+      delivery={{ ...live.def.delivery, cohorts: sim.def.delivery?.cohorts || live.def.delivery.cohorts || [] }}
       benchmark={sim.balance?.synthetic?.scores || []}
       leaderboard={rows}
       identityDefaults={route.lti ? { name: route.lti.name, lti: route.lti } : {}}
@@ -141,7 +141,7 @@ function LearnerRoute({ sim, route, results, onExit, notify }) {
       onFinish={(rec) => {
         const full = { ...rec, simId: sim.id, version: live.version, ...(route.lti ? { lti: { ...route.lti, score: agsScore(rec, route.lti) } } : {}) };
         results.add(full);
-        notify(route.lti ? 'Result saved and score sent to the gradebook' : 'Result saved');
+        notify(route.lti ? `Result saved. The score for ${route.lti.platform}'s gradebook is ready in Learners and results.` : 'Result saved');
       }}
     />
   );

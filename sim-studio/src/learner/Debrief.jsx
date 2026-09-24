@@ -184,9 +184,10 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
 
 export function Leaderboard({ rows, you, delivery }) {
   const metric = delivery.leaderboardMetric || 'score';
-  const label = { score: 'Score', conversions: 'Conversions', xp: 'XP' }[metric];
-  const name = (r) => (delivery.leaderboardNames === 'anonymous' ? (r.id === you ? 'You' : 'A colleague') : delivery.leaderboardNames === 'initials' ? String(r.nickname || r.name || '?').split(/\s+/).map((p) => p[0]).join('.').toUpperCase() : r.nickname || r.name || 'Anonymous');
-  const sorted = [...rows].sort((a, b) => (b[metric] ?? 0) - (a[metric] ?? 0));
+  const label = { score: 'Score', conversions: 'Conversions', xp: 'XP', decisions: 'Decisions' }[metric];
+  const val = (r) => (metric === 'decisions' ? r.parts?.decisions ?? 0 : r[metric] ?? 0);
+  const name = (r) => (delivery.leaderboardNames === 'anonymous' ? (r.id === you ? 'You' : 'A colleague') : delivery.leaderboardNames === 'initials' ? String(r.nickname || r.name || '?').split(/\s+/).map((p) => p[0]).join('.').toUpperCase() : delivery.leaderboardNames === 'full' ? r.group || r.name || r.nickname || 'Anonymous' : r.nickname || r.name || 'Anonymous');
+  const sorted = [...rows].sort((a, b) => val(b) - val(a));
   const top = sorted.slice(0, delivery.leaderboardSize || 10);
   const rank = sorted.findIndex((r) => r.id === you);
   return (
@@ -198,7 +199,7 @@ export function Leaderboard({ rows, you, delivery }) {
             <span className="num lx-rank-num">{i + 1}</span>
             <Avatar name={name(r)} size={24} />
             <span className="grow">{name(r)}{r.group ? <span className="small muted"> · {r.group}</span> : null}</span>
-            <span className="num"><strong>{metric === 'conversions' ? Number(r[metric]).toFixed(1) : r[metric]}</strong> <span className="small muted">{label}</span></span>
+            <span className="num"><strong>{metric === 'conversions' ? Number(val(r)).toFixed(1) : val(r)}</strong> <span className="small muted">{label}</span></span>
           </li>
         ))}
       </ol>

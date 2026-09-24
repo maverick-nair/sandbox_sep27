@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { SESSION_LENGTHS, DIFFICULTY, rescaleTimeline, applyDifficulty } from '../../engine/authoring.js';
-import { collectTexts } from '../../engine/text.js';
 import { schemaProblems } from '../../engine/validate.js';
 import { TEMPLATES } from '../../templates/registry.js';
-import { Button, Callout, Field, NumberInput, Pill, SectionHead, Switch, copyText } from '../ui.jsx';
+import { Button, Callout, Field, NumberInput, SectionHead, copyText } from '../ui.jsx';
+import { PlayCard, LeaderboardCard, LtiCard, ScormCard, LanguagesCard } from '../Delivery.jsx';
 
-// Delivery options the runtime does not serve yet in this prototype. They are recorded on the
-// definition so the choice travels with it, and labelled so no one expects them to work today.
-const Planned = () => <Pill title="Not built in this prototype yet.">Coming soon</Pill>;
 
-const LANGUAGES = { en: 'English', hi: 'Hindi', 'zh-Hans': 'Chinese (Simplified)', es: 'Spanish', fr: 'French', ja: 'Japanese', ar: 'Arabic', de: 'German' };
-
-export default function Settings({ def, update, advanced, notify }) {
+export default function Settings({ def, update, advanced, notify, sim, onPlay }) {
+  const live = [...(sim?.versions || [])].reverse().find((v) => v.def) || null;
   const [json, setJson] = useState('');
   const [importError, setImportError] = useState('');
-  const strings = collectTexts(def).filter((t) => t.text).length;
   const exportText = JSON.stringify(def, null, 2);
 
   return (
@@ -62,36 +57,12 @@ export default function Settings({ def, update, advanced, notify }) {
         {def.meta.difficulty === 'custom' && <p className="small muted">Custom: engine settings were changed by hand. Pick a preset to reset them.</p>}
       </div>
 
-      <div className="card stack">
-        <h3>Delivery</h3>
-        <div className="grid cols-2">
-          <Switch checked={def.delivery.individual} onChange={(v) => update((d) => { d.delivery.individual = v; })} label="Individual play" />
-          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Group play with a group report" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Leaderboard among peers" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Launch from an LMS over LTI" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="SCORM package download" /><Planned /></span>
-        </div>
-        <p className="small muted">Learners play individually in this prototype. Group play, leaderboards, LTI and SCORM come with the production runtime.</p>
-        <Callout>Legacy iLead ran separate code and databases for LTI, the Bajaj LTI org, Accenture, HR and the Chinese version. Here each of those is a setting or a variant of one simulation, served by one engine.</Callout>
-      </div>
-
-      <div className="card stack">
-        <div className="row"><h3>Languages</h3><Planned /></div>
-        <div className="stack" style={{ '--gap': '6px' }}>
-          {def.delivery.languages.map((l) => (
-            <div key={l} className="row spread" style={{ padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
-              <span>{LANGUAGES[l] || l}</span>
-              {l === 'en' ? <Pill tone="good">Source, {strings} strings</Pill> : (
-                <div className="row">
-                  <Pill tone="warn" title="Translation is planned: production drafts it with Genie for a reviewer to approve.">Not translated yet ({strings} strings)</Pill>
-                  <Button size="sm" variant="ghost" className="danger" onClick={() => update((d) => { d.delivery.languages = d.delivery.languages.filter((x) => x !== l); })}>Remove</Button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="small ink2">Adding languages is coming soon. The simulation's {strings} strings are already keyed so each language can be a translation of this same simulation.</p>
-      </div>
+      <PlayCard def={def} update={update} />
+      <LeaderboardCard def={def} update={update} />
+      <LtiCard sim={sim} def={def} update={update} notify={notify} onPlay={(o) => onPlay?.({ ...o, section: 'settings' })} />
+      <ScormCard sim={sim} def={def} update={update} notify={notify} live={live} />
+      <LanguagesCard def={def} update={update} notify={notify} />
+      <Callout>Legacy iLead ran separate code and databases for LTI, the Bajaj LTI org, Accenture, HR and the Chinese version. Here each of those is a setting or a variant of one simulation, served by one engine.</Callout>
 
       <div className="card stack">
         <h3>Your data</h3>

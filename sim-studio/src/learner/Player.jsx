@@ -201,7 +201,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
   const rows = leaderboard.filter((r) => !identity.cohortId || r.cohortId === identity.cohortId);
   if (stage === 'debrief' && debrief) {
     const you = resultId || 'you';
-    const withYou = finished ? rows : [...rows, { id: 'you', nickname: identity.nickname || identity.name || 'You', score: debrief.overall.score, conversions: debrief.progress.conversions, xp: debrief.xp, group: identity.group?.name }];
+    const withYou = finished ? rows : [...rows, { id: 'you', name: identity.name, nickname: identity.nickname || identity.name || 'You', score: debrief.overall.score, parts: debrief.overall.parts, conversions: debrief.progress.conversions, xp: debrief.xp, group: identity.group?.name }];
     return (
       <div className="lx-root">
         <LxHeader def={def} state={state} identity={identity} preview={preview} xray={xray} setXray={setXray} onExit={onExit} ended />
@@ -445,7 +445,8 @@ function Welcome({ def, authored, identity, setIdentity, delivery, preview, save
   const [asGroup, setAsGroup] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [members, setMembers] = useState('');
-  const cohorts = (delivery.cohorts || []).filter((c) => c.status !== 'closed');
+  const now = Date.now();
+  const cohorts = (delivery.cohorts || []).filter((c) => c.status !== 'closed' && (!c.closes || new Date(`${c.closes}T23:59:59`).getTime() >= now) && (!c.opens || new Date(`${c.opens}T00:00:00`).getTime() <= now));
   const cohort = cohorts.find((c) => c.code.toLowerCase() === code.trim().toLowerCase());
   const needsCode = cohorts.length > 0 && !preview && !identity.lti;
   const langs = delivery.languages || ['en'];

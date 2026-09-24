@@ -6,7 +6,7 @@ import {
   desiredStyle, styleDiff, mismatchDistribution, membersInStage, progress, weekOf,
 } from './engine.js';
 import { createRng } from './rng.js';
-import { initDecisions, dueDecisions, resolveDecision, afterTime, evaluateDecision, overallScore, say } from './decisions.js';
+import { initDecisions, dueDecisions, resolveDecision, afterTime, evaluateDecision, overallScore, say, checkAchievements } from './decisions.js';
 import { computeReport } from './report.js';
 
 const expectedOutcome = (option, dist) =>
@@ -290,6 +290,8 @@ export function playSynthetic(def, seed, skill) {
       setWeeklyStyles(def, state, Object.fromEntries(Object.keys(good).map((id) => [id, rng.chance(skill) ? good[id] : guess[id]])));
     } else (rng.chance(skill) ? BOTS.expert : BOTS.random).day(def, state, rng, memo);
     afterTime(def, state);
+    checkAchievements(def, state);
   }
+  checkAchievements(def, state);
   return { ...finish(def, 'synthetic', seed, state), skill };
 }

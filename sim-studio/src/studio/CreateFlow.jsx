@@ -280,7 +280,7 @@ export default function CreateFlow({ templateId, resume, onCancel, onCreate }) {
   const next = () => go(step + 1);
   const create = async () => {
     setBusy('create');
-    const balance = await runBalanceAsync(draft, { runs: 10 });
+    const balance = await runBalanceAsync(draft, { runs: 10, learners: 30 });
     onCreate(draft, 'overview', { ...balance, at: Date.now() + 1000, target: draft.funnel.target }, brief);
   };
 

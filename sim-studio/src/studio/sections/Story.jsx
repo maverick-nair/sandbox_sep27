@@ -4,7 +4,7 @@ import { setTextAt } from '../../engine/authoring.js';
 import { TEMPLATES } from '../../templates/registry.js';
 import { AREAS } from '../../templates/ilead/contextualize.js';
 import { Button, Callout, Pill, SectionHead, TextInput, TokenArea, TokenText } from '../ui.jsx';
-import { ProfileForm, DepthPicker, ProposalReview, GeniePanel, chosen, defaultExcluded, profileSummary } from '../Tailoring.jsx';
+import { ProfileForm, DepthPicker, ProposalReview, GeniePanel, chosen, defaultExcluded, profileSummary, useSample } from '../Tailoring.jsx';
 
 // Profile changes not applied yet, per simulation, so they survive switching tabs and sections.
 const pendingProfiles = new Map();
@@ -47,7 +47,7 @@ export default function Story({ def, update, focus, notify, sim }) {
       {tab === 'context' && <ContextFields def={def} update={update} />}
       {tab === 'rewrite' && (
         <div className="stack" style={{ '--gap': '18px' }}>
-          <RewriteList def={def} update={update} bound={bound} industryChanged={industryChanged} />
+          <RewriteList def={def} update={update} bound={bound} industryChanged={industryChanged} notify={notify} />
           {industryChanged && bound.length > 0 && <GeniePanel def={def} profile={def.context.profile} onApply={(props) => { update((d) => TEMPLATES[d.meta.templateId].contextualize.applyProposals(d, props)); notify?.(`${props.length} changes applied`); }} />}
         </div>
       )}
@@ -102,16 +102,33 @@ function ContextFields({ def, update }) {
             <Button type="submit">Add</Button>
           </form>
         </div>
-        <Callout tone="accent">
-          In production, "Rewrite with Genie" drafts each flagged item for the new industry using the context above, for the author to accept or edit. This prototype lists the items and lets you rewrite them in place.
-        </Callout>
       </div>
     </div>
   );
 }
 
-function RewriteList({ def, update, bound: flagged, industryChanged }) {
+function RewriteList({ def, update, bound: flagged, industryChanged, notify }) {
   const [open, setOpen] = useState(null);
+  const sample = useSample();
+  const [busy, setBusy] = useState(null);
+  const [drafts, setDrafts] = useState({});
+  const genie = async (items) => {
+    setBusy(items.length > 1 ? 'all' : items[0].key);
+    try {
+      const reply = await sample.json([
+        `These texts come from a leadership simulation first written for the ${def.context.originalIndustry.toLowerCase()} industry. Rewrite each one so it describes a believable situation in ${def.context.industry} instead, at ${def.context.entities.find((e) => e.key === 'company')?.value || 'the company'}.`,
+        'Keep the same length, tone, meaning and impact on the team. Keep every {{token}} exactly as it is. Remove the old-industry words. No em dashes.',
+        'Reply with only JSON: {"items":[{"k": string, "text": string}]} using the same k values.',
+        JSON.stringify(items.map((b) => ({ k: b.key, text: b.text }))),
+      ].join('\n'), { cache: false });
+      const out = Object.fromEntries((reply?.items || []).filter((x) => x?.k && typeof x.text === 'string').map((x) => [x.k, x.text]));
+      setDrafts((d) => ({ ...d, ...out }));
+      notify?.(Object.keys(out).length ? `Genie drafted ${Object.keys(out).length} rewrite${Object.keys(out).length === 1 ? '' : 's'}. Use each one or edit it.` : 'Genie could not rewrite these. You can rewrite them by hand.');
+    } catch (e) {
+      notify?.(e?.code === 'rate_limited' ? 'Genie is busy. Try again in a minute.' : 'Genie could not rewrite these. You can rewrite them by hand.');
+    }
+    setBusy(null);
+  };
   // Keep the item being edited on screen even after its last situation word is gone.
   const keyOf = (b) => `${b.label}-${JSON.stringify(b.ref)}`;
   const editing = open && !flagged.some((b) => keyOf(b) === open) ? collectTexts(def).filter((t) => keyOf(t) === open).map((t) => ({ ...t, terms: [] })) : [];
@@ -124,6 +141,7 @@ function RewriteList({ def, update, bound: flagged, industryChanged }) {
   return (
     <div className="stack" style={{ '--gap': '18px' }}>
       <Callout tone="warn" icon="!">These {flagged.length} items describe situations from the original {def.context.originalIndustry.toLowerCase()} storyline (words found: {[...new Set(flagged.flatMap((b) => b.terms))].join(', ')}). An item leaves the list once its text no longer uses a situation word.</Callout>
+      {sample && <div><Button variant="primary" disabled={!!busy} onClick={() => genie(flagged.slice(0, 25).map((b) => ({ key: keyOf(b), text: b.text })))}>{busy === 'all' ? 'Genie is rewriting…' : `Draft ${Math.min(25, flagged.length)} rewrites with Genie`}</Button></div>}
       {Object.entries(bySection).map(([section, items]) => (
         <div key={section} className="stack" style={{ '--gap': '8px' }}>
           <h3 style={{ textTransform: 'capitalize' }}>{section} <Pill>{items.length}</Pill></h3>
@@ -133,8 +151,18 @@ function RewriteList({ def, update, bound: flagged, industryChanged }) {
               <div key={key} className="card tight stack" style={{ '--gap': '8px' }}>
                 <div className="row spread nowrap">
                   <strong className="small">{b.label}</strong>
-                  <Button size="sm" onClick={() => setOpen(open === key ? null : key)}>{open === key ? 'Done' : 'Rewrite'}</Button>
+                  <div className="row nowrap">
+                    {sample && !drafts[key] && <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => genie([{ key, text: b.text }])}>{busy === key ? 'Writing…' : 'Rewrite with Genie'}</Button>}
+                    <Button size="sm" onClick={() => setOpen(open === key ? null : key)}>{open === key ? 'Done' : 'Rewrite'}</Button>
+                  </div>
                 </div>
+                {drafts[key] && (
+                  <div className="suggestion stack" style={{ '--gap': '6px' }}>
+                    <span className="eyebrow">Genie's draft</span>
+                    <textarea className="textarea" rows={3} value={drafts[key]} onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))} aria-label={`Genie's draft for ${b.label}`} />
+                    <div className="row"><Button size="sm" variant="primary" onClick={() => { update((d) => setTextAt(d, b.ref, drafts[key])); setDrafts(({ [key]: _, ...rest }) => rest); }}>Use this</Button><Button size="sm" variant="ghost" onClick={() => setDrafts(({ [key]: _, ...rest }) => rest)}>Discard</Button></div>
+                  </div>
+                )}
                 {open === key ? (
                   <TokenArea def={def} value={b.text} rows={4} tokens="actor" onChange={(v) => update((d) => setTextAt(d, b.ref, v))} />
                 ) : (
