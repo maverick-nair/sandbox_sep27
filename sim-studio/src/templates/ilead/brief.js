@@ -231,6 +231,9 @@ function findOrg(text) {
   }
   // All lowercase: "at acme logistics in dubai".
   for (const m of text.matchAll(new RegExp(`\\b(?:at|for|called|named|join)\\s+((?:[a-z][\\w&'-]*\\s+){0,3}?(?:${ORG_SUFFIX.toLowerCase()}))\\b`, 'g'))) {
+    // "at a solar company" describes the organization; it does not name it.
+    if (/^(?:a|an|the|our|their|my|your|this|that|one|some|any|every|each|large|small|big|leading|global|local|mid-sized|growing)\s/.test(m[1])) continue;
+    if (/^(?:[a-z-]+\s+)?(?:company|group|services|solutions|business|firm|organisation|organization)$/.test(m[1])) continue;
     const t = cleanOk(titleCase(m[1]));
     if (t) found.push({ t, score: 1 });
   }

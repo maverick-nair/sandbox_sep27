@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   createRun, setWeeklyStyles, takeAction, proceed, actionAvailability, teamIds, availableIds, desiredStyle,
   weekOf, dayOfWeek, daysLeftInWeek, progress, teamAverages, stageEfficiency, stageName, membersInStage,
@@ -24,7 +24,22 @@ export default function Preview({ def, onClose }) {
     setState(next);
     return res;
   };
-  const restart = () => { const s = Math.floor(Math.random() * 1e6); setSeed(s); setState(createRun(def, { seed: s })); setError(''); };
+  // Starting over rebuilds every screen from a fresh run, so it is visibly a new start.
+  const [run, setRun] = useState(1);
+  const [confirmRestart, setConfirmRestart] = useState(false);
+  const [notice, setNotice] = useState('');
+  const started = state.day > 1 || state.phase !== 'weekStart';
+  const restart = () => {
+    const s = Math.floor(Math.random() * 1e6);
+    setSeed(s);
+    setState(createRun(def, { seed: s }));
+    setError('');
+    setConfirmRestart(false);
+    setRun((n) => n + 1);
+    setNotice('New run started from week 1, with fresh random outcomes.');
+    document.querySelector('.preview-body')?.scrollTo({ top: 0 });
+  };
+  useEffect(() => { if (!notice) return undefined; const t = setTimeout(() => setNotice(''), 3500); return () => clearTimeout(t); }, [notice]);
   const pr = progress(def, state);
   const avg = teamAverages(state);
   const money = new Intl.NumberFormat('en', { style: 'currency', currency: def.funnel.currency, notation: 'compact' });
@@ -49,12 +64,21 @@ export default function Preview({ def, onClose }) {
         </div>
         <div className="row" style={{ marginLeft: 'auto' }}>
           <Tip text="Shows each person's true skill and morale and the style they need. Learners never see this."><Switch checked={xray} onChange={setXray} label="Author x-ray" /></Tip>
-          <Button size="sm" onClick={restart} tip="Starts a fresh run with new random outcomes.">Restart</Button>
+          {confirmRestart ? (
+            <span className="row nowrap" role="group" aria-label="Confirm start over">
+              <span className="small">Lose this run's progress?</span>
+              <Button size="sm" variant="danger" onClick={restart}>Start over</Button>
+              <Button size="sm" onClick={() => setConfirmRestart(false)}>Keep playing</Button>
+            </span>
+          ) : (
+            <Button size="sm" onClick={() => (started && state.phase !== 'ended' ? setConfirmRestart(true) : restart())} tip="Starts a new run from week 1 with fresh random outcomes.">Start over</Button>
+          )}
           <Button size="sm" variant="primary" onClick={onClose} tip="Closes the preview. Nothing from this run is saved." tipAlign="end">Back to Studio</Button>
         </div>
       </header>
-      <div style={{ overflowY: 'auto' }}>
-        <div className="page" style={{ maxWidth: 1320 }}>
+      <div className="preview-body" style={{ overflowY: 'auto' }}>
+        <div className="page" style={{ maxWidth: 1320 }} key={run}>
+          {notice && <div style={{ marginBottom: 12 }} role="status"><Callout tone="good" icon="✓">{notice}</Callout></div>}
           {error && <div style={{ marginBottom: 12 }}><Callout tone="bad" icon="!">{error}</Callout></div>}
           {state.phase === 'weekStart' && <WeekStart def={def} state={state} xray={xray} onDone={(styles) => act((s) => setWeeklyStyles(def, s, styles))} />}
           {state.phase === 'day' && <Day def={def} state={state} xray={xray} act={act} />}
@@ -62,6 +86,10 @@ export default function Preview({ def, onClose }) {
             <div className="stack">
               <h1>Your report</h1>
               <ReportView def={def} report={computeReport(def, state)} />
+              <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+                <Button variant="primary" onClick={restart}>Play again</Button>
+                <Button onClick={onClose}>Back to Studio</Button>
+              </div>
             </div>
           )}
         </div>

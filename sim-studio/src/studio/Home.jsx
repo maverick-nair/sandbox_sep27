@@ -29,6 +29,7 @@ function HealthPill({ def }) {
 
 export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpen, onNew, notify }) {
   const [confirm, setConfirm] = useState(null);
+  const [soon, setSoon] = useState(null); // a product line that is not in this prototype
   const t = TEMPLATES.ilead;
   const sims = useMemo(() => [...store.sims].sort((a, b) => b.updatedAt - a.updatedAt), [store.sims]);
 
@@ -41,8 +42,9 @@ export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpe
             {line.items.map((item) => {
               const active = item === 'Simulations';
               return (
-                <button key={item} type="button" className={`rail-item ${active ? 'active' : ''}`} aria-disabled={!active} aria-current={active ? 'page' : undefined} title={active ? '' : 'Not part of this prototype'}>
+                <button key={item} type="button" className={`rail-item ${active ? 'active' : ''} ${soon === item ? 'soon-on' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => setSoon(active ? null : item)}>
                   {item}
+                  {!active && <span className="soon-tag">Soon</span>}
                 </button>
               );
             })}
@@ -51,6 +53,15 @@ export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpe
       </nav>
       <main className="main">
         <div className="page stack" style={{ '--gap': '28px' }}>
+          {soon && (
+            <div className="callout" role="status">
+              <span className="ic" aria-hidden="true">i</span>
+              <div className="grow row spread">
+                <span><strong>{soon}</strong> is part of GenieKreator {PRODUCT_LINES.find((l) => l.items.includes(soon))?.name}. This prototype covers Experience &gt; Simulations only, so {soon} is not available here yet.</span>
+                <Button size="sm" onClick={() => setSoon(null)}>OK</Button>
+              </div>
+            </div>
+          )}
           <SectionHead eyebrow="Experience" title="Simulations">
             Build a simulation from a proven template, fit it to your client's world, check that it rewards the right behaviour, then publish.
           </SectionHead>
@@ -60,7 +71,7 @@ export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpe
               <div className="stack" style={{ '--gap': '2px', minWidth: 0 }}>
                 <span className="eyebrow">Resume where you left off</span>
                 <strong>{flowDraft.profile?.orgName?.trim() ? `iLead for ${flowDraft.profile.orgName}` : 'A new iLead simulation'}</strong>
-                <span className="small muted">Step {(flowDraft.step || 0) + 1} of 6 · saved {ago(flowDraft.at)}{flowDraft.brief?.instructions ? ` · "${flowDraft.brief.instructions.slice(0, 70)}${flowDraft.brief.instructions.length > 70 ? '…' : ''}"` : ''}</span>
+                <span className="small muted">Step {flowDraft.flow === 3 ? (flowDraft.step || 0) + 1 : [1, 2, 3, 3, 3, 3][flowDraft.step || 0]} of 3 · saved {ago(flowDraft.at)}{flowDraft.brief?.instructions ? ` · "${flowDraft.brief.instructions.slice(0, 70)}${flowDraft.brief.instructions.length > 70 ? '…' : ''}"` : ''}</span>
               </div>
               <div className="row nowrap">
                 {confirm === 'draft' ? (

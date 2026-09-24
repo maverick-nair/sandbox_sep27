@@ -151,7 +151,7 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
               <Button variant="ghost" size="sm" onClick={onExit} tip={TIPS.all} tipAlign="start">All simulations</Button>
               {sim.status === 'published' ? <Pill tone="accent">Published v{sim.versions.at(-1)?.version}{sim.updatedAt > (sim.publishedAt || sim.versions.at(-1)?.at || 0) ? ' · unpublished changes' : ''}</Pill> : <Pill>Draft</Pill>}
               <span className={`save-state ${store.save.state === 'error' ? 'error' : ''}`} role="status" aria-live="polite">{SAVE_LABEL[store.save.state]}</span>
-              <Button size="sm" variant="ghost" disabled={!history.current.past.length} onClick={undo} tip={TIPS.undo} tipAlign="start">Undo</Button>
+              {history.current.past.length > 0 && <Button size="sm" variant="ghost" onClick={undo} tip={TIPS.undo} tipAlign="start">Undo</Button>}
             </div>
             <div className="row">
               <Tip text={TIPS.engine}><Switch checked={advanced} onChange={setAdvanced} label="Show engine settings" /></Tip>

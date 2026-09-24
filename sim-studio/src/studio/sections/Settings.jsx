@@ -7,12 +7,11 @@ import { Button, Callout, Field, NumberInput, Pill, SectionHead, Switch, copyTex
 
 // Delivery options the runtime does not serve yet in this prototype. They are recorded on the
 // definition so the choice travels with it, and labelled so no one expects them to work today.
-const Planned = () => <Pill tone="warn" title="Recorded with the simulation; the runtime for this is not built in the prototype yet.">Planned</Pill>;
+const Planned = () => <Pill title="Not built in this prototype yet.">Coming soon</Pill>;
 
 const LANGUAGES = { en: 'English', hi: 'Hindi', 'zh-Hans': 'Chinese (Simplified)', es: 'Spanish', fr: 'French', ja: 'Japanese', ar: 'Arabic', de: 'German' };
 
 export default function Settings({ def, update, advanced, notify }) {
-  const [lang, setLang] = useState('hi');
   const [json, setJson] = useState('');
   const [importError, setImportError] = useState('');
   const strings = collectTexts(def).filter((t) => t.text).length;
@@ -67,12 +66,12 @@ export default function Settings({ def, update, advanced, notify }) {
         <h3>Delivery</h3>
         <div className="grid cols-2">
           <Switch checked={def.delivery.individual} onChange={(v) => update((d) => { d.delivery.individual = v; })} label="Individual play" />
-          <span className="row nowrap"><Switch checked={def.delivery.group} onChange={(v) => update((d) => { d.delivery.group = v; })} label="Group play with a group report" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={def.delivery.leaderboard} onChange={(v) => update((d) => { d.delivery.leaderboard = v; })} label="Leaderboard among peers" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={def.delivery.lti} onChange={(v) => update((d) => { d.delivery.lti = v; })} label="Launch from an LMS over LTI" /><Planned /></span>
-          <span className="row nowrap"><Switch checked={def.delivery.scorm} onChange={(v) => update((d) => { d.delivery.scorm = v; })} label="SCORM package download" /><Planned /></span>
+          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Group play with a group report" /><Planned /></span>
+          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Leaderboard among peers" /><Planned /></span>
+          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="Launch from an LMS over LTI" /><Planned /></span>
+          <span className="row nowrap"><Switch checked={false} disabled onChange={() => {}} label="SCORM package download" /><Planned /></span>
         </div>
-        <p className="small muted">Individual play is what the prototype runs. Group play, leaderboards, LTI and SCORM are saved with the simulation for the production runtime.</p>
+        <p className="small muted">Learners play individually in this prototype. Group play, leaderboards, LTI and SCORM come with the production runtime.</p>
         <Callout>Legacy iLead ran separate code and databases for LTI, the Bajaj LTI org, Accenture, HR and the Chinese version. Here each of those is a setting or a variant of one simulation, served by one engine.</Callout>
       </div>
 
@@ -91,13 +90,7 @@ export default function Settings({ def, update, advanced, notify }) {
             </div>
           ))}
         </div>
-        <div className="row nowrap">
-          <select className="select" style={{ maxWidth: 240 }} value={lang} aria-label="Language to add" onChange={(e) => setLang(e.target.value)}>
-            {Object.entries(LANGUAGES).filter(([k]) => !def.delivery.languages.includes(k)).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-          <Button onClick={() => update((d) => { if (!d.delivery.languages.includes(lang)) d.delivery.languages.push(lang); })}>Add language</Button>
-        </div>
-        <p className="small muted">Every string is keyed, so a language is a translation layer over the same simulation. Production drafts translations with Genie for a reviewer to approve; the legacy language insertion script is retired.</p>
+        <p className="small ink2">Adding languages is coming soon. The simulation's {strings} strings are already keyed so each language can be a translation of this same simulation.</p>
       </div>
 
       <div className="card stack">

@@ -191,3 +191,10 @@ test('QA-22 the brief is not part of the definition', () => {
   const def = createIleadDefinition();
   assert.equal(def.meta.brief, undefined);
 });
+
+test('a described organization is not taken as its name', () => {
+  const r = read('A 60-minute simulation for team leads at a solar company in Lagos selling rooftop systems to households.');
+  assert.equal(r.profile.orgName, '');
+  assert.ok(r.missing.includes('orgName'));
+  assert.equal(read('for team leads at acme logistics in dubai').profile.orgName, 'Acme Logistics');
+});

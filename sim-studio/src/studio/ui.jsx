@@ -131,11 +131,11 @@ export function NumberInput({ value, onChange, min, max, step = 1, className = '
   );
 }
 
-export function Switch({ checked, onChange, label, id }) {
+export function Switch({ checked, onChange, label, id, disabled }) {
   const auto = useId();
   return (
-    <label className="switch" htmlFor={id || auto}>
-      <input id={id || auto} type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
+    <label className="switch" htmlFor={id || auto} style={disabled ? { opacity: 0.6, cursor: 'default' } : undefined}>
+      <input id={id || auto} type="checkbox" checked={!!checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       {label && <span>{label}</span>}
     </label>
   );
