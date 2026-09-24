@@ -1,0 +1,191 @@
+# GenieKreator Sim Studio: product spec
+
+Experience > Simulations authoring, with iLead as the first template.
+
+Status: prototype built (this folder). Owner: Product. Last updated: September 2026.
+
+## 1. Why this exists
+
+iLead is one of KNOLSKAPE's longest-running simulations, but the legacy product cannot be configured by anyone outside engineering. The documents show why:
+
+- **Every variant was a fork.** The server map lists separate code and databases for iLead-flex live and test, iLead v2, Accenture, Bajaj LTI, LTI public, HR, Chinese and a 2014 deployment. A storyline insertion script and a language insertion script existed, and both are now marked deprecated.
+- **The rules lived in people's heads.** The model document explains the logic in prose; the content workbook holds the numbers; the two disagree in several places (section 8).
+- **Content was duplicated to handle gender.** Every event and message exists as a male copy and a female copy.
+- **Nobody could tell whether a change broke the balance.** There was no way to know, before learners played, whether the target was reachable or whether a careless player could hit it too.
+
+The Studio turns iLead into a **template**: one engine, many storylines, every client variant a configuration. Authors change the world, the people, the words and the difficulty. The engine keeps the learning logic intact and tells them when a change undermines it.
+
+## 2. Who uses it
+
+| Persona | Goal | What they need from the Studio |
+|---|---|---|
+| **Delivery consultant** (most frequent) | Fit iLead to a client in an afternoon | Quick start, one-click re-skin, a clear list of what still says "elevator", a publish button |
+| **Instructional designer** | Shape the learning design | Team composition, events, responses and report copy, with the numbers hidden until needed |
+| **Simulation designer** (expert) | Tune the model | Every impact, probability and formula, and a balance check to prove the result |
+| **Partner or client admin** (GenieKreator licence) | Build their own variant | Guardrails: health check, balance check, versioning |
+| **Learner** (end user) | Experience a fair, believable simulation | Consistent names, working copy, a target that is hard but reachable |
+
+## 3. Product principles
+
+1. **Start from a working simulation, never a blank page.** Every draft is playable from the first second.
+2. **Say what the learner will experience, not what the engine does.** "Wait before reuse (days)" instead of "restriction"; "Both reads off" instead of "mismatch type 2".
+3. **Progressive disclosure in three layers.** Quick start (2 minutes) → Studio (plain controls) → Engine settings (a single toggle reveals every number).
+4. **Change one thing, and everything that depends on it moves too.** Shortening the session moves events, trigger check points, lead inflow and the target together. Renaming the company updates every string.
+5. **Prove it before you publish.** A health check on every edit and a bot-driven balance check replace "play it five times and hope".
+6. **Variants are settings, not copies.** Language, delivery channel, client and difficulty are layers over one definition.
+
+## 4. Information architecture
+
+```
+GenieKreator
+├── Evaluate:   Conversation AI · Nano AI · PitchPerfect AI
+├── Educate:    AI Microlearn · Interactive Learn
+├── Experience: Simulations (this spec) · AI RolePlay
+└── Enable:     AI Koach
+
+Experience > Simulations
+├── Template gallery (iLead + storylines, planned templates)
+├── Your simulations (status, health, version)
+├── Quick start wizard (4 steps)
+└── Studio (per simulation)
+    ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
+    ├── Build: Story and context · Funnel and target · Team · Leadership model · Actions · Events · Report
+    ├── Ship:  Settings and delivery (length, difficulty, channels, languages, definition file)
+    └── Test:  Balance check · Play as learner
+    Always available: Health check · Publish (versions, restore)
+```
+
+## 5. Key workflows
+
+### 5.1 Re-skin iLead for a client (target: under 15 minutes)
+
+1. **Use this template** → Quick start.
+2. **Purpose:** name, audience, session length (45, 60 or 90 minutes), difficulty.
+3. **Context:** pick an industry sample or type names. The welcome letter previews live.
+4. **Funnel:** keep the legacy stages or apply a preset (Inside sales, Key accounts).
+5. **Review** → Create draft. If the industry changed, the Studio opens on the **rewrite list**: the items whose situations only make sense in the original world (an elevator accident, a microprocessor feature). Names are already done.
+6. Run the **balance check**, apply the suggested target if offered.
+7. **Publish** with a change note.
+
+### 5.2 Design a harder variant for senior leaders
+
+Settings → Difficulty: Challenging (wrong styles land 75% of the time, target +15%, wider randomness) → Team: move two people into the high-skill, low-morale quadrant → Balance check confirms the skilled leader still reaches target.
+
+### 5.3 Fix legacy content gaps
+
+Health check lists "Missing copy: Style insight, Low use / High accuracy" for all four styles (the legacy workbook literally contains `$$$$$-------NO STRING AVAILABLE--------$$$$$$`). "Go to report" opens the style grid with the four empty cells marked **Write this**.
+
+### 5.4 Ship a new language
+
+Settings → Languages → Add. Every string is keyed, so a language is a translation layer with a coverage count, not a new deployment. (Production: Genie drafts, a reviewer approves.)
+
+## 6. How complexity is hidden
+
+| Legacy concept | What the author sees | Where the real value lives |
+|---|---|---|
+| Actor phase SMP table (20 people × 5 phases × 3 values) | Person cards with bars and a "Needs Directing" chip; a **diagnosis map** plotting the team on skill × morale | Engine settings: a 5 × 3 grid per person |
+| Leadership style numbers 1 to 4 | Named, coloured styles; rename to fit the client's framework | Style skill and morale levels are fixed by the model |
+| Mismatch type 0, 1, 2 | Outcomes named per action ("Style fits", "One read off", "Both reads off"; "Top performer passed over") | Impact numbers per outcome |
+| "60% randomness" | "How often a wrong read shows: 60%" slider | Also an 80 to 120% impact multiplier |
+| Restriction (days) | "Wait before reuse (days)" | Same |
+| Trigger "Impact Condition" prose | A sentence with inline inputs: "When someone's performance is above [70] and a colleague covers the same stage" | Structured rule kind + parameters |
+| Period and sub-period | Week and day on a drag-and-drop timeline | Same |
+| PLACEHOLDER_ACTOR_NAME, male and female copies | Field chips (`{{actor}}`, `{{company}}`), one string, pronouns from the person's profile (he, she or they) | Token renderer |
+| Conversion formula | Visual funnel with pass-on rates, and "if nobody improves, the team converts about 21 (48% of target)" | `output = input × ratio × (avg performance + buffer) / 100` |
+
+## 7. The iLead model, as implemented
+
+Faithful to the Model Document; see `src/engine/engine.js`.
+
+- **Time.** `weeks × daysPerWeek` (legacy 12 × 5). Monday: the learner sets a style for every team member. Actions cost days. Every elapsed day runs the funnel.
+- **Needed style.** Skill and morale against the high threshold (70): low/low Directing, low/high Guiding, high/low Partnering, high/high Entrusting.
+- **Style difference.** 0 if both reads are right, 1 if one is, 2 if neither is. **Mismatch** = difference, shown with probability *mismatchChance* (60%), otherwise 0.
+- **Action mechanics** (the author picks content, not code):
+  - *Style choice* (Meet the team, Meet face to face, Set goals, Coach, Give feedback): option style vs needed style.
+  - *Team energiser* (Team lunch, Team building): this week's intended style vs needed style.
+  - *Recognition by trend* (emails): performance now vs 10 days ago.
+  - *Training*: this week's style, with the probability table from the model document; person away for 3 or 5 days.
+  - *Role change* (reassign, swap): profile values for the new stage ± 6.
+  - *Hire*, *Fire* (everyone else reacts with the Mixed outcome), *Assess* (estimates ± 6), *Reward* (top performer resents a reward given to someone else).
+- **Impact** = outcome impact × random factor (0.8 to 1.2), clamped to 0..100.
+- **Events** hit the team (or one person) on a set day; softer when the week's style fits the person.
+- **Triggers**: six rule kinds covering all nine legacy triggers, with check points and a maximum count.
+- **Funnel**: `output = input × pass-on rate × min(1, (avg stage performance + buffer) / 100)`, stage by stage. People away do not count.
+- **Report**: five competencies mapped to the Skills Ontology (A1.1.1 to A1.1.5), objective band, adaptability band, per-style use × accuracy insights, action insights, consistency, reflection questions.
+
+## 8. What the migration found in the legacy content
+
+| Finding | Resolution |
+|---|---|
+| "Con - Leadership Style" sheet lists Partnering as High skill / **High** morale | Model document wins: High skill / Low morale |
+| All four styles have `NO STRING AVAILABLE` for Low use / High accuracy | Flagged as errors in the Report section |
+| Cooldowns differ: model doc says Team building 8 days, Hire 8 days; workbook says 20 and 10 | Workbook kept; open question |
+| Model doc says everyone reacts negatively to a firing; workbook impacts are all zero | Warning with a one-click fix |
+| Three general events have period 0 and never fire | Kept in the library, unscheduled |
+| Role change after "2 months" (generic doc) vs 4 weeks (workbook) | Workbook kept |
+| Emails and reassignments store negative copy under outcome 2 although the model defines only 0 and 1 | Engine falls back to the nearest outcome with copy; warning shown |
+| "Desmond Marta" vs "Desmond Mart" | Stats sheet name kept |
+| Male and female copies of every string | Merged with pronoun tokens |
+
+## 9. Assumptions to confirm with the original iLead team
+
+Values the documents do not contain. Each ships with a default, is listed on the Overview page, and can be marked confirmed.
+
+1. Weekly lead inflow (defaults ramp 200 → 300 leads a week).
+2. Performance buffer in the conversion formula (default 20).
+3. Value per conversion and target (USD 50,000; target 45, calibrated by the balance check).
+4. Impact of the weekly style decision (small positive when right, small negative when wrong).
+5. Which reassign response fires (positive when the new stage suits the person better).
+6. Competency score formulas.
+7. Event multiplier by weekly style fit (0.5, 1, 1.5).
+8. "Performance decreasing for N weeks" read as a net drop of 5 points or more.
+
+## 10. Balance check
+
+Four bots each play N full, seeded runs of the exact definition:
+
+| Bot | Behaviour | Question it answers |
+|---|---|---|
+| Adaptive leader | Reads everyone correctly; greedy expected-value action choice; restructures early | Is the target reachable at all? |
+| One-style leader | Directing with everyone, busy with one-to-ones | Can a single habit win? |
+| Guessing leader | Random styles and actions | Does good leadership matter? |
+| Hands-off leader | Random styles, no actions | What does the team do alone? |
+
+Verdicts: *too hard* (adaptive < 110% of target), *too easy* (> 170%), *does not reward adapting* (weaker bots within 80% of the adaptive one). Each comes with a one-click fix. The suggested target puts the adaptive bot at about 130%, because learners have to infer what the bot can see.
+
+Legacy defaults (12 weeks, target 45): adaptive 137%, one-style 44%, guessing 31%, hands-off 18%. About 80 runs take roughly one second in the browser.
+
+## 11. Data model
+
+One JSON **Simulation Definition** (`schema: 1`) per simulation: `meta`, `context` (entities, industry, situation words), `story`, `timeline`, `leadership`, `stages`, `funnel`, `team`, `actors`, `actions`, `events`, `triggers`, `randomness`, `report`, `delivery`. A **record** wraps it with status, versions (immutable snapshots with notes) and the last balance result. The runtime plays a definition; a run state is a separate serializable object with a seeded RNG, so any run can be replayed exactly.
+
+## 12. Generalizing beyond iLead
+
+The Studio shell (gallery, wizard, sections, health, balance, preview, publish) is template-agnostic. A template supplies: a definition builder, the mechanic library for its actions, its rule kinds, its bots and its section editors. iLead's "people × stages × styles" pattern also fits iLead PM and the HR storyline directly; Build Your Business, Trust sim, F1 Sim, Design Thinking and Agile Simulation each need their own mechanic library.
+
+## 13. Out of scope for the prototype, needed for production
+
+- Backend persistence, roles and review workflow (prototype uses browser storage).
+- "Rewrite with Genie" and "Translate with Genie" (the prototype lists items and lets authors edit).
+- Group report, leaderboard and cohort data (settings exist; no runtime yet).
+- LTI and SCORM packaging.
+- Migration of the other five legacy storylines (the script in `scripts/extract_ilead.py` handles one workbook; each storyline needs its workbook).
+- GenieTracker integration of competency scores via the ontology codes.
+
+## 14. Success measures
+
+| Measure | Target |
+|---|---|
+| Time to publish a client re-skin | Under 15 minutes (legacy: a developer ticket) |
+| Share of published variants with a passing balance check | 95% |
+| Engineering tickets for content changes | Near zero |
+| Learner-reported "unfair or confusing" in post-sim survey | Below legacy baseline |
+| Published variants per quarter per consultant | Tracked; expected to rise sharply |
+
+## 15. Open questions
+
+1. Do we keep the workbook cooldowns (20 and 10 days) or the model document's (8 and 8)?
+2. Should firing carry a cost by default? The model document says yes; the workbook says no.
+3. Should learners see skill and morale directly, only after Assess, or only as colour bands? (Legacy shows RAG bands.)
+4. Should "they/them" be offered for actors given verb agreement in legacy copy ("They blames")? Prototype offers it; copy review needed.
+5. Who can change engine settings in a partner-licensed tenant?

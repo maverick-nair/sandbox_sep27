@@ -1,3 +1,5 @@
+> This repository also contains **GenieKreator Sim Studio** in [`sim-studio/`](sim-studio/): the Experience > Simulations authoring tool with iLead as its first template. See [`sim-studio/README.md`](sim-studio/README.md).
+
 # LAUNCH WINDOW
 
 The KNOLSKAPE AI Product Management sandbox. A browser-based, gamified capstone in which the learner joins Helios Works as its first AI Product Manager and has one quarter (eight sprints) to take "Helios Assist" from idea to a governed, profitable launch.

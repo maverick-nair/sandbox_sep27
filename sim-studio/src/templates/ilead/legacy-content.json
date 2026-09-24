@@ -1,0 +1,4111 @@
+{
+ "source": "4484db10-iLead_International_Sales_Elevator_-_Full_content.xlsx",
+ "story": {
+  "name": "Sales Elevator International - English",
+  "welcome": "Welcome on board {{company}}! As you know, {{company}} is a relatively small company with a vision to revolutionize the Elevator industry through state-of-the-art innovations. We have three products in our portfolio, the {{product_2}}, the {{product_3}} and the recently launched {{product}}. Your role will be to lead the sales team of {{product}}. Your predecessor was a complete misfit and left the team in shatters. He could not inspire the team to get their act right and our board trusts that your leadership experience will turn the team around. Information on the {{product}}, the parameters on which you will be assessed are attached.\nGood Luck! \n{{ceo}}. \nCEO, {{company}}",
+  "overview": "{{product}} is the most recent addition to our product portfolio and we consider it to be one of our star products. {{product}} provides highest levels of reliability, convenience and its modular construction makes it very easy to maintain for our customers. We have been working on this product for the last two years and we believe this will be a step forward not only for the company but for the industry.\nInitial feedback of the {{product}} has been encouraging and we believe that if you can motivate and inspire our sales team to perform at their best we can make {{product}} a star product for {{company}}. We are counting on the sales of {{product}} in order to achieve our end-of-year targets.",
+  "target": "The target we've set for you are quite modest. You should not only meet but surpass them by a big margin! Good Luck!"
+ },
+ "briefing": [
+  "As a people leader, one of your primary objectives is to help your team members perform at their best.",
+  "But how do you do this? Is there a recipe for ‘perfect’ leadership style one could adopt? Do you have to be hands on, hands off or follow any specific style with your team? The answer is ‘It depends!’.",
+  "Your approach on how to lead your team will depend on each team member’s skill and morale. In other words, great performance doesn’t happen when your team members need to adapt to your approach, but when you adapt to your team members’ needs.",
+  "There are essentially 4 different leadership styles:",
+  "DIRECTING- Give in-depth instructions to team member and hand-hold for execution.",
+  "GUIDING-Give guidance to team member as and when needed and seek buy-in to complete the task.",
+  "PARTNERING-Actively encourage and support team member in achieving task and take collaborative decisions.",
+  "ENTRUSTING - Delegate task by providing big picture and enable the team member to act independently.",
+  "Now that you know about the four different leadership styles, it is time to apply this learning in a virtual simulation - iLead. iLead is an award-winning, experiential simulation created by KNOLSKAPE, in which you will play a role of a Sales Lead handling a team of 10 members. Your objective in the simulation is to achieve target number of sales conversions and revenue within a specified duration.",
+  "To achieve this objective, you need to understand your team members needs and adapt your style accordingly. The simulation provides you various day-day actions that will help you interact with your team members as the time progresses. These actions when taken appropriately will improve your team members’ skill and morale, which further yields in good performance and results.",
+  "Good luck!"
+ ],
+ "walkthrough": [
+  {
+   "title": "Tic Tock",
+   "text": "This is your first day! You have limited time to turnaround the team and achieve the targets!",
+   "group": "Introduction Walkthrough"
+  },
+  {
+   "title": "Meet Your Team",
+   "text": "You will be working with different roles/phases across your team. Focus on all these phases to reach your goals. For more information about each phase, hover on (i) icon.",
+   "group": ""
+  },
+  {
+   "title": "Know your team member",
+   "text": "Click on each team member to uncover their background information. You need to know about atleast 3 team members before you can click on 'Proceed' button.",
+   "group": ""
+  },
+  {
+   "title": "History",
+   "text": "The results of all interactions with your team member will be logged in this column. Access this space any time you want.",
+   "group": "Actor Dialogue walkthrough"
+  },
+  {
+   "title": "Actions",
+   "text": "You can use any of these actions to interact with your team member individually.",
+   "group": ""
+  },
+  {
+   "title": "Leadership Style",
+   "text": "Click here to set your leadership style with your team member. Make sure you do this for your entire team at the beginning of every week before clicking on 'Proceed' button.",
+   "group": "Set Leadership Style WAlkthrough"
+  },
+  {
+   "title": "Objectives & Tutorial",
+   "text": "You can revisit Objectives and Tutorial anytime from here.",
+   "group": "Dashboard Walkthrough"
+  },
+  {
+   "title": "Leaderboard",
+   "text": "Access this to see how well you are doing amongst your peers.",
+   "group": ""
+  },
+  {
+   "title": "Notifications",
+   "text": "Keep watching this space to view your team's responses to your actions, as well as future events. You can also view your past actions and responses from here by clicking on 'View History'.",
+   "group": ""
+  },
+  {
+   "title": "Team Performance",
+   "text": "Keep track of your team's collective performance here. Strive hard to improve these metrics.",
+   "group": ""
+  },
+  {
+   "title": "Target",
+   "text": "Leading your team successfuly will help you achieve your goal. Track how close you are to achieving your goal.",
+   "group": ""
+  },
+  {
+   "title": "Analysis",
+   "text": "Click here to analize your phase-wise performance. Follow the funnel and take wise decisions!",
+   "group": ""
+  },
+  {
+   "title": "Actions",
+   "text": "Interact with your team using the list of actions here. Choose wisely!",
+   "group": ""
+  },
+  {
+   "title": "Action duration",
+   "text": "Don't forget to make a note of the duration of the actions you are choosing.",
+   "group": "Action Walkthrough"
+  }
+ ],
+ "stages": [
+  {
+   "name": "Sales lead",
+   "description": "Team members in this role are responsible for making initial contact with companies and collecting potential leads who may be interested in {{product}}.",
+   "conversion": "60-65%"
+  },
+  {
+   "name": "Qualify",
+   "description": "Once sales leads are collected, team members in this role apply certain parameters to the companies to check if they qualify to be potential customers.",
+   "conversion": 0.5
+  },
+  {
+   "name": "Proposal",
+   "description": "Once companies qualify, team members in this role send out proposals with pricing and service level agreements.",
+   "conversion": 0.3
+  },
+  {
+   "name": "Negotiate",
+   "description": "Negotiations with clients may happen with companies for price or for service agreements.",
+   "conversion": 0.5
+  },
+  {
+   "name": "Conversion",
+   "description": "Upon successful negotiation between client and {{company}}, team members responsible for conversion take over and process the order management system.",
+   "conversion": 0.5
+  }
+ ],
+ "styleSheet": [
+  {
+   "skill": "Low",
+   "morale": "Low",
+   "name": "Directive",
+   "definition": "You are direct with team member and give in-depth instructions."
+  },
+  {
+   "skill": "Low",
+   "morale": "High",
+   "name": "Guiding",
+   "definition": "Seek buy-in from team member to complete the task."
+  },
+  {
+   "skill": "High",
+   "morale": "High",
+   "name": "Partnering",
+   "definition": "Encourage team member and help in achieving task."
+  },
+  {
+   "skill": "High",
+   "morale": "High",
+   "name": "Entrusting",
+   "definition": "Delegate by providing big picture and monitor progress."
+  }
+ ],
+ "gameMath": [
+  [
+   "Threshold for Skill, Moral",
+   ">=70 - High",
+   "<70 - Low"
+  ],
+  [
+   "Threshold for Skill, Moral - Red,amber, green",
+   "<50 - Red",
+   ">=50 n <70 - Amber"
+  ]
+ ],
+ "actors": [
+  {
+   "name": "Kent Goldberg",
+   "active": true,
+   "startStage": "Sales Lead",
+   "stats": {
+    "Sales Lead": {
+     "s": 30.0,
+     "m": 22.0,
+     "p": 49.0
+    },
+    "Qualify": {
+     "s": 14.0,
+     "m": 15.0,
+     "p": 14.0
+    },
+    "Proposal": {
+     "s": 22.0,
+     "m": 24.0,
+     "p": 24.0
+    },
+    "Negotiate": {
+     "s": 43.0,
+     "m": 38.0,
+     "p": 40.0
+    },
+    "Conversion": {
+     "s": 29.0,
+     "m": 28.0,
+     "p": 21.0
+    }
+   },
+   "joined": "1 month ago",
+   "experience": "3 years",
+   "domain": "Lead Generation, Negotiation",
+   "bio": "He expected a lot more from his current job and has already started complaining to others about his job.",
+   "profileName": "Kent Goldberg"
+  },
+  {
+   "name": "Beth Killiney",
+   "active": true,
+   "startStage": "Sales Lead",
+   "stats": {
+    "Sales Lead": {
+     "s": 25.0,
+     "m": 73.0,
+     "p": 45.0
+    },
+    "Qualify": {
+     "s": 40.0,
+     "m": 41.0,
+     "p": 40.0
+    },
+    "Proposal": {
+     "s": 34.0,
+     "m": 35.0,
+     "p": 35.0
+    },
+    "Negotiate": {
+     "s": 28.0,
+     "m": 29.0,
+     "p": 28.0
+    },
+    "Conversion": {
+     "s": 25.0,
+     "m": 27.0,
+     "p": 25.0
+    }
+   },
+   "joined": "6 months ago",
+   "experience": "3 years",
+   "domain": "Lead Generation, Lead Qualification",
+   "bio": "{{rival}} is {{company}}'s closest rival. She decided to switch companies mainly due to her unhappiness with the management of {{rival}}.",
+   "profileName": "Beth Killiney"
+  },
+  {
+   "name": "Justin Keel",
+   "active": true,
+   "startStage": "Qualify",
+   "stats": {
+    "Sales Lead": {
+     "s": 18.0,
+     "m": 17.0,
+     "p": 17.0
+    },
+    "Qualify": {
+     "s": 22.0,
+     "m": 40.0,
+     "p": 52.0
+    },
+    "Proposal": {
+     "s": 32.0,
+     "m": 39.0,
+     "p": 25.0
+    },
+    "Negotiate": {
+     "s": 10.0,
+     "m": 40.0,
+     "p": 20.0
+    },
+    "Conversion": {
+     "s": 20.0,
+     "m": 88.0,
+     "p": 40.0
+    }
+   },
+   "joined": "5 years ago",
+   "experience": "5 years",
+   "domain": "Lead Qualification, Sales Conversion",
+   "bio": "Justin is a Finance Major and is looking for a shift to the Sales Conversion role. He has been in the Lead Qualification role for the past 3 years and wants a change.",
+   "profileName": "Justin Keel"
+  },
+  {
+   "name": "Derick Kaynes",
+   "active": true,
+   "startStage": "Qualify",
+   "stats": {
+    "Sales Lead": {
+     "s": 65.0,
+     "m": 66.0,
+     "p": 61.0
+    },
+    "Qualify": {
+     "s": 70.0,
+     "m": 71.0,
+     "p": 62.0
+    },
+    "Proposal": {
+     "s": 22.0,
+     "m": 25.0,
+     "p": 25.0
+    },
+    "Negotiate": {
+     "s": 28.0,
+     "m": 29.0,
+     "p": 31.0
+    },
+    "Conversion": {
+     "s": 47.0,
+     "m": 49.0,
+     "p": 35.0
+    }
+   },
+   "joined": "3 years",
+   "experience": "6 years",
+   "domain": "Lead Qualification, Lead Generation",
+   "bio": "None.",
+   "profileName": "Derick Kaynes"
+  },
+  {
+   "name": "Green Bell",
+   "active": true,
+   "startStage": "Proposal",
+   "stats": {
+    "Sales Lead": {
+     "s": 65.0,
+     "m": 56.0,
+     "p": 57.0
+    },
+    "Qualify": {
+     "s": 24.0,
+     "m": 22.0,
+     "p": 23.0
+    },
+    "Proposal": {
+     "s": 89.0,
+     "m": 56.0,
+     "p": 69.0
+    },
+    "Negotiate": {
+     "s": 91.0,
+     "m": 81.0,
+     "p": 80.0
+    },
+    "Conversion": {
+     "s": 12.0,
+     "m": 13.0,
+     "p": 12.0
+    }
+   },
+   "joined": "3 years",
+   "experience": "10 years",
+   "domain": "Proposal Design, Negotiation",
+   "bio": "Green Bell has influential contacts to make his proposals work and is the go-to guy in the team for anything proposal related.",
+   "profileName": "Green Bell"
+  },
+  {
+   "name": "Lowe Rex",
+   "active": true,
+   "startStage": "Proposal",
+   "stats": {
+    "Sales Lead": {
+     "s": 46.0,
+     "m": 48.0,
+     "p": 49.0
+    },
+    "Qualify": {
+     "s": 78.0,
+     "m": 72.0,
+     "p": 71.0
+    },
+    "Proposal": {
+     "s": 80.0,
+     "m": 45.0,
+     "p": 67.0
+    },
+    "Negotiate": {
+     "s": 72.0,
+     "m": 35.0,
+     "p": 57.0
+    },
+    "Conversion": {
+     "s": 62.0,
+     "m": 25.0,
+     "p": 47.0
+    }
+   },
+   "joined": "3 years ago",
+   "experience": "3 years",
+   "domain": "Proposal Design, Lead Qualification, Negotiation",
+   "bio": "None.",
+   "profileName": "Lowe Rex"
+  },
+  {
+   "name": "Jack Holt",
+   "active": true,
+   "startStage": "Negotiate",
+   "stats": {
+    "Sales Lead": {
+     "s": 40.0,
+     "m": 45.0,
+     "p": 43.0
+    },
+    "Qualify": {
+     "s": 19.0,
+     "m": 31.0,
+     "p": 20.0
+    },
+    "Proposal": {
+     "s": 20.0,
+     "m": 22.0,
+     "p": 21.0
+    },
+    "Negotiate": {
+     "s": 92.0,
+     "m": 85.0,
+     "p": 95.0
+    },
+    "Conversion": {
+     "s": 71.0,
+     "m": 78.0,
+     "p": 72.0
+    }
+   },
+   "joined": "2 years ago",
+   "experience": "15 years",
+   "domain": "Negotiation, Sales Conversion",
+   "bio": "Jack Holt is a top performer at {{company}} and has received a multitude of positive appraisals from his superiors.",
+   "profileName": "Jack Holt"
+  },
+  {
+   "name": "Peter Higgins",
+   "active": true,
+   "startStage": "Negotiate",
+   "stats": {
+    "Sales Lead": {
+     "s": 22.0,
+     "m": 23.0,
+     "p": 20.0
+    },
+    "Qualify": {
+     "s": 41.0,
+     "m": 43.0,
+     "p": 44.0
+    },
+    "Proposal": {
+     "s": 30.0,
+     "m": 31.0,
+     "p": 31.0
+    },
+    "Negotiate": {
+     "s": 10.0,
+     "m": 15.0,
+     "p": 16.0
+    },
+    "Conversion": {
+     "s": 63.0,
+     "m": 30.0,
+     "p": 41.0
+    }
+   },
+   "joined": "6 years ago",
+   "experience": "6 years",
+   "domain": "Negotiation, Sales Conversion",
+   "bio": "Peter Higgins is a lawyer by education and switched careers to work for {{company}} in the sales team. His appraisals for the past 2 years have gone down hill. He has been loyal to his job and his managers, but has not added any value and needs encouragement often.",
+   "profileName": "Peter Higgins"
+  },
+  {
+   "name": "Ruth Ether",
+   "active": true,
+   "startStage": "Conversion",
+   "stats": {
+    "Sales Lead": {
+     "s": 24.0,
+     "m": 28.0,
+     "p": 32.0
+    },
+    "Qualify": {
+     "s": 29.0,
+     "m": 29.0,
+     "p": 31.0
+    },
+    "Proposal": {
+     "s": 33.0,
+     "m": 31.0,
+     "p": 35.0
+    },
+    "Negotiate": {
+     "s": 11.0,
+     "m": 12.0,
+     "p": 12.0
+    },
+    "Conversion": {
+     "s": 80.0,
+     "m": 50.0,
+     "p": 65.0
+    }
+   },
+   "joined": "2 years ago",
+   "experience": "2 years",
+   "domain": "Sales Conversion",
+   "bio": "Ruth is a perfectionist and highly skilled in conversion and order processing.",
+   "profileName": "Ruth Ether"
+  },
+  {
+   "name": "Mandy Lobert",
+   "active": true,
+   "startStage": "Conversion",
+   "stats": {
+    "Sales Lead": {
+     "s": 46.0,
+     "m": 35.0,
+     "p": 42.0
+    },
+    "Qualify": {
+     "s": 40.0,
+     "m": 60.0,
+     "p": 45.0
+    },
+    "Proposal": {
+     "s": 65.0,
+     "m": 50.0,
+     "p": 70.0
+    },
+    "Negotiate": {
+     "s": 55.0,
+     "m": 75.0,
+     "p": 66.0
+    },
+    "Conversion": {
+     "s": 60.0,
+     "m": 80.0,
+     "p": 71.0
+    }
+   },
+   "joined": "",
+   "experience": "6 years",
+   "domain": "Sales Conversion, Negotiation",
+   "bio": "Mandy Lobert is popular among her ex-employees to have closed tough deals with clients who had opted for competitor's products.",
+   "profileName": "Mandy Lobert"
+  },
+  {
+   "name": "Ron Hackman",
+   "active": false,
+   "startStage": "Sales Lead",
+   "stats": {
+    "Sales Lead": {
+     "s": 90.0,
+     "m": 69.0,
+     "p": 82.0
+    },
+    "Qualify": {
+     "s": 30.0,
+     "m": 42.0,
+     "p": 20.0
+    },
+    "Proposal": {
+     "s": 34.0,
+     "m": 45.0,
+     "p": 40.0
+    },
+    "Negotiate": {
+     "s": 40.0,
+     "m": 32.0,
+     "p": 35.0
+    },
+    "Conversion": {
+     "s": 10.0,
+     "m": 12.0,
+     "p": 20.0
+    }
+   },
+   "joined": "",
+   "experience": "1 month",
+   "domain": "Lead Generation, Proposal Design",
+   "bio": "Ron is new to {{company}}. Previously, he was working with a telemarketing agency and has 7 years in collecting sales leads.",
+   "profileName": "Ron Hackman"
+  },
+  {
+   "name": "Sheila Frederick",
+   "active": false,
+   "startStage": "Sales Lead",
+   "stats": {
+    "Sales Lead": {
+     "s": 57.0,
+     "m": 27.0,
+     "p": 30.0
+    },
+    "Qualify": {
+     "s": 11.0,
+     "m": 12.0,
+     "p": 11.0
+    },
+    "Proposal": {
+     "s": 16.0,
+     "m": 18.0,
+     "p": 15.0
+    },
+    "Negotiate": {
+     "s": 13.0,
+     "m": 14.0,
+     "p": 11.0
+    },
+    "Conversion": {
+     "s": 22.0,
+     "m": 24.0,
+     "p": 25.0
+    }
+   },
+   "joined": "",
+   "experience": "5 years",
+   "domain": "Lead Generation",
+   "bio": "Sheila's previous manager felt she needed to perform better and spend less time chatting in the common area.",
+   "profileName": "Sheila Frederick"
+  },
+  {
+   "name": "Ajit Ram",
+   "active": false,
+   "startStage": "Qualify",
+   "stats": {
+    "Sales Lead": {
+     "s": 43.0,
+     "m": 56.0,
+     "p": 40.0
+    },
+    "Qualify": {
+     "s": 82.0,
+     "m": 99.0,
+     "p": 95.0
+    },
+    "Proposal": {
+     "s": 25.0,
+     "m": 27.0,
+     "p": 30.0
+    },
+    "Negotiate": {
+     "s": 14.0,
+     "m": 15.0,
+     "p": 15.0
+    },
+    "Conversion": {
+     "s": 10.0,
+     "m": 12.0,
+     "p": 11.0
+    }
+   },
+   "joined": "",
+   "experience": "8 years",
+   "domain": "Lead Qualification, Lead Generation",
+   "bio": "Ajit Ram has recommendations from the top management of his previous company and is said to have started the Energize club and is extremely motivated to perform.",
+   "profileName": "Ajit Ram"
+  },
+  {
+   "name": "Nate Benjamin",
+   "active": false,
+   "startStage": "Qualify",
+   "stats": {
+    "Sales Lead": {
+     "s": 49.0,
+     "m": 47.0,
+     "p": 45.0
+    },
+    "Qualify": {
+     "s": 54.0,
+     "m": 40.0,
+     "p": 42.0
+    },
+    "Proposal": {
+     "s": 21.0,
+     "m": 10.0,
+     "p": 10.0
+    },
+    "Negotiate": {
+     "s": 14.0,
+     "m": 19.0,
+     "p": 19.0
+    },
+    "Conversion": {
+     "s": 60.0,
+     "m": 70.0,
+     "p": 70.0
+    }
+   },
+   "joined": "",
+   "experience": "8 years",
+   "domain": "Lead Qualification, Negotiation",
+   "bio": "Nate has strong negotiation skills, but wants to try out a new career in qualifying sales leads.",
+   "profileName": "Nate Benjamin"
+  },
+  {
+   "name": "Desmond Mart",
+   "active": false,
+   "startStage": "Proposal",
+   "stats": {
+    "Sales Lead": {
+     "s": 60.0,
+     "m": 60.0,
+     "p": 71.0
+    },
+    "Qualify": {
+     "s": 22.0,
+     "m": 21.0,
+     "p": 22.0
+    },
+    "Proposal": {
+     "s": 40.0,
+     "m": 45.0,
+     "p": 40.0
+    },
+    "Negotiate": {
+     "s": 10.0,
+     "m": 11.0,
+     "p": 19.0
+    },
+    "Conversion": {
+     "s": 19.0,
+     "m": 19.0,
+     "p": 21.0
+    }
+   },
+   "joined": "",
+   "experience": "5 years",
+   "domain": "Proposal Design, Lead Generation",
+   "bio": "Desmond Mart is sought after for his proposal drafting skills and is known for striking a chord with clients. He has worked with {{company}}'s competitors previously and can get the job done.",
+   "profileName": "Desmond Marta"
+  },
+  {
+   "name": "Rita Sandersky",
+   "active": false,
+   "startStage": "Proposal",
+   "stats": {
+    "Sales Lead": {
+     "s": 19.0,
+     "m": 18.0,
+     "p": 15.0
+    },
+    "Qualify": {
+     "s": 16.0,
+     "m": 20.0,
+     "p": 21.0
+    },
+    "Proposal": {
+     "s": 34.0,
+     "m": 32.0,
+     "p": 35.0
+    },
+    "Negotiate": {
+     "s": 38.0,
+     "m": 50.0,
+     "p": 40.0
+    },
+    "Conversion": {
+     "s": 35.0,
+     "m": 32.0,
+     "p": 33.0
+    }
+   },
+   "joined": "",
+   "experience": "None (5 years of work experience with China Bank)",
+   "domain": "Proposal Design, Negotiation",
+   "bio": "Rita Sandersky has been working as an assistant to the Vice President at an MNC for the past 5 years and has received medium-to-high scores in her appraisals.",
+   "profileName": "Rita Sandersky"
+  },
+  {
+   "name": "Ben Lowinsky",
+   "active": false,
+   "startStage": "Negotiate",
+   "stats": {
+    "Sales Lead": {
+     "s": 39.0,
+     "m": 30.0,
+     "p": 27.0
+    },
+    "Qualify": {
+     "s": 28.0,
+     "m": 30.0,
+     "p": 31.0
+    },
+    "Proposal": {
+     "s": 33.0,
+     "m": 33.0,
+     "p": 31.0
+    },
+    "Negotiate": {
+     "s": 78.0,
+     "m": 58.0,
+     "p": 72.0
+    },
+    "Conversion": {
+     "s": 21.0,
+     "m": 22.0,
+     "p": 22.0
+    }
+   },
+   "joined": "",
+   "experience": "7 years",
+   "domain": "Negotiation, Sales Conversion",
+   "bio": "Ben Lowinsky has had 7 years' experience in negotiations and client transactions and has worked with three of {{company}}'s competitors.",
+   "profileName": "Ben Lowinsky"
+  },
+  {
+   "name": "Nico Arnas",
+   "active": false,
+   "startStage": "Negotiate",
+   "stats": {
+    "Sales Lead": {
+     "s": 23.0,
+     "m": 22.0,
+     "p": 21.0
+    },
+    "Qualify": {
+     "s": 33.0,
+     "m": 39.0,
+     "p": 39.0
+    },
+    "Proposal": {
+     "s": 30.0,
+     "m": 32.0,
+     "p": 32.0
+    },
+    "Negotiate": {
+     "s": 45.0,
+     "m": 90.0,
+     "p": 60.0
+    },
+    "Conversion": {
+     "s": 43.0,
+     "m": 82.0,
+     "p": 70.0
+    }
+   },
+   "joined": "",
+   "experience": "MBA Freshman",
+   "domain": "Negotiation, Sales Conversion",
+   "bio": "Nico Arnas is a freshman out of business school. He was part of the debate and negotiation clubs and is looking for a role in the Negotiation department.",
+   "profileName": "Nico Arnas"
+  },
+  {
+   "name": "Patrick Kent",
+   "active": false,
+   "startStage": "Conversion",
+   "stats": {
+    "Sales Lead": {
+     "s": 30.0,
+     "m": 31.0,
+     "p": 30.0
+    },
+    "Qualify": {
+     "s": 70.0,
+     "m": 79.0,
+     "p": 81.0
+    },
+    "Proposal": {
+     "s": 70.0,
+     "m": 78.0,
+     "p": 70.0
+    },
+    "Negotiate": {
+     "s": 31.0,
+     "m": 39.0,
+     "p": 30.0
+    },
+    "Conversion": {
+     "s": 40.0,
+     "m": 83.0,
+     "p": 63.0
+    }
+   },
+   "joined": "",
+   "experience": "Graduate (Freshman)",
+   "domain": "Sales Conversion, Lead Qualification, Negotiation",
+   "bio": "Patrick Kent is a freshman having just completed his Bachelors in Commerce. He is talented in closing deals and following up with order management processes. He has technical skills and has experience in Tally accounting software.",
+   "profileName": "Patrick Kent"
+  },
+  {
+   "name": "Terrence Paddington",
+   "active": false,
+   "startStage": "Conversion",
+   "stats": {
+    "Sales Lead": {
+     "s": 41.0,
+     "m": 45.0,
+     "p": 45.0
+    },
+    "Qualify": {
+     "s": 55.0,
+     "m": 56.0,
+     "p": 59.0
+    },
+    "Proposal": {
+     "s": 79.0,
+     "m": 71.0,
+     "p": 71.0
+    },
+    "Negotiate": {
+     "s": 62.0,
+     "m": 58.0,
+     "p": 59.0
+    },
+    "Conversion": {
+     "s": 80.0,
+     "m": 65.0,
+     "p": 72.0
+    }
+   },
+   "joined": "",
+   "experience": "None (10 years of work experience with Manchester Business School)",
+   "domain": "Sales Conversion, Proposal Design",
+   "bio": "Terrence Paddington is currently working as a professor of leadership at a business school. He now wants to switch to sales and is expecting a role in the conversion team.",
+   "profileName": "Terrence Paddington"
+  }
+ ],
+ "actions": [
+  {
+   "name": "Meet the team",
+   "description": "Team meeting enables you to meet the team in person and outline your goals for the weeks ahead. You could use the opportunity to gauge feedback from the team members as well. This action will take 1 day to complete.",
+   "condition": "The style difference is calculated by comparing the leadership style (based on the option selected) with actor’s actual leadership style (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Present the overall strategy, get into details of the execution plan and explain the responsibilities of the teams.",
+     "selectPrompt": "",
+     "dayCost": 1.0,
+     "cooldown": 10.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 8.0,
+        "p": 10.0
+       },
+       "messages": [
+        "Looks like your decision to have a team meeting has paid off. Many employees walked away motivated and with a positive outlook to the plans you have outlined. The others are skeptical of your plans but have decided to place trust in you.",
+        "The team meeting was a hit among many team members. They finally felt they had a strong leader to manage the team and were positive of the outcome of your plans. They feel motivated and excited to try and achieve the goals set by you.",
+        "Congrats! The team meeting was a blockbuster! You succeeded in motivating the team and receiving a positive response from a majority of team members"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -5.0,
+        "p": -6.0
+       },
+       "messages": [
+        "Around half of your team members felt wanting more after your team meeting. You had outlined some strategic plans but they felt it was too long term and would wait and watch your leadership style to make any further judgements.",
+        "The team meeting was not entirely a success. A number of your team members have opted to take a wait-and-watch approach to your leadership style. They are not yet confident about your plans and have decided to give their best to the company nonetheless."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -8.0,
+        "p": -10.0
+       },
+       "messages": [
+        "The team meeting you hosted was a disaster! Many of your team members walked away feeling let down by your speech. They felt let down by their leader!",
+        "Many team members walked away from the team meeting calling your plans outlandish and not achievable. They have started losing confidence in your leadership and expect you to make changes to your leadership style.",
+        "Your team meeting backfired! Many in the team don't think your plans can be executed successfully."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Energize the team by giving a pep talk. At the same time, you try to get a buy-in for your strategy and execution plan.",
+     "selectPrompt": "",
+     "dayCost": 1.0,
+     "cooldown": 10.0,
+     "style": 2,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 8.0,
+        "p": 10.0
+       },
+       "messages": [
+        "Looks like your decision to have a team meeting has paid off. Many employees walked away motivated and with a positive outlook to the plans you have outlined. The others are skeptical of your plans but have decided to place trust in you.",
+        "The team meeting was a hit among many team members. They finally felt they had a strong leader to manage the team and were positive of the outcome of your plans. They feel motivated and excited to try and achieve the goals set by you.",
+        "Congrats! The team meeting was a blockbuster! You succeeded in motivating the team and receiving a positive response from a majority of team members"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -5.0,
+        "p": -6.0
+       },
+       "messages": [
+        "Around half of your team members felt wanting more after your team meeting. You had outlined some strategic plans but they felt it was too long term and would wait and watch your leadership style to make any further judgements.",
+        "The team meeting was not entirely a success. A number of your team members have opted to take a wait-and-watch approach to your leadership style. They are not yet confident about your plans and have decided to give their best to the company nonetheless."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -8.0,
+        "p": -10.0
+       },
+       "messages": [
+        "The team meeting you hosted was a disaster! Many of your team members walked away feeling let down by your speech. They felt let down by their leader!",
+        "Many team members walked away from the team meeting calling your plans outlandish and not achievable. They have started losing confidence in your leadership and expect you to make changes to your leadership style.",
+        "Your team meeting backfired! Many in the team don't think your plans can be executed successfully."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Present the overall strategy and ask for feedback.",
+     "selectPrompt": "",
+     "dayCost": 1.0,
+     "cooldown": 10.0,
+     "style": 3,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 8.0,
+        "p": 10.0
+       },
+       "messages": [
+        "Looks like your decision to have a team meeting has paid off. Many employees walked away motivated and with a positive outlook to the plans you have outlined. The others are skeptical of your plans but have decided to place trust in you.",
+        "The team meeting was a hit among many team members. They finally felt they had a strong leader to manage the team and were positive of the outcome of your plans. They feel motivated and excited to try and achieve the goals set by you.",
+        "Congrats! The team meeting was a blockbuster! You succeeded in motivating the team and receiving a positive response from a majority of team members"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -5.0,
+        "p": -6.0
+       },
+       "messages": [
+        "Around half of your team members felt wanting more after your team meeting. You had outlined some strategic plans but they felt it was too long term and would wait and watch your leadership style to make any further judgements.",
+        "The team meeting was not entirely a success. A number of your team members have opted to take a wait-and-watch approach to your leadership style. They are not yet confident about your plans and have decided to give their best to the company nonetheless."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -8.0,
+        "p": -10.0
+       },
+       "messages": [
+        "The team meeting you hosted was a disaster! Many of your team members walked away feeling let down by your speech. They felt let down by their leader!",
+        "Many team members walked away from the team meeting calling your plans outlandish and not achievable. They have started losing confidence in your leadership and expect you to make changes to your leadership style.",
+        "Your team meeting backfired! Many in the team don't think your plans can be executed successfully."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Ask the team to brainstorm on the strategy and the execution plan",
+     "selectPrompt": "",
+     "dayCost": 1.0,
+     "cooldown": 10.0,
+     "style": 4,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 8.0,
+        "p": 10.0
+       },
+       "messages": [
+        "Looks like your decision to have a team meeting has paid off. Many employees walked away motivated and with a positive outlook to the plans you have outlined. The others are skeptical of your plans but have decided to place trust in you.",
+        "The team meeting was a hit among many team members. They finally felt they had a strong leader to manage the team and were positive of the outcome of your plans. They feel motivated and excited to try and achieve the goals set by you.",
+        "Congrats! The team meeting was a blockbuster! You succeeded in motivating the team and receiving a positive response from a majority of team members"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -5.0,
+        "p": -6.0
+       },
+       "messages": [
+        "Around half of your team members felt wanting more after your team meeting. You had outlined some strategic plans but they felt it was too long term and would wait and watch your leadership style to make any further judgements.",
+        "The team meeting was not entirely a success. A number of your team members have opted to take a wait-and-watch approach to your leadership style. They are not yet confident about your plans and have decided to give their best to the company nonetheless."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -8.0,
+        "p": -10.0
+       },
+       "messages": [
+        "The team meeting you hosted was a disaster! Many of your team members walked away feeling let down by your speech. They felt let down by their leader!",
+        "Many team members walked away from the team meeting calling your plans outlandish and not achievable. They have started losing confidence in your leadership and expect you to make changes to your leadership style.",
+        "Your team meeting backfired! Many in the team don't think your plans can be executed successfully."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Energise the team",
+   "description": "Energize your team by either taking them out for a team lunch or organize a 2-day team building activity.",
+   "condition": "The style difference is calculated by comparing the leadership style (which the player set with actor at the start of that week) with actor’s actual leadership style at the start of week (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Team Lunch",
+     "selectPrompt": "",
+     "dayCost": 1.0,
+     "cooldown": 20.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 3.0,
+        "p": 4.0
+       },
+       "messages": [
+        "Lunch outing to {{lunch_venue}} was received well by many people in the team. They felt that we need to do the team lunch more often and try out other cuisines as well. It helped in bringing employees from different departments together and improve bonding.",
+        "With diversity being a characteristic feature of your team, the team lunch was a success as it helped bring the team together. Many felt it would be nice to have few more events such as these to try out other cuisines as well.",
+        "A majority of your team members thanked you for the team lunch. They did not expect to go to such a high-end restaurant and wanted more of such events to keep them energized."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "Lunch outing was received reasonably well by the team. Around half of your team members liked the food, the others disliked it since they were not asked of the lunch venue and felt left out by you.",
+        "Overall, the lunch outing went well. Some did not like the food and some didn't like the choice of restaurant, but overall they enjoyed being away from work together for a while."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": -5.0,
+        "p": -4.0
+       },
+       "messages": [
+        "Many members from your team disliked the team lunch. You had an important meeting with a client and had arrived at the lunch late. They felt left out and felt demotivated as a result.",
+        "Team lunch didn't go well. The place was packed with people, the table you had reserved was taken and the restaurant manager was too busy to listen to your complaints. The team felt demoralized and returned back to office for take-out food.",
+        "Your plan to energize the team by organizing a team lunch backfired! The place you selected lacked hygiene and the food was horrible to taste. Most of the team members decided to abandon the team lunch and decided to eat elsewhere."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Team building activity",
+     "selectPrompt": "",
+     "dayCost": 2.0,
+     "cooldown": 20.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "The team loved the outing! They were thoroughly energized and highly motivated to get back to work. Only a few from the team thought you had spent lavishly on the vacation and was money down the drain.",
+        "Your decision to take the team out for a vacation was timed superbly! A number of your team members felt they needed a break from work and were excited to get back to work. A few felt the location could have been better but still ended up having a good time with the other colleagues.",
+        "The timing of the team building exercise could not have been better. With work pressure daily, many team members did not know each other and utilized the opportunity to bond."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": [
+        "The team vacation received a mixed response. Around half of your team members felt it could have been better had it been organized a little earlier as they had to reschedule their plans.",
+        "There were many who did not like the team vacation..."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -8.0
+       },
+       "messages": [
+        "The planned team-building activity was a managemen...",
+        "Many of your team members were cross that you had ..."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Send email",
+   "description": "From time to time, you may want to reward top performers acknowledging their contribution to the team. Use this dialog to send a congratulatory e-mail. Send a warning e-mail if you find a member not performing up to your expectation.(The mail is an auto-generated mail which goes to the team member/members you have selected.)",
+   "condition": "Calculated by comparing current performance value of the actor with his/her performance 10 days before from the current sub-period",
+   "options": [
+    {
+     "text": "Send warning mail",
+     "selectPrompt": "Select the members, you want to send warning mail to. You can send mail to maximum 3 members at once.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 3.0,
+        "p": 3.0
+       },
+       "messages": [
+        "I have noted your warning mail! I acknowledge what I did was wrong and will take care that it doesn't repeat again.",
+        "I know my performance has been declining over the past few weeks, I'll set things right and get back to higher performance soon.",
+        "I was expecting your warning mail owing to my performance decline over the past week. Why don't you try re-assigning me to another role?"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -7.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": -7.0,
+        "m": -5.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I am sorry, I don't know why I have received a warning note from you. My performance has been on the up for some time now. Can we meet and discuss the warning note. I feel let down by you.",
+        "I want to meet up and discuss the warning mail. I have been consistently hitting targets and my performance has been on the rise while your mail claims the opposite."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Send congratulatory mail",
+     "selectPrompt": "Select the members, you want to send congratulatory mail to. You can send mail to maximum 3 members at once.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 8.0,
+        "p": 8.0
+       },
+       "messages": [
+        "Thank you for your congratulatory note! Really thoughtful of you to pen it that way. I am excited and look forward to many more laurels and achievements.",
+        "I sincerely thank you for your wishes! I want to express my gratitude for recognizing my work and congratulating me. I am excited about the prospects of {{product}} and will strive to perform even better.",
+        "I don't have words to express my gratitude for your congratulatory note. It's a privilege working with you and will put in my best in the coming weeks to achieve our target."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -4.0
+       },
+       "messages": [
+        "I am confused. My performance has just been declining in the past two weeks and I receive a congratulatory note from you. It would be nice if I could meet you and clear the air.",
+        "You have sent me a congratulatory note when my performance has actually been declining. I wish to meet you and clarify my position with you.",
+        "You have congratulated me at a time when my performance is declining! What do I make of this?"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Swap / Reassign roles",
+   "description": "Once you get to know your team better, you may decide to reassign team members according to a task of their liking. Use this dialog to reassign members to different roles in the team.\nNote: You may want to use the assess member action before swapping / re-assigning team members.",
+   "condition": "Each actor has associated skill, motivation and performance values for each phase. The new values are taken based on the new phase selected with a buffer of (+6, -6).",
+   "options": [
+    {
+     "text": "Reassign role",
+     "selectPrompt": "Select a member to reassign.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "I am excited to begin my new role. Thank you for re-assigning.",
+        "Thank you for assigning me to the new role. I am thoroughly pleased with your decision and will perform to the best of my potential.",
+        "Your decision to assign me to this new role couldn't have been timed better. Thank you!"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "You should have thoroughly assessed me before reassigning. I am not sure how to carry out the tasks in the new role and would be good if you could coach me.",
+        "I am disappointed with the re-assignment. I feel you should have consulted me and assessed my capabilities before re-assigning.",
+        "You should have conducted a thorough assessment test before assigning me to this new role."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Swap role",
+     "selectPrompt": "Select two members to swap their roles.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "I want to express my gratitude for reassigning my role. I am new to this role, but excited to perform well and achieve the targets you have set.",
+        "Thank you for entrusting me with the new role. I do believe I can contribute more effectively from here."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "I think you should have based your decision on your assessment of me. I am clueless as to what I need to do next and need further guidance.",
+        "Since you decided to take your decision without assessing me appropriately I urge you to send me for training so that I don't remain clueless in this role for a long period of time. I fear it may hamper other team members' performances."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Send For Training",
+   "description": "Team members always appreciate being trained and equipping themselves with new skills. They get motivated and may result in higher performance in their roles.\nNote: Sending team members for training will impact the productivity of the team this week but hopefully will increase their productivity in the coming weeks.",
+   "condition": "The style difference is calculated by comparing the leadership style (which the player set with actor at the start of that week) with actor’s actual leadership style at the start of week (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Send for 3-day training",
+     "selectPrompt": "Select a maximum of 3 members for 3-day training. You will be able to choose a person only if another person can actively play the same role.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 9.0,
+        "m": 6.0,
+        "p": 8.0
+       },
+       "messages": [
+        "I having been thinking of requesting you to send me for training. It is great that you have decided to do so!"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 5.0,
+        "m": 3.0,
+        "p": 2.0
+       },
+       "messages": [
+        "Thank you for giving me the opportunity to improve my skills. I think I'll benefit from the training, but I am doubtful as to whether I would be using these new skills immediately."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -4.0,
+        "m": -8.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I'm surprised that I am being sent for training despite my efforts and good work."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Send for 1 week workshop",
+     "selectPrompt": "Select a maximum of 3 members for 1-week workshop. You will be able to choose a person only if another person can actively play the same role.",
+     "dayCost": 2.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 8.0,
+        "m": 7.0,
+        "p": 6.0
+       },
+       "messages": [
+        "I having been thinking of requesting you to send me for training. It is great that you have decided to do so!"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 5.0,
+        "m": 6.0,
+        "p": 4.0
+       },
+       "messages": [
+        "Thank you for giving me the opportunity to improve my skills. I think I'll benefit from the training, but I am doubtful as to whether I would be using these new skills immediately."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -3.0,
+        "m": -5.0,
+        "p": -7.0
+       },
+       "messages": [
+        "I'm surprised that I am being sent for training despite my efforts and good work."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Hire member",
+   "description": "You decide to hire fresh talent into the team. We have provided you with the following options. Choose wisely.",
+   "condition": "The hired actor will have the skill, motivation and performance value shown in the profile while hiring. None of the other actors get affected.",
+   "options": [
+    {
+     "text": "",
+     "selectPrompt": "",
+     "dayCost": 2.0,
+     "cooldown": 10.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "The hiring process is a success and the new employee(s) have joined the team."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Fire member",
+   "description": "Use this action to fire a member from a role. Please note that you are required to have atleast one member in the role after the Fire action is taken.",
+   "condition": "All the other actors available in the team get affected. The mismatch type of all the other actors is always 1, and will always respond negatively.",
+   "options": [
+    {
+     "text": "",
+     "selectPrompt": "Select a member to fire.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": []
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "{{actor}} has been fired successfully after an exit interview with {{company}}'s HR manager"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Meet Face to Face",
+   "description": "Conduct face to face meetings with team member to receive feedback on your leadership style and interaction with him or her.",
+   "condition": "The style difference is calculated by comparing the leadership style (based on the option selected) with actor’s actual leadership style (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Get into details of the execution plan and explain the tasks in detail.",
+     "selectPrompt": "Select the member, you want to meet face to face.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "I love the way you keep your cool under tough situations. I am thoroughly inspired by your leadership style and look forward to working with you.",
+        "I am very happy with your leadership style. Please continue to inspire us the way you do and I look forward to hitting all the targets we have set."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": [
+        "With respect to your leadership style, I am happy with some of the interactions we've had and I expect you to change your style on other aspects."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -8.0
+       },
+       "messages": [
+        "I am not happy with the way you have managed me and my time. I feel demotivated most of the times and would urge you to change your leadership style with me.",
+        "It is high time that you changed your leadership style with me. I cannot get things done on time with your current style."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Energize the person by providing emotional support and try to seek an agreement on your execution plan.",
+     "selectPrompt": "Select the member, you want to meet face to face.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 2,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "I love the way you keep your cool under tough situations. I am thoroughly inspired by your leadership style and look forward to working with you.",
+        "I am very happy with your leadership style. Please continue to inspire us the way you do and I look forward to hitting all the targets we have set."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": [
+        "With respect to your leadership style, I am happy with some of the interactions we've had and I expect you to change your style on other aspects."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -8.0
+       },
+       "messages": [
+        "I am not happy with the way you have managed me and my time. I feel demotivated most of the times and would urge you to change your leadership style with me.",
+        "It is high time that you changed your leadership style with me. I cannot get things done on time with your current style."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Discuss the role and performance of the person and ask for feedback.",
+     "selectPrompt": "Select the member, you want to meet face to face.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 3,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "I love the way you keep your cool under tough situations. I am thoroughly inspired by your leadership style and look forward to working with you.",
+        "I am very happy with your leadership style. Please continue to inspire us the way you do and I look forward to hitting all the targets we have set."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": [
+        "With respect to your leadership style, I am happy with some of the interactions we've had and I expect you to change your style on other aspects."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -8.0
+       },
+       "messages": [
+        "I am not happy with the way you have managed me and my time. I feel demotivated most of the times and would urge you to change your leadership style with me.",
+        "It is high time that you changed your leadership style with me. I cannot get things done on time with your current style."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Encourage the person to follow own processes.",
+     "selectPrompt": "Select the member, you want to meet face to face.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 4,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "I love the way you keep your cool under tough situations. I am thoroughly inspired by your leadership style and look forward to working with you.",
+        "I am very happy with your leadership style. Please continue to inspire us the way you do and I look forward to hitting all the targets we have set."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -4.0,
+        "p": -5.0
+       },
+       "messages": [
+        "With respect to your leadership style, I am happy with some of the interactions we've had and I expect you to change your style on other aspects."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -6.0,
+        "p": -8.0
+       },
+       "messages": [
+        "I am not happy with the way you have managed me and my time. I feel demotivated most of the times and would urge you to change your leadership style with me.",
+        "It is high time that you changed your leadership style with me. I cannot get things done on time with your current style."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Assess member",
+   "description": "Assess action helps you to evaluate a team member's expertise and motivation levels with respect to a new role. Prior to reassigning a member, you may use the Assess action to determine the most suited role for him / her.",
+   "condition": "This action is an information related action and does not have impact on any of the actors. Each actor has associated skill, motivation and performance values for each phase. The assessment values for skill, motivation and performance are calculated based on the new phase selected with a buffer of (+6, -6).",
+   "options": [
+    {
+     "text": "",
+     "selectPrompt": "Select a member to assess.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "Assessment was completed successfully. Reassigning {{actor}} to {{stage}} would alter {{his}} Skill level to {{skill}}, Motivation to {{morale}} and Performance to {{performance}}"
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "Assessment was completed successfully. Reassigning {{actor}} to {{stage}} would alter her Skill level to {{skill}}, Motivation to {{morale}} and Performance to {{performance}}"
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": 0.0,
+        "m": 0.0,
+        "p": 0.0
+       },
+       "messages": [
+        "Assessment was completed successfully. Reassigning {{actor}} to {{stage}} would alter her Skill level to {{skill}}, Motivation to {{morale}} and Performance to {{performance}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Reward member",
+   "description": "Awarding bonus to your team members may boost their morale and enhance their performance.",
+   "condition": "This is an individual actor action. But the impact depends upon the actor selected for rewarding.",
+   "options": [
+    {
+     "text": "",
+     "selectPrompt": "Select a member you wish to reward.",
+     "dayCost": 1.0,
+     "cooldown": 20.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 0.0,
+        "m": 6.0,
+        "p": 9.0
+       },
+       "messages": [
+        "I would sincerely like to thank you for the bonus I recently received. This bonus shows the faith you have in my abilities and I am very grateful to you for the same.",
+        "Thank you for the bonus! It has motivated me to perform even better for {{company}}. I am excited to be working here and will strive to achieve higher."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": 0.0,
+        "m": -12.0,
+        "p": -18.0
+       },
+       "messages": [
+        "I was just told that one of my colleagues received a bonus. I am currently your top performer and I feel betrayed that my efforts have gone unrecognized! I will continue to give my best to the company, but I feel let down by your decision.",
+        "Being your top performer, I deserve to know why I was not given the bonus. Is there something I said or did wrong? I am still committed to performing my best for the company, but recognition for my efforts from time to time will help in boosting one's morale."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Set Goals",
+   "description": "Set goals allows you to interact with your team members and to send them tasks and milestones for the upcoming week.",
+   "condition": "The style difference is calculated by comparing the leadership style (based on the option selected) with actor’s actual leadership style (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Send team member's tasks and the milestones for the upcoming week.",
+     "selectPrompt": "Select the member, you want to set goal for.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 3.0,
+        "m": 6.0,
+        "p": 7.0
+       },
+       "messages": [
+        "Nice to know that you keep checking status of my tasks with me.",
+        "I am happy with the plan for the week. If there's any help I need I will come to you personally."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -4.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Seek buy-in from team member for the current week's plan and be available for any help required.",
+     "selectPrompt": "Select the member, you want to set goal for.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 2,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 5.0,
+        "p": 6.0
+       },
+       "messages": [
+        "Nice to know that you keep checking status of my tasks with me.",
+        "I am happy with the plan for the week. If there's any help I need I will come to you personally."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Send the plan for the week and seek inputs on it.",
+     "selectPrompt": "Select the member, you want to set goal for.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 3,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 5.0,
+        "p": 5.0
+       },
+       "messages": [
+        "Nice to know that you keep checking status of my tasks with me.",
+        "I am happy with the plan for the week. If there's any help I need I will come to you personally."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Ask team member what he / she is focusing on this week.",
+     "selectPrompt": "Select the member, you want to set goal for.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 4,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 5.0,
+        "p": 5.0
+       },
+       "messages": [
+        "Nice to know that you keep checking status of my tasks with me.",
+        "I am happy with the plan for the week. If there's any help I need I will come to you personally."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I think I can manage my role myself. When you check status with me it gives me a feeling that you don't have trust in my skills.",
+        "I think you should check status at a different time. It feels like a hindrance to my role and my tasks when I need to update you on the status of my targets."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Coach member",
+   "description": "Take up the role of a coach and help a team member achieve his / her target for the week.",
+   "condition": "The style difference is calculated by comparing the leadership style (based on the option selected) with actor’s actual leadership style (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Handhold the person with the execution plan and provide detailed instructions to deal with the task at hand.",
+     "selectPrompt": "Select the member, you want to coach.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 6.0,
+        "m": 3.0,
+        "p": 7.0
+       },
+       "messages": [
+        "Your coaching session was very useful. I would like to have such sessions with you in the future too.",
+        "You are an excellent coach! I am going to start applying the concepts we discussed straightaway into my role."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -2.0,
+        "m": -1.0,
+        "p": -4.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -5.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Provide detailed guidance on execution and help the person see the importance of your instructions.",
+     "selectPrompt": "Select the member, you want to coach.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 2,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 5.0,
+        "m": 3.0,
+        "p": 6.0
+       },
+       "messages": [
+        "Your coaching session was very useful. I would like to have such sessions with you in the future too.",
+        "You are an excellent coach! I am going to start applying the concepts we discussed straightaway into my role."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -2.0,
+        "m": -1.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -5.0,
+        "m": -2.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Work closely with the person to solve problems collaboratively.",
+     "selectPrompt": "Select the member, you want to coach.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 3,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 3.0,
+        "m": 2.0,
+        "p": 5.0
+       },
+       "messages": [
+        "Your coaching session was very useful. I would like to have such sessions with you in the future too.",
+        "You are an excellent coach! I am going to start applying the concepts we discussed straightaway into my role."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -1.0,
+        "p": -3.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -4.0,
+        "m": -2.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Ask questions to provide clarity to the person.",
+     "selectPrompt": "Select the member, you want to coach.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 4,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 2.0,
+        "p": 4.0
+       },
+       "messages": [
+        "Your coaching session was very useful. I would like to have such sessions with you in the future too.",
+        "You are an excellent coach! I am going to start applying the concepts we discussed straightaway into my role."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -1.0,
+        "p": -2.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -2.0,
+        "p": -1.0
+       },
+       "messages": [
+        "I felt your coaching session was long and not applicable to my role.",
+        "Thanks for taking the time out to coach me. However, I felt it was too short and was not relevant to me."
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Give feedback",
+   "description": "Use this action to give feedback to your team members from time to time. Based on skill and morale levels of team members, some may want to receive feedback more often than others.",
+   "condition": "The style difference is calculated by comparing the leadership style (based on the option selected) with actor’s actual leadership style (calculated based on his/her skill and motivation value).",
+   "options": [
+    {
+     "text": "Provide step-by-step feedback on things that have gone well and things that haven't.",
+     "selectPrompt": "Select the member, you want to give feedback to.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 1,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 3.0,
+        "m": 6.0,
+        "p": 7.0
+       },
+       "messages": [
+        "Your feedback was timely and helped me realize my strengths and weaknesses. Thank you for taking the time.",
+        "Spending time with you to pinpoint where I am performing well and where I am not helped a lot. I am going to ensure that I use the feedback to good effect."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -4.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -3.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Provide detailed feedback on performance and encourage the person to stick to your action plan.",
+     "selectPrompt": "Select the member, you want to give feedback to.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 2,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 5.0,
+        "p": 6.0
+       },
+       "messages": [
+        "Your feedback was timely and helped me realize my strengths and weaknesses. Thank you for taking the time.",
+        "Spending time with you to pinpoint where I am performing well and where I am not helped a lot. I am going to ensure that I use the feedback to good effect."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Collaboratively assess the performance and come up with an action plan.",
+     "selectPrompt": "Select the member, you want to give feedback to.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 3,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 2.0,
+        "m": 5.0,
+        "p": 5.0
+       },
+       "messages": [
+        "Your feedback was timely and helped me realize my strengths and weaknesses. Thank you for taking the time.",
+        "Spending time with you to pinpoint where I am performing well and where I am not helped a lot. I am going to ensure that I use the feedback to good effect."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -3.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -2.0,
+        "m": -3.0,
+        "p": -2.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      }
+     }
+    },
+    {
+     "text": "Ask the person to do self assessment and validate it.",
+     "selectPrompt": "Select the member, you want to give feedback to.",
+     "dayCost": 1.0,
+     "cooldown": 0.0,
+     "style": 4,
+     "outcomes": {
+      "0": {
+       "impact": {
+        "s": 1.0,
+        "m": 3.0,
+        "p": 4.0
+       },
+       "messages": [
+        "Your feedback was timely and helped me realize my strengths and weaknesses. Thank you for taking the time.",
+        "Spending time with you to pinpoint where I am performing well and where I am not helped a lot. I am going to ensure that I use the feedback to good effect."
+       ]
+      },
+      "1": {
+       "impact": {
+        "s": -1.0,
+        "m": -1.0,
+        "p": -2.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      },
+      "2": {
+       "impact": {
+        "s": -1.0,
+        "m": -2.0,
+        "p": -1.0
+       },
+       "messages": [
+        "Your feedback was not very helpful. You could have spent more time explaining to me what I could do better.",
+        "The feedback you provided was not very insightful. I feel like I am performing as per the role given to me."
+       ]
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "name": "Tragic accident",
+   "text": "Tragic accident strikes passengers in a {{product}} elevator in a high-rise in New York. This does damage to the brand, making it hard for the sales team to close sales.",
+   "week": 9,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -8.0,
+    "p": -7.0
+   }
+  },
+  {
+   "name": "Rumors of being acquired",
+   "text": "There are some serious rumors that {{product}} might be acquired by {{competitor}}. The sales team finds it hard to convince customers that there is no risk of products getting abandoned even in case an acquisition might go through.",
+   "week": 6,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -5.0,
+    "p": 0.0
+   }
+  },
+  {
+   "name": "360-degree feedback",
+   "text": "In your 360-degree feedback, employees have mentioned that they're out of energy and are in dire need of a break.",
+   "week": 4,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -4.0,
+    "p": 0.0
+   }
+  },
+  {
+   "name": "Job offer",
+   "text": "{{actor}} gets a job offer from your competitor, {{competitor}}. The fabulous pay package and promotion makes it hard for {{him}} to refuse the offer.",
+   "week": 7,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -5.0,
+    "p": -5.0
+   }
+  },
+  {
+   "name": "New microprocessor in the market",
+   "text": "Engineering has introduced a microprocessor in the elevator that can beam the health of the elevator to service professionals. The sales team has not been educated enough on the new feature that has been introduced. They fumble when customers raise a question on the much-advertised feature.",
+   "week": 0,
+   "day": 0,
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "name": "New CRM system",
+   "text": "Your firm has adopted a new CRM system and employees are forced to input leads electronically. Some are not tech savvy and do not like the change.",
+   "week": 2,
+   "day": 1,
+   "impact": {
+    "s": -1.0,
+    "m": -4.0,
+    "p": -7.0
+   }
+  },
+  {
+   "name": "Tablet PC issue",
+   "text": "Senior management has refused to provide the sales team with a tablet PC. Competitor's sales professionals dazzle prospective clients with slick presentation on their tablets. The sales team is also handicapped due to the lack of real-time information on the road.",
+   "week": 0,
+   "day": 0,
+   "impact": {
+    "s": 0.0,
+    "m": -6.0,
+    "p": -5.0
+   }
+  },
+  {
+   "name": "Performance declines",
+   "text": "{{actor}}'s performance suddenly declines. You find out that due to personal reasons, {{he}}'s not been performing well and could be a roadblock for others to act on their leads.",
+   "week": 3,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -6.0,
+    "p": -10.0
+   }
+  },
+  {
+   "name": "Business process change",
+   "text": "A business process change in the company necessitates stringent sales compliance measures. This has introduced multiple approvals before sales can be closed. The sales team finds itself encumbered with needless paperwork, making them inefficient.",
+   "week": 10,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -9.0,
+    "p": -10.0
+   }
+  },
+  {
+   "name": "Recession strikes",
+   "text": "Recession strikes. Salaries across the company are lowered and you (the {{learner_role}}) are asked to lower salaries of your team members.",
+   "week": 5,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -5.0,
+    "p": -5.0
+   }
+  },
+  {
+   "name": "Sales conference announcement",
+   "text": "CEO announces that this year's sales conference will happen in a local resort, as opposed to the usual exotic destinations. Sales professionals expecting to cool their heels in Hawaii this year are terribly disappointed.",
+   "week": 8,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -4.0,
+    "p": -2.0
+   }
+  },
+  {
+   "name": "Strike at supplier's factories",
+   "text": "The sales team is finding it hard to answer customers whose orders have been delayed due to a strike at one of {{product}}'s supplier's factories.",
+   "week": 11,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -2.0,
+    "p": -3.0
+   }
+  },
+  {
+   "name": "Insider trading scandal",
+   "text": "{{product}}'s long-time board member, {{board_member}}, gets embroiled in an insider trading scandal. This brings a lot of disrepute to the company. {{actor}} tells you that {{he}} is embarrassed to meet clients who often ask {{him}} about the latest developments in the scandal.",
+   "week": 10,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -5.0,
+    "p": 0.0
+   }
+  },
+  {
+   "name": "Training Request",
+   "text": "With new advances in technology, {{actor}} approaches you and has expressed interest in being trained in these skills so as to perform better in {{stage}}.",
+   "week": 0,
+   "day": 0,
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "name": "Elevator review website criticizes",
+   "text": "An elevator review website criticizes the features of {{product}}. It claims that the features already exist in competitor's products and are not innovative.",
+   "week": 3,
+   "day": 1,
+   "impact": {
+    "s": 0.0,
+    "m": -4.0,
+    "p": -4.0
+   }
+  }
+ ],
+ "triggers": [
+  {
+   "name": "Casual leave",
+   "text": "{{actor}}: As informed earlier to the HR department, I will be on leave for the whole of this week.",
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "Check for an actor whose performance is greater than 70 and there's 1 more person in the same role. This event occurs only on periods 3,5,7 and sub period 1. The event should occur only once and the actor should be blur for 5 days",
+   "windows": [
+    {
+     "week": 3,
+     "day": 1
+    },
+    {
+     "week": 5,
+     "day": 1
+    },
+    {
+     "week": 7,
+     "day": 1
+    }
+   ]
+  },
+  {
+   "name": "Clueless team member",
+   "text": "You've reassigned {{actor}} to {{stage}} but {{he}}'s totally clueless on how to perform tasks in {{his}} current role.",
+   "impact": {
+    "s": -10.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "check if user has reassigned someone in the last week and the user has not sent the actor for training and the event has not occurred before.",
+   "windows": [
+    {
+     "week": 2,
+     "day": 2
+    },
+    {
+     "week": 4,
+     "day": 2
+    },
+    {
+     "week": 6,
+     "day": 2
+    },
+    {
+     "week": 8,
+     "day": 2
+    },
+    {
+     "week": 10,
+     "day": 2
+    }
+   ]
+  },
+  {
+   "name": "Demoralized member",
+   "text": "{{actor}}: I cannot work with my team mate anymore. I feel betrayed and coming to work everyday is demoralizing. Please reassign me to a different role or I would have no choice but to leave the company.",
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "Check for an actor whose performance is less than 20. Check at the beginning of every week after the 3rd week of the sim. This event should only occur once during the simulation",
+   "windows": [
+    {
+     "week": 4,
+     "day": 1
+    },
+    {
+     "week": 5,
+     "day": 1
+    },
+    {
+     "week": 6,
+     "day": 1
+    },
+    {
+     "week": 7,
+     "day": 1
+    },
+    {
+     "week": 8,
+     "day": 1
+    },
+    {
+     "week": 9,
+     "day": 1
+    },
+    {
+     "week": 10,
+     "day": 1
+    },
+    {
+     "week": 11,
+     "day": 1
+    },
+    {
+     "week": 12,
+     "day": 1
+    }
+   ]
+  },
+  {
+   "name": "Lack of training",
+   "text": "{{actor}}'s performance has been on the decline for the past 6 weeks. {{He}} blames lack of training in Sales as the primary reason. {{company}}'s HR Head is at the meeting and recommends that you should send {{him}} for a training and give {{him}} another chance, before firing {{him}}.",
+   "impact": {
+    "s": -2.0,
+    "m": -6.0,
+    "p": -8.0
+   },
+   "rule": "Check for an actor whose performance is decreasing for the past 6 weeks due to various reasons",
+   "windows": [
+    {
+     "week": 7,
+     "day": 2
+    },
+    {
+     "week": 10,
+     "day": 2
+    }
+   ]
+  },
+  {
+   "name": "Medical leave",
+   "text": "{{actor}}: I am writing to you to let you know that I am down with flu and would like to take a 2-day medical break.",
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "Check for an actor whose performance is greater than 70. This event occurs only on periods 3,6,9 and sub periods 2,3,4. The event should occur only once.",
+   "windows": [
+    {
+     "week": 3,
+     "day": 5
+    },
+    {
+     "week": 3,
+     "day": 3
+    },
+    {
+     "week": 3,
+     "day": 4
+    },
+    {
+     "week": 6,
+     "day": 5
+    },
+    {
+     "week": 6,
+     "day": 3
+    },
+    {
+     "week": 6,
+     "day": 4
+    },
+    {
+     "week": 9,
+     "day": 5
+    },
+    {
+     "week": 9,
+     "day": 3
+    },
+    {
+     "week": 9,
+     "day": 4
+    }
+   ]
+  },
+  {
+   "name": "Morale drops",
+   "text": "{{actor}}'s morale suddenly drops due to lack of recognition / awards. You find that {{his}} performance had been tremendous, but you realize that you hadn't congratulated {{him}} and {{he}} is feeling left out.",
+   "impact": {
+    "s": 0.0,
+    "m": -5.0,
+    "p": 0.0
+   },
+   "rule": "If any actors performance is more than 60 consistently for 3 weeks and he didn't receive any congratulatory email",
+   "windows": [
+    {
+     "week": 4,
+     "day": 1
+    },
+    {
+     "week": 8,
+     "day": 1
+    },
+    {
+     "week": 12,
+     "day": 1
+    }
+   ]
+  },
+  {
+   "name": "Resignation",
+   "text": "{{actor}}: I have lost faith in your leadership and am tendering my resignation effective immediately. I wish you and the team the best of luck in achieving your targets.",
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "Check for an actor whose performance goes below 10. Check after 2nd week onwards everyday. This event should occur only twice during the simulation.",
+   "windows": [
+    {
+     "week": 3,
+     "day": 1
+    },
+    {
+     "week": 12,
+     "day": 1
+    },
+    {
+     "week": 4,
+     "day": 1
+    },
+    {
+     "week": 5,
+     "day": 1
+    },
+    {
+     "week": 6,
+     "day": 1
+    },
+    {
+     "week": 7,
+     "day": 1
+    },
+    {
+     "week": 8,
+     "day": 1
+    },
+    {
+     "week": 9,
+     "day": 1
+    },
+    {
+     "week": 10,
+     "day": 1
+    },
+    {
+     "week": 11,
+     "day": 1
+    }
+   ]
+  },
+  {
+   "name": "Role change request",
+   "text": "{{actor}} has been in the same role of {{stage}} for the past 4 weeks and wants a change.",
+   "impact": {
+    "s": 0.0,
+    "m": -2.0,
+    "p": 2.0
+   },
+   "rule": "Check for any one actor who's role has been the same in the past 4 weeks",
+   "windows": [
+    {
+     "week": 4,
+     "day": 3
+    },
+    {
+     "week": 8,
+     "day": 3
+    },
+    {
+     "week": 12,
+     "day": 3
+    }
+   ]
+  },
+  {
+   "name": "Team member complains",
+   "text": "Your leadership style with {{actor}} needs to change. {{He}} has not been performing well and has been complaining about you to others. You probably need to supervise, set role and goals better.",
+   "impact": {
+    "s": 0.0,
+    "m": 0.0,
+    "p": 0.0
+   },
+   "rule": "Check for an actor whose performance has been decreasing in the past 3 weeks. This event can only happen on weeks 4 and 8",
+   "windows": [
+    {
+     "week": 4,
+     "day": 2
+    },
+    {
+     "week": 8,
+     "day": 2
+    }
+   ]
+  }
+ ],
+ "report": [
+  {
+   "page": "Disclaimer",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "The information in this document is confidential and can be used only by the organization to which the results pertain. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior consent of the authorised representative/s of \\\"KNOLSKAPE Solutions Pte. Ltd.\\\" ('the Company'), except within the organization. A recipient may not solicit, directly or indirectly (whether through an agent or otherwise) the participation of another institution or person without the prior approval of the authorised representative/s of the Company. No representation, warranty or undertaking, expressed or implied is or will be made or given and no responsibility or liability is or will be accepted by the Company or by any of its directors, employees or advisors in relation to the accuracy or completeness of this document or any other written or oral information made available in connection with the Company. Any form of reproduction, dissemination, copying, disclosure, modification, distribution and or publication of this material is strictly prohibited."
+  },
+  {
+   "page": "About iLead",
+   "section": "About iLead",
+   "kind": "Section Description",
+   "band": "",
+   "text": "iLead, a compelling real-life like simulation, enables you to understand your approach to people leadership. In the simulation, you played the role of a Team Lead, working with a diverse team of 10 members, to meet the targets set for your team. Your objective was to enable your team to perform well by helping them build their skills, and to increase their motivation and engagement."
+  },
+  {
+   "page": "About iLead",
+   "section": "About Report",
+   "kind": "Section Description",
+   "band": "",
+   "text": "- This report tells you about how you performed in the simulation, on various parameters.\n- There are several sections in which the information is represented in graphs and figures.\n- To benefit from this report, relate the results to the simulation that you played.\n- The Summary section provides you with questions that you should introspect and answer for youself.\n- It also provides with some thoughts for you to keep as a guide when you manage your team."
+  },
+  {
+   "page": "Competencies",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "This section describes various competencies that you demonstrated in the simulation."
+  },
+  {
+   "page": "Competencies",
+   "section": "Competency Score",
+   "kind": "",
+   "band": "",
+   "text": "This score represents your performance in each of the competency measured on a scale of 1-10."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Identify, hone and leverage team members' skills to accomplish goals."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "Section insights",
+   "band": "Novice (0-2)",
+   "text": "Your lack of knowledge of your team members' abilities, hampered the effectiveness of your actions to hone their skills. You will need to put in more effort to identify your team members' abilities."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "",
+   "band": "Emerging(2-4)",
+   "text": "You were able to identify some abilities of your team members and hence few of the actions you took yielded limited favorable results. You will need to put in more effort to understand your team members' abilities."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "",
+   "band": "Competent(4-6)",
+   "text": "While you were able to identify your team members' abilities, you will need to deepen it further to ensure that all the actions that you take to hone their skills yield the desired results."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "",
+   "band": "Proficient(6-8)",
+   "text": "You were familiar with your team members' abilities and you used the knowledge to effectively drive results. All the actions that you took to hone their skills yielded the desired results."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to upskill",
+   "kind": "",
+   "band": "Role Model(8-10)",
+   "text": "Your success is largely because of your deep knowledge of your team members' abilities and your timely usage of the right combination of their skills. This also ensured that all the actions you took resulted in an efficient and well-honed team."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Enthuse, energize and empower team members to maximise performance."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "Section insights",
+   "band": "Novice (0-2)",
+   "text": "You were unable to understand your team members' needs. You will need to take more effort to pick actions that will maximize your team members' enthusiasm, energy and performance."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "",
+   "band": "Emerging(2-4)",
+   "text": "You were able to partially understand your team members' needs. While you took some actions to increase their enthusiasm, energy and performance, they were not effective."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "",
+   "band": "Competent(4-6)",
+   "text": "You understood your team members' needs reasonably well. The actions that you took to maximize their enthusiasm, energy and performance were effective most of the time."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "",
+   "band": "Proficient(6-8)",
+   "text": "You understood your team members' needs quite well. The actions that you took to maximize their enthusiasm and performance were effective."
+  },
+  {
+   "page": "Competencies",
+   "section": "Ability to Motivate",
+   "kind": "",
+   "band": "Role Model(8-10)",
+   "text": "Your were able to intuit your team members' needs and pick the most appropriate style to inspire them to perform. Your team members had become extremely enthusiastic and performed to the best of their ability."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Know the right environment that produces superlative performance and create it."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "Section insights",
+   "band": "Novice (0-2)",
+   "text": "You will need to take a lot of efforts to get to know and to create an environment conducive to enhanced performance."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "",
+   "band": "Emerging(2-4)",
+   "text": "You showed limited understanding of what your team members require to perform at a high level. Your efforts to create an environment conducive to enhanced performance were not effective."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "",
+   "band": "Competent(4-6)",
+   "text": "You showed adequate understanding of what your team members require to perform at a high level. Your efforts at creating an environment conducive to enhanced performance were somewhat effective."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "",
+   "band": "Proficient(6-8)",
+   "text": "You showed a good understanding of what your team members require to perform at a high level. Your efforts at creating an environment conducive to enhanced performance were effective."
+  },
+  {
+   "page": "Competencies",
+   "section": "Enabling Performance",
+   "kind": "",
+   "band": "Role Model(8-10)",
+   "text": "You showed a deep understanding of what your team members require to perform at a high level. You succeeded in creating an environment of high performance."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Dynamically adapting leadership style to maximise morale, skill & performance."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "Section insights",
+   "band": "Novice (0-2)",
+   "text": "You were not effective in motivating, improving skills or performance of your team members, by dynamically changing your leadership style. You will have to put in more effort to read your team members' needs and act accordingly."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "",
+   "band": "Emerging(2-4)",
+   "text": "You showed limited ability to read how your team members need to be managed at a given point in time and you were somewhat effective in improving morale, skills and performance by dynamically adapting your leadership style."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "",
+   "band": "Competent(4-6)",
+   "text": "You showed adequate ability to read how your team members need to be managed at a given point in time and you were effective in improving morale, skills and performance by dynamically adapting your leadership style."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "",
+   "band": "Proficient(6-8)",
+   "text": "You showed good ability to read how your team members need to be managed at a given point in time and you were successful in improving morale, skills and performance by dynamically adapting your leadership style."
+  },
+  {
+   "page": "Competencies",
+   "section": "Adaptive Leadership Score",
+   "kind": "",
+   "band": "Role Model(8-10)",
+   "text": "You were consistently accurate in reading how your team members need to be managed at a given point in time and you maximized morale, skills and performance by dynamically adapting your leadership style."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Ensure goal achievement through effective management of team members."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "Section insights",
+   "band": "Novice (0-2)",
+   "text": "You were aware of the end goal. However, you could have taken more actions in leveraging your team members to achieve the goal."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "",
+   "band": "Emerging(2-4)",
+   "text": "You were aware of the end goal and you took some actions to leverage your team members to achieve it. However, you could have been more consistent in doing so."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "",
+   "band": "Competent(4-6)",
+   "text": "You were focused on the end goal. While you took sufficient number of actions to keep your team enthused, not all of them worked."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "",
+   "band": "Proficient(6-8)",
+   "text": "Your unrelenting focus on the goal and your actions to leverage your team members proved extremely effective. Your team enthusiastically progressed towards goal achievement."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "",
+   "band": "Role Model(8-10)",
+   "text": "Your strong goal-orientation rubbed off on your team members. Your team was very happy with the way you set them up for success. Your response to the diverse situations and your timely guidance to your team members ensured that you surpassed your goal."
+  },
+  {
+   "page": "Competencies",
+   "section": "Drive for Results/Result Orientation",
+   "kind": "Insight",
+   "band": "",
+   "text": "Morale and skill are the two factors that impact performance directly. Adapting the leadership styles, by accurately reading what team members need and the situation demands, can enhance performance. High performance drives results."
+  },
+  {
+   "page": "Objectives",
+   "section": "",
+   "kind": "Insight",
+   "band": "low",
+   "text": "Good attempt! Though the target was not achieved on time, you tried to lead your team well. You would have been more successful if you had leveraged your team members' abilities, by adapting your leadership styles to your team memebers' needs and to the changing situations."
+  },
+  {
+   "page": "Objectives",
+   "section": "",
+   "kind": "",
+   "band": "medium",
+   "text": "Well done! Though the target was not achieved on time, you led your team reasonably well. You leveraged your team members' abilities well and you were fairly adaptable in managing them in different situations."
+  },
+  {
+   "page": "Objectives",
+   "section": "",
+   "kind": "",
+   "band": "high",
+   "text": "Excellent! You have acheived your target on time. You owe your success to the way you leveraged your team members and adapted your leadership styles in changing situations."
+  },
+  {
+   "page": "Objectives",
+   "section": "Revenue is calculated based on the number of conversions made",
+   "kind": "",
+   "band": "",
+   "text": "This section depicts the revenue achieved by you in the simulation in comparison to the target set at the beginning."
+  },
+  {
+   "page": "Objectives",
+   "section": "Revenue is calculated based on the number of conversions made",
+   "kind": "",
+   "band": "",
+   "text": "This graph depicts the difference between your team's (overall) skill, moral and result values at the beginning and at the end of the simulation."
+  },
+  {
+   "page": "Overall Leadership Adaptability",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "The way a leader manages team members in different situations, impacts their skill and morale and eventually, the results. If the leader has consistently chosen the right style to managing a team member, it will result in increased skill and morale, and hence, better results. On the other hand, if the leader has consistently chosen inappropriate styles, it will result in decreased skill and morale, and hence, lower results."
+  },
+  {
+   "page": "Overall Leadership Adaptability",
+   "section": "",
+   "kind": "Insight",
+   "band": "lowAccuracy",
+   "text": "-You demonstrated low levels of leadership adaptability. \n-You might want to invest some time and effort to get to know your team members well, so that you can adapt your leadership styles and manage them better across changing tasks or situations."
+  },
+  {
+   "page": "Overall Leadership Adaptability",
+   "section": "",
+   "kind": "",
+   "band": "moderateAccuracy",
+   "text": "-You demonstrated moderate levels of leadership adaptability. \n-While you adapted your leadership styles to suit needs in some situations, you would need to choose the right styles more often in order to reach or exceed your goal."
+  },
+  {
+   "page": "Overall Leadership Adaptability",
+   "section": "",
+   "kind": "",
+   "band": "highAccuracy",
+   "text": "-You demonstrated high levels of leadership adaptability.\n-You adopted the correct leadership styles most often, and were able to change it as the situation demanded, based on the accurate reading of your team members' needs."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "In the simulation, you adopted different styles in leading your team across various scenarios. The extent to which you adopted these different styles and their effectiveness is described below:"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Proportion",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Proportion of use of style as compared to other style (out of 100%)."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Adaptibility",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Number of times style was used correctly / Number of times style should have been used."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Directive Style is when the leader gives detailed instructions on what his team members are expected to do and how to perform the expected tasks."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "Insight",
+   "band": "LowMagnituteLowAccuracy",
+   "text": "You did not give directions and instructions to your team as many times as they needed it. You will need to align to the needs of your team members better, and adopt the '{{style}}' style when required."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "LowMagnituteModerateAccuracy",
+   "text": "You did not give directions and instructions to your team members as much as they needed it. However, whenever you deployed the directing style of leadership, it was effective. You will need to align to the needs of your team members better, and adopt the '{{style}}' style when required."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "LowMagnituteHighAccuracy",
+   "text": "$$$$$-------NO STRING AVAILABLE--------$$$$$$"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "ModerateMagnituteLowAccuracy",
+   "text": "While you did give directions and instructions to your team, it was not as much as they needed. You were also not effective whenever you did deploy the directing style of leadership. You will need to align to the needs of your team members better, and adopt the '{{style}}' style, more effectively, when required."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "ModerateMagnituteModerateAccuracy",
+   "text": "While you did give directions and instructions to your team, it was not as often as they needed it. However, you were quite effective in deploying the directing style of leadership, whenever you used it. If you could deploy it more often, you can increase your impact."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "ModerateMagnituteHighAccuracy",
+   "text": "While you did give directions and instructions to your team, it was not as much as they needed. However, you were highly effective in deploying the directing style of leadership. Increasing the frequency of deployment will maximize impact."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "HighMagnituteLowAccuracy",
+   "text": "You provided directions and instructions to your team members as much as, or more than they needed it. However, your deployement of the directing leadership style was not effective. You will need to align to the needs of your team members better, and adopt the '{{style}}' approach when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "HighMagnituteModerateAccuracy",
+   "text": "You had some hits and misses when using the '{{style}}' style. Focus further on reviewing the needs of your team members, and providing hand holding when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Directive",
+   "kind": "",
+   "band": "HighMagnituteHighAccuracy",
+   "text": "You used the '{{style}}' style to a sufficient extent, and demonstrated high degree of adaptability in hand holding your team members when desired by them."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Guiding Style is when the leader uses two-way communication and provides support to generate buy-in to the process."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "Insight",
+   "band": "LowMagnituteLowAccuracy",
+   "text": "You did not use the '{{style}}' style of leadership sufficiently. Additionally, whenever you deployed this style it was not effective. Review the needs of your team members better and reflect on what stops you from having active discussions and showing support when needed."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "LowMagnituteModerateAccuracy",
+   "text": "You did not use the '{{style}}' style of leadership sufficiently. However, whenever you deployed this style, it was effective. For better results align your style to the needs of your team members better."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "LowMagnituteHighAccuracy",
+   "text": "$$$$$-------NO STRING AVAILABLE--------$$$$$$"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "ModerateMagnituteLowAccuracy",
+   "text": "You did not provide active guidance when your team members needed, often. Review the needs of your team members better, and adopt the '{{style}}' style when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "ModerateMagnituteModerateAccuracy",
+   "text": "While you had open discussions and expressed support to your team members, it was not as often as they needed it. However, you deployed the '{{style}}' style of leadership quite effectively. If you deployed the '{{style}}' style of leadership more often, you will be creating a bigger impact."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "ModerateMagnituteHighAccuracy",
+   "text": "You demonstrated high degree of adaptability in providing active guidance to your team members when needed. You may benefit by using the '{{style}}' style more often."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "HighMagnituteLowAccuracy",
+   "text": "You mis-applied the '{{style}}' style to your team members, on some occasions. Review the needs of your team members better, and provide active guidance when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "HighMagnituteModerateAccuracy",
+   "text": "You had some hits and misses when using the '{{style}}' style. Focus further on reviewing the needs of your team members, and providing active guidance when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Guiding",
+   "kind": "",
+   "band": "HighMagnituteHighAccuracy",
+   "text": "You used the '{{style}}' style of leadership as much as, or more often than your team members needed it. You were also very effective in deploying this style of leadership. You are encouraged to continue to align to the needs of your team members and use this style for for good impact"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Partnering Style is when the team members play an important role in the decision-making process. The decision-making power rests with the leader. Best deployed when skill is high but morale is low."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "Insight",
+   "band": "LowMagnituteLowAccuracy",
+   "text": "You were not able to involve your team members in the decision-making process as often as they would have liked. The '{{style}}' style of leadership was not deployed effectively. You will need to deploy the '{{style}}' style of leadership more often and more effectively."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "LowMagnituteModerateAccuracy",
+   "text": "Occasionally, you involved and encouraged your team members when needed. You could have used the '{{style}}' style more often. Reflect on what stops you from doing this."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "LowMagnituteHighAccuracy",
+   "text": "$$$$$-------NO STRING AVAILABLE--------$$$$$$"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "ModerateMagnituteLowAccuracy",
+   "text": "You did not involve and encourage your team members when needed, often. Review the needs of your team members better, and adopt the '{{style}}' style when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "ModerateMagnituteModerateAccuracy",
+   "text": "You involved your team members in the decision-making process to a moderate extent. You deployed the '{{style}}' style of leadership quite effectively. This had a somewhat positive impact. For a higher impact, get to know your team better and increase the frequency of the times that you deploy the style."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "ModerateMagnituteHighAccuracy",
+   "text": "You demonstrated high degree of adaptability in involving and encouraging your team members when needed. You may benefit by using the '{{style}}' style more often."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "HighMagnituteLowAccuracy",
+   "text": "You involved your team members in the decision-making process as often as or more than, they would have liked to have been. However, you did not deploy the '{{style}}' style of leadership effectively. Get to know your team members better and become more effective to maximize impact."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "HighMagnituteModerateAccuracy",
+   "text": "You had some hits and misses when using the '{{style}}' style. Focus further on reviewing the needs of your team members, and involve and encourage when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Partnering",
+   "kind": "",
+   "band": "HighMagnituteHighAccuracy",
+   "text": "You used the '{{style}}' style to a sufficient extent, and demonstrated high degree of adaptability in involving and encouraging your team members when needed."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Entrusting Style is when the process and responsibility passes on to the team member. The leader stays involved to monitor progress."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "Insight",
+   "band": "LowMagnituteLowAccuracy",
+   "text": "You did not take enough steps to handover the responsibility to your team members. Additionally you did not deploy the '{{style}}' style of leadership very effectively. Review the needs of your team members better and reflect on what stops you from letting go when needed."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "LowMagnituteModerateAccuracy",
+   "text": "You did not take enough steps to handover the responsibility to your team members. You did not deploy the '{{style}}' style of leadership as often as the team needed it. However, whenever you did deploy it, you were quite effective. Align with the needs of your team and deploy this style mindfully and more often."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "LowMagnituteHighAccuracy",
+   "text": "$$$$$-------NO STRING AVAILABLE--------$$$$$$"
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "ModerateMagnituteLowAccuracy",
+   "text": "You could have leveraged more of the opportunities to hand over the responsibilities to your team. You did not deploy the '{{style}}' style of leadership effectively. Take more actions to hand over responsibilities to have a favorable impact on morale and skill."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "ModerateMagnituteModerateAccuracy",
+   "text": "You could have leveraged more of the opportunities to hand over the responsibilities to your team, thereby deploying the '{{style}}' style of leadership more often. However, you deployed the '{{style}}' style of leadership quite effectively, whenever you used it. Grab more opportunities to hand over responsibilities and take steps to improve the effectiveness of your actions."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "ModerateMagnituteHighAccuracy",
+   "text": "You demonstrated high degree of adaptability in being hands off when your team members needed. You may benefit by using the '{{style}}' style more often."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "HighMagnituteLowAccuracy",
+   "text": "You mis-applied the '{{style}}' style to your team members, on some occasions. Review the needs of your team members better, and be hands off when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "HighMagnituteModerateAccuracy",
+   "text": "You had some hits and misses when using the '{{style}}' style. Focus further on reviewing the needs of your team members, and being hands off when desired."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "",
+   "band": "HighMagnituteHighAccuracy",
+   "text": "You used the '{{style}}' style to a sufficient extent, and demonstrated high degree of adaptability in being hands off when your team members needed."
+  },
+  {
+   "page": "Leadership Styles Summary",
+   "section": "Entrusting",
+   "kind": "Section Summary",
+   "band": "",
+   "text": "While leading your team, in most situations you used <b>{{dominant_style}}</b>. THIS_THESE_REPLACEMENT your preferred {{style}}."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "In this section, we will see how consistent was the identification, intention and actual deployment of the most appropriate leadership style."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired Style",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Predominant leadership approach desired by each team member basis her/his skill and morale levels."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intended Style",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Predominant leadership approach the group intended to take for each team member."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Actual Style",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Predominant leadership approach the group actually adopted for each team member. This is the leadership style that was most often used through the different actions."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Actual",
+   "kind": "Section Description",
+   "band": "",
+   "text": "This shows the deviation between the leadership style that the team members wanted to be deployed and the that which the group actually deployed."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Actual",
+   "kind": "",
+   "band": "LowMismatch",
+   "text": "You knew what leadership style your team members desired and you aligned your style accurately."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Actual",
+   "kind": "",
+   "band": "ModerateMismatch",
+   "text": "When you chose your actions to engage with your team member, you seem to have some knowledge about how it impacts the team members' skill and morale. You will have to do a deeper analysis to have a greater positive impact."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Actual",
+   "kind": "",
+   "band": "HighMismatch",
+   "text": "You need to take efforts to know what leadership style your team members desire and align your style more accurately."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Actual",
+   "kind": "",
+   "band": "NoMismatch",
+   "text": "No measurable action taken."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intent vs Actual",
+   "kind": "Section Description",
+   "band": "",
+   "text": "This shows the deviation between the leadership style that the group intended to deploy and the that which they actually deployed."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intent vs Actual",
+   "kind": "",
+   "band": "LowMismatch",
+   "text": "The intended leadership style you chose was consistent with the actual leadership style you deployed."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intent vs Actual",
+   "kind": "",
+   "band": "ModerateMismatch",
+   "text": "While there was some alignment in the leadership style that you intended to take and the actions that you took to implement it, you will need to take more effort to align the two."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intent vs Actual",
+   "kind": "",
+   "band": "HighMismatch",
+   "text": "Your actual leadership style needs to be aligned better with your intended leadership style."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Intent vs Actual",
+   "kind": "",
+   "band": "NoMismatch",
+   "text": "No measurable action taken."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Intent",
+   "kind": "Section Description",
+   "band": "",
+   "text": "This shows the deviation between the leadership style that the team members wanted to be deployed and the that which the group intended to deploy."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Intent",
+   "kind": "",
+   "band": "LowMismatch",
+   "text": "You have understood your team members' skill and morale level, and you have consistently picked the appropriate leadership style."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Intent",
+   "kind": "",
+   "band": "ModerateMismatch",
+   "text": "While you understood your team members' skill and morale level, you will have to more fully understand the different leadership styles, to be able to pick the most appropriate one consistently."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Intent",
+   "kind": "",
+   "band": "HighMismatch",
+   "text": "You will need to fully understand your team members' skill and morale level, so that you can adopt the right leadership style, which meets the team members' expectations."
+  },
+  {
+   "page": "Consistency in Styles",
+   "section": "Desired vs Intent",
+   "kind": "",
+   "band": "NoMismatch",
+   "text": "No measurable action taken."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "You adopted different styles in leading your team across various scenarios, in the simulation. The extent to which you adopted these different styles and their effectiveness are described below:"
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Impact",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Extent to which the action you took had a positive outcome"
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Frequency",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Number of occasions you took the action in the simulation"
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Team Meetings help to promote team work, brainstorm ideas, take collective decisions, share updates and inspire your team members. Its important to conduct meetings in a manner that impacts the entire team."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your approach to conducting the team meeting did not have any positive impact on the skill and morale levels of your team members. To the contrary, it decreased the morale of most of your team members. You need to identify your team's needs and align your style to them."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your style to conducting the team meeting did not have much positive impact on the skill or morale levels of your team members. You need to align your style to their needs more consciously."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your approach to conducting the team meeting had some positive impact on the skill and morale levels of your team members. However, you need to think more about how you can better align your style to their needs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your approach to conducting the team meeting had a lot of positive impact on the skill and morale levels of your team members. Your efforts on trying to better align your style to their needs has paid off."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet the team",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not have any team check-in discussions. If you adopt a suitable leadership style for the discussion and meet the team periodically, you will find that it can be a useful tool to improve skill and morale."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Energizing the team through team activities and motivational messages is an effective way of engaging the team and boosting morale."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your attempts to energize the team did not have any positive impact on the morale of the team members. You will have to apply more thought to understand the needs of the team and plan your activities and communication accordingly."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempts to energize the team had some positive impact on the morale of the team members. You will have to analyze what did not go well and avoid it in the future."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your attempts to energize the team had a good amount of positive impact on the morale of the team members. Introspect on what you did well, and do more of it to increase morale even further."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your attempts to energize the team generated a lot of positive impact on the morale levels of the team members. Analyze the reasons for your success and glean learnings to use in the future."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Energize Team",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not take any actions to energize your team. You should use this method periodically as a quick but effective method of raising the morale in your team."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Sending an email is an powerful way of engaging with your team. When you adopt the right style this could be a personalized and effective way of sending key messages, improving skill, increasing morale and opening a two-way communication channel."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your emails seem to have had a negative impact on the overall engagement of your team members. You will have to get to know your team members' needs better, send appropriate emails that convey the right message to have the right impact."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your emails seem to have had a mixed impact on the overall engagement of your team members. You will have to do more to get to know your team members' needs better. Critically review your emails so that you convey the right message and have more impact."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your emails seem to have had a somewhat positive impact on the overall engaement of your team members. The messages were positioned appropriately. You should work on understanding what changes in your email communication can make this positive impact higher."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your emails have had a very positive impact on the overall engagement of your team members. The messages and your approach seem to have paid off. You could glean learnings by thouroughly analyzing what you did well, so that you can use this action effectively."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send Email",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You have not sent any emails to your team. You should leverage this very effective tool by sending well-thought out emails periodically to reinforce key messages as well as to hear what your team members have to say."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Formal and structured learning oportunities can be a powerful way of developing your team members' skill and performance while conveying your commitment to their professional development. You will, however, need to align the learning need and the program."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your attempts to train your team members had a negative impact on their morale, skill and performance. This could be due to lack of communication regarding the training or misalignment between the need and the training program. You will have get to know their learning needs before you recommend them for learning programs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempts to train your team members had a somewhat negative impact on their morale, skill and performance. For a positive impact you will have to, more thouroughly, get to know their learning needs before you recommend them for learning programs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your attempts to train your team members had a somewhat positive impact on their morale, skill and performance. For a higher impact you will have to get a deeper knowledge of their learning needs before you recommend them for learning programs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your attempts to train your team members has had a highly positive impact on their morale, skill and performance. You were able to accurately judge their learning needs and align them to the learning programs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Send for Training",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not take any actions to train your team members. If used properly, this can be a powerful tool to improve morale, and increase skill and performance. You are urged to use it periodically."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "Section Description",
+   "band": "",
+   "text": "If handled in a manner that meets the team member's needs, having a personal, face-to-face discussion periodically can be very effective in building strong relationships and opening channels communication channels, thereby raising morale and improving skills."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your approach to a face-to-face meeting was counter-productive and was not effective at all in building a relationship or opening communication channels. It had a negative impact on morale and skills. You are urged to change your style to suit the needs of your team member."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your approach to a face-to-face meeting was not all that effective in building a relationship and opening communication channels. The impact on the team member was more negative than positive. You will need to do a lot more to align your style to the team member's needs."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your approach to the face-to-face meeting helped you start building a relationship and opening communication channels. It had a somewhat positive effect on the team member. You could try to maximize the impact by replicating what went well before."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your approach to the face-to-face meeting helped you build a strong relationship and opened up the communication channel. It had a positive effect on the team member. You are urged to glean learnings to use again in the future."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Meet Face to Face",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not have any face-to-face meetings. You are recommended to take an appropriate style to build relationship and improve communication through this very effective tool."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Evaluating the suitability and fitment for a role, before reassigning team members to a new role, is critical to drive results."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "You did not sufficiently evaluate suitability and fitment of the team member before you swapped and reassigned them to another role."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempts to have one-one check-in discussions with your team members yielded low success. You are recommended to understand your team member’s needs (through skill and morale levels), and take a suitable leadership style in the check-in discussions."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your attempts to have one-one check-in discussions with your team members yielded moderate success. You will benefit by being more consistent in understanding yourteam member’s needs (through skill and morale levels), and taking a suitable leadership style in the check-in discussions."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "You effectively evaluated suitability and fitment of a team member before you swapped and reassigned them to another role."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Assess Member",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not use the assessment action. Without this action, reassigning team members becomes ineffective. It is important for team members to work in roles that are aligned to their skills and strengths."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Rewarding a team member is a powerful way of recognizing performance. It serves to reinforce the right behaviour and can be an effective tool to raise morale."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your approach to recognizing your team member was not effective. It did not have a positive impact on morale or performance. You must select the right team member and the right time for the reward to be effective."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your approach to recognizing your team member was somewhat effective. It had a marginally positive impact on morale and performance. You must select the right team member and the right time for the reward to be effective."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your approach to recognizing your team member was effective. It did have a somewhat positive impact on morale and performance. To maximize the impact you must select the right team member and the right time."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your approach to recognizing your team member was very effective. It had an excellent impact on morale and performance. You were able to select the right team member and right time for the reward, resulting in positive impact."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Reward Member",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not take any actions to reward your team members. Remember to reward and recognize team members periodically. It is a very effective way of improving morale and performance."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Priorities play a critical role in helping team members focus on what’s important for the project, team, and themselves. It is important to conduct the process and discussion in a manner most appropriate to the team member."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your attempts to help your team members set priorities yielded low success. You are strongly recommended to understand your team member’s needs (through skill and morale levels), and take a suitable leadership style when helping set priorities."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempts to help your team members set priorities yielded low success. You are recommended to understand your team member’s needs (through skill and morale levels), and take a suitable leadership style when helping set priorities."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your attempts to help your team members set priorities yielded moderate success. You will benefit by being more consistent in understanding yourteam member’s needs (through skill and morale levels), and taking a suitable leadership style when helping set priorities."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your attempts to help your team members set priorities yielded high success. You demonstrated capability in understanding your teammember’s needs (through skill and morale levels), and taking a suitable leadership style when helping set priorities."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Set Goals",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not take action to help set priorities for your team members. You are recommended to focus on priorities of your team members, and take a suitable leadership style to do so."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Coaching is an effective method of engaging the team member, improving skill and performance. Chose the right team member and the right style for coaching to have the best effect."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your attempt to coach your team member had a negative effect on performance. It seems that the style that you took was not appropriate for that team member. You will have to choose your style more carefully to match the coachee."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempt to coach your team member had a negative effect on morale and performance. It seems that the style that you took was not entirely appropriate for the person whom you choose. You will have to think more before you choose your coachee and match the style more carefully."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your attempt to coach your team member had a mildly positive effect on performance. Although the style you took may have worked, you should make a note of your learnings to improve your style and apply it consistently."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your attempt to coach your team member had a highly positive effect on performance. It seems that the style that you took was very suitable for the person whom you choose. Continue doing what you did."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Coach Member",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You did not choose to coach any of your team members. Remember that coaching is a powerful tool to empower your team members and improve skill, morale and performance. Coaching the right team members can help you drive results more effectively."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Giving the right feedback at the right time in the right manner can be an effective tool to increase morale, as well as to bring and keep performance on track."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "Insight",
+   "band": "HighNegative",
+   "text": "Your attempt to give feedback had quite a negative impact on your team member's morale and adversely affected his performance."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "",
+   "band": "LowNegative",
+   "text": "Your attempt to give feedback had a somewhat negative impact on your team member's morale and has affected his performance."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "",
+   "band": "LowPositive",
+   "text": "Your feedback had a moderately positive impact on your team member's morale and somewhat improved his performance."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "",
+   "band": "HighPositive",
+   "text": "Your feedback has had a very good impact on your team member's morale and has improved his performance tremendously."
+  },
+  {
+   "page": "Summary of Actions",
+   "section": "Give Feedback",
+   "kind": "",
+   "band": "NoImpact",
+   "text": "You have not made any attempt to give feedback to your team member. Remember that giving the right feedback in the correct manner, is a very powerful tool to improve morale and performance."
+  },
+  {
+   "page": "Distribution of Actions across Team Members",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "As you look into this table, make sure to go through 'Food for thought' section questions below. This table focus on two aspects - the numbers and the colours. If more of the boxes have zeros, it indicates that you have not used all the actions that were available to you. On the other hand, if most of the boxes have numbers, it indicates that you have used most of the actions available to you."
+  },
+  {
+   "page": "Distribution of Actions across Team Members",
+   "section": "Number",
+   "kind": "Section Description",
+   "band": "",
+   "text": "The number in each cell indicates the number of times an action was taken on a team member."
+  },
+  {
+   "page": "Distribution of Actions across Team Members",
+   "section": "Order",
+   "kind": "Section Description",
+   "band": "",
+   "text": "Team members are listed in descending order, by their average performance (high performers on top)."
+  },
+  {
+   "page": "Distribution of Actions across Team Members",
+   "section": "Gradient",
+   "kind": "Section Description",
+   "band": "",
+   "text": "The gradient of each cell indicates performance impact of each action on the team member."
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Introduction",
+   "band": "",
+   "text": "Here are some questions that will help you understand your actions better:"
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Question",
+   "band": "",
+   "text": "Did you give your attention to and engage with all your team members? If you did not, then why not? Why did some team members get more of your time and attention, while others got less or none at all?"
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Answer",
+   "band": "",
+   "text": "Giving appropriate attention to and engaging regularly with all your team members is needed for you to drive results."
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Question",
+   "band": "",
+   "text": "Are you unconsciously biased for or against some or any of them?"
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Answer",
+   "band": "",
+   "text": "Biases, even if it is unconscious can be picked up by others and will adversely affect morale."
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Question",
+   "band": "",
+   "text": "What actions did you prefer or were comfortable taking, and why?"
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Answer",
+   "band": "",
+   "text": "The actions that are taken to manage teams may emerge from how you prefer to be managed."
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Question",
+   "band": "",
+   "text": "What kind of actions had what kind of impacts on team members? Why do you think that the same actions had one kind of impact on a team member and an entirely different kind of impact on another team member?"
+  },
+  {
+   "page": "Food For Thought",
+   "section": "",
+   "kind": "Section Answer",
+   "band": "",
+   "text": "Impact of an action is affected by the situation and mindframe of the team member. Continously communicating, assessing and adapting is critical to your success in driving results."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "Section Insight",
+   "band": "",
+   "text": "Thank you for playing the simulation! We hope you had a great experience. As we conclude, here is a brief summary of key points to keep in mind, and recommended next steps."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "Section Points",
+   "band": "",
+   "text": "The strength of a good manager lies in leveraging his team members to drive results."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Morale and skill are both important for good performance. Performance drives results."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Keep communication channels open and get to know your team members better. This will help you take the right steps to increase morale and performance."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Constantly assess your team members and upskill as needed."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Give constructive feedback and coach as needed. Appropriate attention results in improved morale."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Challenge your team members. Motivate, support and celebrate success to enhance and sustain performance."
+  },
+  {
+   "page": "Key Takeaways",
+   "section": "",
+   "kind": "",
+   "band": "",
+   "text": "Take leadership styles based on your team members' skill and morale levels. Be adaptable to your team members."
+  }
+ ]
+}
