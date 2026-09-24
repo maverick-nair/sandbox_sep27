@@ -24,6 +24,8 @@ export function rescaleTimeline(def, weeks) {
   if (weeks === old) return d;
   const map = (w) => Math.max(1, Math.min(weeks, Math.round((w * weeks) / old)));
   for (const e of d.events) if (e.week > 0) e.week = map(e.week);
+  for (const p of d.decisions?.points || []) p.week = map(p.week);
+  for (const r of d.learning?.reflections || []) r.week = map(r.week);
   for (const t of d.triggers) {
     const seen = new Set();
     t.windows = t.windows
@@ -87,7 +89,14 @@ export function newId(prefix) {
 export function setTextAt(def, ref, value) {
   if (ref.field === 'briefing') def.story.briefing[ref.index] = value;
   else if (ref.field === 'walkthrough') def.story.walkthrough[ref.index].text = value;
-  else if (ref.field) def.story[ref.field] = value;
+  else if (ref.dpId) {
+    const p = def.decisions.points.find((x) => x.id === ref.dpId);
+    if (ref.optionId) p.options.find((o) => o.id === ref.optionId)[ref.field] = value;
+    else if (ref.band) { p.outcomes[ref.band] ||= {}; p.outcomes[ref.band][ref.field] = value; }
+    else if (ref.field === 'variant') p.variants[ref.index].text = value;
+    else if (ref.field === 'modelAnswer') p.open.modelAnswer = value;
+    else p[ref.field] = value;
+  } else if (ref.field) def.story[ref.field] = value;
   else if (ref.stageId) def.stages.find((s) => s.id === ref.stageId).description = value;
   else if (ref.actorId) def.actors.find((a) => a.id === ref.actorId).bio = value;
   else if (ref.eventId) def.events.find((e) => e.id === ref.eventId).text = value;

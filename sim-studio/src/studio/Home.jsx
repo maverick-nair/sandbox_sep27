@@ -27,7 +27,7 @@ function HealthPill({ def }) {
   return <Pill tone="good">Ready</Pill>;
 }
 
-export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpen, onNew, notify }) {
+export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpen, onPlay, results, onNew, notify }) {
   const [confirm, setConfirm] = useState(null);
   const [soon, setSoon] = useState(null); // a product line that is not in this prototype
   const t = TEMPLATES.ilead;
@@ -168,7 +168,7 @@ export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpe
                         <td>{TEMPLATES[s.def.meta.templateId]?.name}</td>
                         <td>{s.status === 'published' ? <Pill tone="accent">Published v{s.versions.at(-1)?.version}</Pill> : <Pill>Draft</Pill>}</td>
                         <td><HealthPill def={s.def} /></td>
-                        <td className="small muted num">{ago(s.updatedAt)}</td>
+                        <td className="small muted num">{ago(s.updatedAt)}{results ? <div>{results.forSim(s.id).length} learner result{results.forSim(s.id).length === 1 ? '' : 's'}</div> : null}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           {confirm === s.id ? (
                             <div className="row nowrap">
@@ -178,6 +178,7 @@ export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpe
                           ) : (
                             <div className="row nowrap">
                               <Button size="sm" onClick={() => onOpen(s.id)} tip="Open in the Studio to edit, test and publish.">Open</Button>
+                              {s.versions.some((v) => v.def) && <Button size="sm" variant="primary" onClick={() => onPlay(s.id)} tip="Play the live version exactly as learners get it.">Play</Button>}
                               <Button size="sm" variant="ghost" onClick={() => { store.duplicate(s.id); notify('Copy created'); }} tip="Makes an independent draft copy, useful for a second client or language.">Duplicate</Button>
                               <Button size="sm" variant="ghost" className="danger" onClick={() => setConfirm(s.id)} tip="Deletes this simulation from this browser. You confirm first." tipAlign="end">Delete</Button>
                             </div>

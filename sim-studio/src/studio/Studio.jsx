@@ -11,7 +11,7 @@ import Events from './sections/Events.jsx';
 import Report from './sections/Report.jsx';
 import Settings from './sections/Settings.jsx';
 import Balance from './Balance.jsx';
-import Preview from './Preview.jsx';
+import Player from '../learner/Player.jsx';
 import HealthDrawer from './Health.jsx';
 import { TEMPLATES } from '../templates/registry.js';
 
@@ -40,7 +40,7 @@ export const SECTIONS = [
   { id: 'settings', label: 'Settings and delivery', group: 'Ship', component: Settings },
 ];
 
-export default function Studio({ sim, store, initialSection, notify, onExit }) {
+export default function Studio({ sim, store, results, initialSection, notify, onExit, onPlay }) {
   const [section, setSection] = useState(initialSection || 'overview');
   const [focus, setFocus] = useState(null);
   const [advanced, setAdvanced] = useState(false);
@@ -107,7 +107,7 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
   const bySection = (id) => issues.filter((i) => i.section === id && i.severity !== 'info');
   const groups = [...new Set(SECTIONS.map((s) => s.group))];
 
-  const ctx = { def, update, advanced, sim, store, notify, go, focus, issues, openPanel: setPanel };
+  const ctx = { def, update, advanced, sim, store, results, notify, go, focus, issues, openPanel: setPanel, onPlay };
 
   return (
     <div className="shell compact-rail">
@@ -173,8 +173,8 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
 
       {panel === 'health' && <HealthDrawer def={def} issues={issues} onClose={() => setPanel(null)} go={go} update={update} notify={notify} />}
       {panel === 'balance' && <Balance sim={sim} def={def} store={store} update={update} onClose={() => setPanel(null)} notify={notify} advanced={advanced} />}
-      {panel === 'publish' && <PublishModal sim={sim} health={health} store={store} onClose={() => setPanel(null)} notify={notify} openHealth={() => setPanel('health')} update={update} />}
-      {panel === 'preview' && <Preview def={def} onClose={() => setPanel(null)} />}
+      {panel === 'publish' && <PublishModal sim={sim} health={health} store={store} onClose={() => setPanel(null)} notify={notify} openHealth={() => setPanel('health')} openBalance={() => setPanel('balance')} update={update} onPlay={onPlay} go={go} />}
+      {panel === 'preview' && <Player def={def} mode="preview" delivery={def.delivery} benchmark={sim.balance?.synthetic?.scores || []} onExit={() => setPanel(null)} />}
     </div>
   );
 }

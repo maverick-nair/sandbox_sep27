@@ -5,10 +5,24 @@ import CreateFlow from './studio/CreateFlow.jsx';
 import Studio from './studio/Studio.jsx';
 import ErrorBoundary from './studio/ErrorBoundary.jsx';
 import { Button, Toast } from './studio/ui.jsx';
+import Player from './learner/Player.jsx';
+import { useResults } from './studio/results.js';
+import { agsScore } from './delivery/lti.js';
+
+// The version learners get: the newest published version that still has its full definition.
+export function liveVersion(sim) {
+  const v = [...(sim?.versions || [])].reverse().find((x) => x.def);
+  return v ? { def: v.def, version: v.version } : null;
+}
+const hashRoute = () => {
+  const m = /^#\/play\/([\w-]+)/.exec(typeof location !== 'undefined' ? location.hash : '');
+  return m ? { screen: 'play', simId: m[1] } : { screen: 'home' };
+};
 
 export default function App() {
   const store = useSims();
-  const [route, setRoute] = useState({ screen: 'home' });
+  const results = useResults();
+  const [route, setRoute] = useState(hashRoute);
   const [toast, setToast] = useState('');
   const [flowDraft, setFlowDraft] = useState(() => readFlowDraft());
   const clearToast = useCallback(() => setToast(''), []);
@@ -33,6 +47,7 @@ export default function App() {
     { label: 'Simulations', go: home },
   ];
   if (route.screen === 'wizard') crumbs.push({ label: 'New simulation' });
+  if (route.screen === 'play' && sim) crumbs.push({ label: `Play: ${sim.def.meta.name}` });
   if (route.screen === 'studio' && sim) crumbs.push({ label: sim.def.meta.name });
 
   const failed = store.save.state === 'error';
@@ -70,6 +85,8 @@ export default function App() {
             onResume={() => setRoute({ screen: 'wizard', templateId: flowDraft?.templateId || 'ilead', resume: flowDraft })}
             onDiscardDraft={() => { clearFlowDraft(); setFlowDraft(null); setToast('Draft discarded'); }}
             onOpen={(id) => setRoute({ screen: 'studio', simId: id })}
+            onPlay={(id) => setRoute({ screen: 'play', simId: id })}
+            results={results}
             onNew={(templateId) => { clearFlowDraft(); setFlowDraft(null); setRoute({ screen: 'wizard', templateId }); }}
             notify={setToast}
           />
@@ -89,10 +106,43 @@ export default function App() {
           />
         )}
         {route.screen === 'studio' && sim && (
-          <Studio key={sim.id} sim={sim} store={store} initialSection={route.section} notify={setToast} onExit={home} />
+          <Studio key={sim.id} sim={sim} store={store} results={results} initialSection={route.section} notify={setToast} onExit={home} onPlay={(opts) => setRoute({ screen: 'play', simId: sim.id, ...opts })} />
         )}
+        {route.screen === 'play' && <LearnerRoute sim={sim} route={route} results={results} onExit={() => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); setRoute(route.back || { screen: 'home' }); }} notify={setToast} />}
       </ErrorBoundary>
       <Toast message={toast} onDone={clearToast} />
     </div>
+  );
+}
+
+function LearnerRoute({ sim, route, results, onExit, notify }) {
+  const live = liveVersion(sim);
+  if (!sim || !live) {
+    return (
+      <div className="page stack" style={{ maxWidth: 560, margin: '60px auto' }}>
+        <h1>This simulation is not live yet</h1>
+        <p className="ink2">{sim ? 'Publish it from the Studio first. Learners always get the latest published version.' : 'The link points to a simulation that is not in this workspace.'}</p>
+        <div><Button onClick={onExit}>Back</Button></div>
+      </div>
+    );
+  }
+  const rows = results.forSim(sim.id).filter((r) => r.version === live.version || !r.version);
+  return (
+    <Player
+      key={`${sim.id}:${live.version}:${route.lti?.resourceLinkId || ''}`}
+      def={live.def}
+      mode="live"
+      saveKey={`gk-play-${sim.id}-v${live.version}${route.lti ? `-${route.lti.userId}` : ''}`}
+      delivery={live.def.delivery}
+      benchmark={sim.balance?.synthetic?.scores || []}
+      leaderboard={rows}
+      identityDefaults={route.lti ? { name: route.lti.name, lti: route.lti } : {}}
+      onExit={onExit}
+      onFinish={(rec) => {
+        const full = { ...rec, simId: sim.id, version: live.version, ...(route.lti ? { lti: { ...route.lti, score: agsScore(rec, route.lti) } } : {}) };
+        results.add(full);
+        notify(route.lti ? 'Result saved and score sent to the gradebook' : 'Result saved');
+      }}
+    />
   );
 }

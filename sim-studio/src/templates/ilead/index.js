@@ -6,6 +6,8 @@
 
 import legacy from './legacy-content.json' with { type: 'json' };
 import { fillMissingInsights, draftBio } from './insights.js';
+import { defaultDecisions, DEFAULT_LEARNING } from './decisions.js';
+import { DEFAULT_SCORING } from '../../engine/decisions.js';
 
 export const STYLES = [
   { id: 'directing', name: 'Directing', legacy: 'Executor', skill: 'low', morale: 'low', color: 'var(--style-directing)' },
@@ -392,7 +394,12 @@ function buildDefinition() {
       },
     },
     report: buildReport(),
-    delivery: { individual: true, group: true, leaderboard: true, lti: false, scorm: true, languages: ['en'] },
+    delivery: defaultDelivery(),
+    decisions: defaultDecisions(),
+    learning: JSON.parse(JSON.stringify(DEFAULT_LEARNING)),
+    scoring: { ...DEFAULT_SCORING },
+    gamification: { xp: true, achievements: true, benchmarks: true },
+    translations: {},
   };
 }
 
@@ -416,6 +423,27 @@ export const ILEAD_TEMPLATE = {
 };
 
 // Brings a definition saved by an earlier Studio version up to date without touching authored content.
+// How learners get the simulation. Every option here is live in the learner experience.
+export function defaultDelivery() {
+  return {
+    individual: true,
+    group: false,
+    groupSize: { min: 2, max: 5 },
+    leaderboard: true,
+    leaderboardMetric: 'score',
+    leaderboardNames: 'nickname',
+    leaderboardSize: 10,
+    cohorts: [],
+    lti: false,
+    ltiPlatforms: [],
+    scorm: false,
+    scormVersion: '1.2',
+    passScore: 65,
+    languages: ['en'],
+    defaultLanguage: 'en',
+  };
+}
+
 export function migrateDefinition(def) {
   const fresh = createIleadDefinition();
   const d = def;
@@ -427,5 +455,17 @@ export function migrateDefinition(def) {
   d.context.generated ||= {};
   d.meta.drafted = [...new Set([...(d.meta.drafted || []), ...fillMissingInsights(d.report, d.leadership.styles.map((st) => st.id))])];
   for (const a of d.actors) if (!a.bio) { a.bio = draftBio(a, d.leadership.highThreshold); d.meta.drafted.push(`bio:${a.id}`); }
+  // Simulations made before decision moments, learning design and live delivery existed.
+  d.delivery = { ...defaultDelivery(), ...(d.delivery || {}) };
+  if (!d.decisions) {
+    const dec = defaultDecisions();
+    const scale = (d.timeline?.weeks || 12) / 12;
+    for (const p of dec.points) p.week = Math.max(1, Math.min(d.timeline.weeks, Math.round(p.week * scale)));
+    d.decisions = dec;
+  }
+  d.learning ||= JSON.parse(JSON.stringify(DEFAULT_LEARNING));
+  d.scoring ||= { ...DEFAULT_SCORING };
+  d.gamification ||= { xp: true, achievements: true, benchmarks: true };
+  d.translations ||= {};
   return d;
 }

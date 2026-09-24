@@ -6,6 +6,8 @@ import {
   desiredStyle, styleDiff, mismatchDistribution, membersInStage, progress, weekOf,
 } from './engine.js';
 import { createRng } from './rng.js';
+import { initDecisions, dueDecisions, resolveDecision, afterTime, evaluateDecision, overallScore, say } from './decisions.js';
+import { computeReport } from './report.js';
 
 const expectedOutcome = (option, dist) =>
   dist.reduce(
@@ -176,18 +178,68 @@ export const BOTS = {
   },
 };
 
-export function playBot(def, botId, seed) {
-  const bot = BOTS[botId];
-  const state = createRun(def, { seed });
-  const rng = createRng(seed * 7919 + 17);
-  const memo = {};
-  let guard = 0;
-  while (state.phase !== 'ended' && guard++ < 5000) {
-    if (state.phase === 'weekStart') setWeeklyStyles(def, state, bot.weekly(def, state, rng));
-    else bot.day(def, state, rng, memo);
+// How each bot answers decision moments. 'expert' gives the best answer the author defined;
+// 'random' guesses; 'oneStyle' always takes the first option; 'passive' never replies.
+const WEAK_ANSWERS = [
+  "I'll talk to them about it this week.",
+  'We need to do better. I will keep an eye on it.',
+  'Everyone should just focus and work harder on the numbers.',
+  "Let's see how it goes and review later.",
+];
+export function botAnswer(def, state, dp, strategy, rng) {
+  if (strategy === 'passive') return null;
+  const opts = dp.options || [];
+  const expert = strategy === 'expert';
+  if (dp.type === 'single' || dp.type === 'scenario') {
+    if (!opts.length) return null;
+    if (expert) {
+      const scored = opts.map((o) => ({ o, s: evaluateDecision(def, state, dp, { optionId: o.id })?.score ?? 0 })).sort((a, b) => b.s - a.s);
+      return { optionId: scored[0].o.id };
+    }
+    if (strategy === 'oneStyle') {
+      const same = opts.find((o) => o.style === def.leadership.styles[0].id);
+      if (same) return { optionId: same.id };
+    }
+    return { optionId: rng.pick(opts).id };
   }
+  if (dp.type === 'multi') {
+    const max = dp.maxSelect || opts.length;
+    if (expert) return { optionIds: opts.filter((o) => o.correct).slice(0, max).map((o) => o.id) };
+    return { optionIds: [...opts].sort(() => rng.next() - 0.5).slice(0, rng.int(1, max)).map((o) => o.id) };
+  }
+  if (dp.type === 'rank') {
+    if (expert) return { order: [...opts].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).map((o) => o.id) };
+    return { order: [...opts].sort(() => rng.next() - 0.5).map((o) => o.id) };
+  }
+  if (dp.type === 'open') {
+    if (expert) return { text: say(def, state, dp, dp.open?.modelAnswer || '') };
+    return { text: strategy === 'oneStyle' ? WEAK_ANSWERS[0] : rng.pick(WEAK_ANSWERS) };
+  }
+  return null;
+}
+
+function answerDue(def, state, strategy, rng, skill) {
+  for (const dp of dueDecisions(def, state)) {
+    const s = skill === undefined ? strategy : rng.chance(skill) ? 'expert' : 'random';
+    const ans = botAnswer(def, state, dp, s, rng);
+    if (ans) resolveDecision(def, state, dp, ans);
+  }
+}
+
+// Weekly conversions, for the trajectory chart.
+function weeklyConversions(def, state) {
+  const out = Array.from({ length: def.timeline.weeks }, () => 0);
+  for (const d of state.funnel.daily) out[Math.min(def.timeline.weeks - 1, weekOf(def, d.day) - 1)] += d.conversions;
+  let run = 0;
+  return out.map((v) => (run += v));
+}
+
+function finish(def, botId, seed, state) {
   const pr = progress(def, state);
   const intents = state.log.intents;
+  const answered = Object.values(state.dx?.answered || {});
+  const report = computeReport(def, state);
+  const overall = overallScore(def, state, report.competencies);
   return {
     botId,
     seed,
@@ -196,6 +248,48 @@ export function playBot(def, botId, seed) {
     accuracy: intents.length ? intents.filter((i) => i.diff === 0).length / intents.length : 0,
     actions: state.log.actions.length,
     leavers: Object.values(state.actors).filter((a) => a.status === 'left').length,
+    decisionScore: answered.length ? answered.reduce((t, a) => t + a.score, 0) / answered.length : null,
+    decisions: Object.fromEntries(answered.map((a) => [a.id, a.score])),
+    kpis: { ...(state.dx?.kpis || {}) },
+    overall: overall.score,
+    trajectory: weeklyConversions(def, state),
     state,
   };
+}
+
+export function playBot(def, botId, seed) {
+  const bot = BOTS[botId];
+  const state = createRun(def, { seed });
+  initDecisions(def, state);
+  const rng = createRng(seed * 7919 + 17);
+  const memo = {};
+  let guard = 0;
+  while (state.phase !== 'ended' && guard++ < 5000) {
+    answerDue(def, state, botId, rng);
+    if (state.phase === 'weekStart') setWeeklyStyles(def, state, bot.weekly(def, state, rng));
+    else bot.day(def, state, rng, memo);
+    afterTime(def, state);
+  }
+  return finish(def, botId, seed, state);
+}
+
+// A synthetic learner: skill 0 plays like the guessing bot, skill 1 like the adaptive one.
+// Every weekly style, action and decision is an independent draw, so a cohort of these shows
+// the spread of results real learners of mixed ability are likely to get.
+export function playSynthetic(def, seed, skill) {
+  const state = createRun(def, { seed });
+  initDecisions(def, state);
+  const rng = createRng(seed * 104729 + 3);
+  const memo = {};
+  let guard = 0;
+  while (state.phase !== 'ended' && guard++ < 5000) {
+    answerDue(def, state, 'random', rng, skill);
+    if (state.phase === 'weekStart') {
+      const good = BOTS.expert.weekly(def, state, rng);
+      const guess = BOTS.random.weekly(def, state, rng);
+      setWeeklyStyles(def, state, Object.fromEntries(Object.keys(good).map((id) => [id, rng.chance(skill) ? good[id] : guess[id]])));
+    } else (rng.chance(skill) ? BOTS.expert : BOTS.random).day(def, state, rng, memo);
+    afterTime(def, state);
+  }
+  return { ...finish(def, 'synthetic', seed, state), skill };
 }

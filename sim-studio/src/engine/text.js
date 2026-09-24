@@ -22,6 +22,12 @@ export const RUNTIME_TOKENS = {
   him: 'Pronoun (him / her / them)',
   his: 'Pronoun (his / her / their)',
   himself: 'Pronoun (himself / herself / themselves)',
+  actor2: 'Second team member name',
+  he2: 'Second person pronoun (he / she / they)',
+  his2: 'Second person pronoun (his / her / their)',
+  him2: 'Second person pronoun (him / her / them)',
+  conversions: 'Conversions so far',
+  target: 'Conversion target',
 };
 
 const TOKEN_RE = /\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g;
@@ -97,6 +103,23 @@ export function collectTexts(def) {
   def.triggers.forEach((t) => add('events', `Trigger: ${t.name}`, t.text, { triggerId: t.id }));
   def.report.competencies.forEach((c) => c.bands.forEach((b) => add('report', `${c.name}: ${b.label}`, b.text, { competencyId: c.id, band: b.label })));
   Object.entries(def.report.objective).forEach(([k, v]) => add('report', `Objective insight: ${k}`, v, { objective: k }));
+  for (const p of def.decisions?.points || []) {
+    const lbl = p.title || p.id;
+    add('decisions', `Moment: ${lbl} (title)`, p.title, { dpId: p.id, field: 'title' });
+    add('decisions', `Moment: ${lbl} (situation)`, p.situation, { dpId: p.id, field: 'situation' });
+    (p.variants || []).forEach((v, i) => add('decisions', `Moment: ${lbl} (variant ${i + 1})`, v.text, { dpId: p.id, field: 'variant', index: i }));
+    add('decisions', `Moment: ${lbl} (question)`, p.prompt, { dpId: p.id, field: 'prompt' });
+    (p.options || []).forEach((o) => {
+      add('decisions', `Moment: ${lbl} (option)`, o.text, { dpId: p.id, optionId: o.id, field: 'text' });
+      if (o.reaction) add('decisions', `Moment: ${lbl} (reaction)`, o.reaction, { dpId: p.id, optionId: o.id, field: 'reaction' });
+      if (o.feedback) add('decisions', `Moment: ${lbl} (feedback)`, o.feedback, { dpId: p.id, optionId: o.id, field: 'feedback' });
+    });
+    for (const [band, oc] of Object.entries(p.outcomes || {})) {
+      if (oc?.reaction) add('decisions', `Moment: ${lbl} (${band} reaction)`, oc.reaction, { dpId: p.id, band, field: 'reaction' });
+      if (oc?.feedback) add('decisions', `Moment: ${lbl} (${band} feedback)`, oc.feedback, { dpId: p.id, band, field: 'feedback' });
+    }
+    if (p.open?.modelAnswer) add('decisions', `Moment: ${lbl} (model answer)`, p.open.modelAnswer, { dpId: p.id, field: 'modelAnswer' });
+  }
   Object.entries(def.report.styleInsights).forEach(([styleId, grid]) =>
     Object.entries(grid).forEach(([k, v]) => add('report', `Style insight: ${styleId} ${k}`, v, { styleId, cell: k })),
   );
