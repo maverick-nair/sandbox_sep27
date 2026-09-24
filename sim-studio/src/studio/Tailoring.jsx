@@ -3,7 +3,8 @@ import { INDUSTRIES, DEPTHS } from '../templates/ilead/context-packs.js';
 import { COUNTRIES, COUNTRY_LIST, CURRENCIES, REGIONS, findCountry } from '../templates/ilead/world.js';
 import { AREAS, applyProposals, suggestProfile, industryPack, locationPack, GENIE_SCOPES, genieItems, geniePrompt, genieProposals } from '../templates/ilead/contextualize.js';
 import { contextBoundItems, renderText } from '../engine/text.js';
-import { Button, Callout, Field, Pill, Seg, TextInput, TokenText } from './ui.jsx';
+import { Button, Callout, Combobox, Field, Pill, Seg, TextInput, TokenText } from './ui.jsx';
+import { clone } from '../engine/clone.js';
 
 // ---------- Layer 1: the organization profile ----------
 
@@ -86,17 +87,14 @@ export function LocationFields({ profile, onChange, setDriver, markTouched = () 
   return (
     <div className="stack" style={{ '--gap': '14px' }}>
       <Field label="Country" id="pf-country" hint={profile.country === 'custom' ? '' : 'Start typing to search any country. Type a name that is not in the list to use a fictitious country.'}>
-        <input
+        <Combobox
           id="pf-country"
-          className="input"
-          list="pf-countries"
-          autoComplete="off"
           value={countryText}
-          onChange={(e) => typeCountry(e.target.value)}
-          onBlur={commitCountry}
-          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), commitCountry())}
+          options={COUNTRY_LIST.map((c) => c.name)}
+          onChange={typeCountry}
+          onCommit={commitCountry}
+          label="Country"
         />
-        <datalist id="pf-countries">{COUNTRY_LIST.map((c) => <option key={c.code} value={c.name} />)}</datalist>
       </Field>
 
       {profile.country === 'custom' ? (
@@ -116,7 +114,7 @@ export function LocationFields({ profile, onChange, setDriver, markTouched = () 
           </div>
         </div>
       ) : (
-        <p className="small muted" style={{ marginTop: -8 }}>Currency {loc.currency} · team names in {REGIONS[loc.region]?.label.toLowerCase()} style</p>
+        <p className="small muted" style={{ marginTop: -8 }}>Currency {loc.currency} · {loc.namesFrom === 'country' ? `team names from ${loc.label}` : `team names in ${REGIONS[loc.region]?.label.toLowerCase()} style; review them on the People step`}</p>
       )}
 
       <div className="field">
@@ -192,7 +190,7 @@ export function ProposalReview({ def, proposals, excluded, setExcluded, edits = 
   }, [proposals]);
   const included = proposals.filter((p) => !excluded.has(p.id)).length;
   // Render every item against the draft as it will be, so names read as the final version.
-  const finalDef = useMemo(() => applyProposals(structuredClone(def), chosen(proposals, excluded, edits)), [def, proposals, excluded, edits]);
+  const finalDef = useMemo(() => applyProposals(clone(def), chosen(proposals, excluded, edits)), [def, proposals, excluded, edits]);
   const toggle = (id) => setExcluded((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleArea = (items, on) => setExcluded((s) => { const n = new Set(s); items.forEach((p) => (on ? n.delete(p.id) : n.add(p.id))); return n; });
 

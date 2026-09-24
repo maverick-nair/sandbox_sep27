@@ -27,7 +27,7 @@ function HealthPill({ def }) {
   return <Pill tone="good">Ready</Pill>;
 }
 
-export default function Home({ store, onOpen, onNew, notify }) {
+export default function Home({ store, flowDraft, onResume, onDiscardDraft, onOpen, onNew, notify }) {
   const [confirm, setConfirm] = useState(null);
   const t = TEMPLATES.ilead;
   const sims = useMemo(() => [...store.sims].sort((a, b) => b.updatedAt - a.updatedAt), [store.sims]);
@@ -55,6 +55,30 @@ export default function Home({ store, onOpen, onNew, notify }) {
             Build a simulation from a proven template, fit it to your client's world, check that it rewards the right behaviour, then publish.
           </SectionHead>
 
+          {flowDraft && (
+            <div className="card row spread" style={{ borderColor: 'var(--accent)' }}>
+              <div className="stack" style={{ '--gap': '2px', minWidth: 0 }}>
+                <span className="eyebrow">Resume where you left off</span>
+                <strong>{flowDraft.profile?.orgName?.trim() ? `iLead for ${flowDraft.profile.orgName}` : 'A new iLead simulation'}</strong>
+                <span className="small muted">Step {(flowDraft.step || 0) + 1} of 6 · saved {ago(flowDraft.at)}{flowDraft.brief?.instructions ? ` · "${flowDraft.brief.instructions.slice(0, 70)}${flowDraft.brief.instructions.length > 70 ? '…' : ''}"` : ''}</span>
+              </div>
+              <div className="row nowrap">
+                {confirm === 'draft' ? (
+                  <>
+                    <span className="small">Discard this draft?</span>
+                    <Button size="sm" onClick={() => setConfirm(null)}>Keep it</Button>
+                    <Button size="sm" variant="danger" onClick={() => { onDiscardDraft(); setConfirm(null); }}>Discard</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button size="sm" variant="ghost" onClick={() => setConfirm('draft')}>Discard</Button>
+                    <Button variant="primary" onClick={onResume} tip="Opens the creation flow exactly where you left it." tipAlign="end">Resume</Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <section className="stack" aria-labelledby="tpl-h">
             <h2 id="tpl-h">Start from a template</h2>
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -68,8 +92,17 @@ export default function Home({ store, onOpen, onNew, notify }) {
                   </div>
                   <p className="small muted">For {t.audiences.join(', ').toLowerCase()}.</p>
                   <div className="row" style={{ marginTop: 4 }}>
-                    <Button variant="primary" size="lg" onClick={() => onNew('ilead')} tip="Describe what you need in a few sentences. Genie drafts a tailored iLead simulation step by step for you to review." tipAlign="start">Use this template</Button>
+                    <Button variant="primary" size="lg" onClick={() => (flowDraft ? setConfirm('new') : onNew('ilead'))} tip={flowDraft ? 'Starts a new simulation. The draft you have in progress is replaced; use Resume above to continue it instead.' : 'Describe what you need in a few sentences. A tailored iLead simulation is drafted step by step for you to review.'} tipAlign="start">Use this template</Button>
                   </div>
+                  {confirm === 'new' && (
+                    <div className="callout warn">
+                      <span className="ic">!</span>
+                      <div className="grow stack" style={{ '--gap': '6px' }}>
+                        <span>You have a simulation in progress. Starting a new one replaces it.</span>
+                        <div className="row"><Button size="sm" variant="primary" onClick={() => { setConfirm(null); onResume(); }}>Resume it</Button><Button size="sm" onClick={() => { setConfirm(null); onNew('ilead'); }}>Start a new one</Button></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="stack" style={{ padding: 20, background: 'var(--surface-2)', '--gap': '8px' }}>
                   <span className="eyebrow">Storylines</span>

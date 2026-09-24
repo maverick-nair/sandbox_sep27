@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MECHANIC_INFO } from '../../engine/engine.js';
 import { Button, Callout, Drawer, Field, ImpactInputs, NumberInput, Pill, SectionHead, StylePill, Switch, TextInput, TokenArea, impactText } from '../ui.jsx';
+import { clone } from '../../engine/clone.js';
 
 const CATEGORIES = {
   team: 'Whole team',
@@ -144,7 +145,7 @@ function ActionEditor({ def, action, update, advanced, onClose, initialOption, i
           <div className="row spread">
             <h3>Responses{action.options.length > 1 ? ` for ${styled ? def.leadership.styles.find((s) => s.id === option.style)?.name : option.label}` : ''}</h3>
             {styled && action.options.length > 1 && (
-              <Button size="sm" variant="ghost" onClick={() => setA((a) => { a.options.forEach((o) => { if (o !== a.options[oi]) o.outcomes = structuredClone(a.options[oi].outcomes); }); })}>Copy to all options</Button>
+              <Button size="sm" variant="ghost" onClick={() => setA((a) => { a.options.forEach((o) => { if (o !== a.options[oi]) o.outcomes = clone(a.options[oi].outcomes); }); })}>Copy to all options</Button>
             )}
           </div>
           <p className="small muted">{action.scope === 'team' ? 'Team actions show one message, based on how most of the team reacted.' : 'Several versions of a response keep repeat plays fresh; one is picked at random.'}</p>

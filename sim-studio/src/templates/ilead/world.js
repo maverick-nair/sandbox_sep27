@@ -348,10 +348,20 @@ export const COUNTRY_LIST = RAW.map(([code, name]) => ({ code, name })).sort((a,
 
 export const CURRENCIES = [...new Set(RAW.map((r) => r[3]))].sort();
 
+// Everyday names authors use for a country.
+export const COUNTRY_ALIASES = {
+  usa: 'US', 'u.s.': 'US', 'u.s.a.': 'US', america: 'US', 'the us': 'US', 'the usa': 'US', 'the united states': 'US', states: 'US',
+  uk: 'GB', 'u.k.': 'GB', britain: 'GB', 'great britain': 'GB', england: 'GB', scotland: 'GB', wales: 'GB', 'the uk': 'GB',
+  uae: 'AE', emirates: 'AE', 'the uae': 'AE', ksa: 'SA', holland: 'NL', 'south korea': 'KR', korea: 'KR', 'czech republic': 'CZ', turkiye: 'TR', 'türkiye': 'TR',
+};
+
 export function findCountry(text) {
   const t = String(text || '').trim().toLowerCase();
   if (!t) return null;
-  return RAW.find(([code, name]) => name.toLowerCase() === t || code.toLowerCase() === t)?.[0] || null;
+  const hit = RAW.find(([code, name]) => name.toLowerCase() === t || code.toLowerCase() === t)?.[0];
+  if (hit) return hit;
+  const alias = COUNTRY_ALIASES[t];
+  return alias && RAW.some((r) => r[0] === alias) ? alias : null;
 }
 
 export function fxFor(currency) {

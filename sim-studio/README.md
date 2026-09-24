@@ -9,7 +9,7 @@ The product spec is in [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md).
 ```
 npm install
 npm run dev              # local development
-npm test                 # engine, template, validator and balance tests
+npm test                 # engine, template, validator, balance, brief and QA regression tests
 npm run balance          # balance check for the iLead template from the command line
 npm run build            # production build in dist/
 npm run build:artifact   # single self-contained HTML in dist/sim-studio.html

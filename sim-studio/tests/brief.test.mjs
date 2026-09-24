@@ -33,9 +33,9 @@ test('service, business buyers, constraints and difficulty are read from the wor
 
 test('only what cannot be inferred is asked', () => {
   const vague = read({ instructions: 'Something for our managers.' });
-  assert.deepEqual(vague.missing.sort(), ['country', 'industry', 'orgName']);
+  assert.deepEqual(vague.missing.sort(), ['country', 'industry', 'offeringName', 'orgName']);
   const solar = read({ instructions: 'For team leads at Solaris Energy, a solar installer in Lagos selling rooftop systems to households.' });
-  assert.deepEqual(solar.missing, ['industry']);
+  assert.deepEqual(solar.missing, ['industry', 'offeringName'], 'an unknown industry has no sample product, so its name is asked');
   assert.equal(solar.profile.country, 'NG');
   assert.equal(solar.profile.offeringName, '', 'no elevator sample names leak into an unknown industry');
 });
@@ -49,7 +49,7 @@ test('a city implies its country', () => {
 
 test("Genie's reading fills gaps and wins where it answered", () => {
   const rules = read({ instructions: 'Something for our managers.' });
-  const merged = mergeGenieBrief(rules, { orgName: 'Helios Solar', industry: 'other', customIndustry: 'Solar energy', offeringType: 'product', customerType: 'b2c', country: 'Nigeria', city: 'Abuja', sessionMinutes: 45, outcomes: ['motivate'], unknown: [] }, base);
+  const merged = mergeGenieBrief(rules, { orgName: 'Helios Solar', industry: 'other', customIndustry: 'Solar energy', offeringType: 'product', offeringName: 'Helios Home', customerType: 'b2c', country: 'Nigeria', city: 'Abuja', sessionMinutes: 45, outcomes: ['motivate'], unknown: [] }, base);
   assert.equal(merged.profile.orgName, 'Helios Solar');
   assert.equal(merged.profile.country, 'NG');
   assert.equal(merged.profile.city, 'Abuja');

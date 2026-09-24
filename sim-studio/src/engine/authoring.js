@@ -13,7 +13,8 @@ export const DIFFICULTY = {
   challenging: { label: 'Challenging', note: 'Wrong styles land more often; target is 15% higher; outcomes vary more.', mismatchChance: 0.75, targetFactor: 1.15, impactMin: 0.7, impactMax: 1.3 },
 };
 
-export const clone = (x) => structuredClone(x);
+import { clone } from './clone.js';
+export { clone };
 
 // Compress or stretch the calendar: events, trigger windows and lead inflow move together,
 // and the target scales with the number of leads so difficulty stays about the same.

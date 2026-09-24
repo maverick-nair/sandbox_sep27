@@ -61,7 +61,13 @@ export function renderText(def, text, vars = {}) {
     }
     if (vars[key] !== undefined) return String(vars[key]);
     if (vars[lower] !== undefined) return upper ? capitalize(String(vars[lower])) : String(vars[lower]);
-    if (entities[key] !== undefined) return entities[key];
+    if (entities[key] !== undefined) {
+      // Never leave a gap in the sentence: an empty field shows as a visible placeholder,
+      // and the health check lists it.
+      if (String(entities[key]).trim()) return entities[key];
+      const e = def.context.entities.find((x) => x.key === key);
+      return `[${e?.label || key}]`;
+    }
     if (key === 'weeks') return String(def.timeline.weeks);
     return whole;
   });

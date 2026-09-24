@@ -70,6 +70,16 @@ The author gives direction; Genie does the structuring. One stage per screen, ea
 
 **Consistency.** Every stage is derived from one state (brief, profile, settings, author edits). Changing the country on step 2 updates names, money and events on steps 3 to 5; an author's own edits survive regeneration of other items and re-reading the brief.
 
+**Safety nets (from the QA pass).**
+- *Nothing is lost.* The flow autosaves every change; Simulations offers *Resume where you left off*. The Studio header shows the real save state (Saving, Saved in this browser, Not saved) and a failed save raises a banner with *Try again* and *Download a backup*. Other tabs' changes are merged, not overwritten, and pending saves are flushed when the page closes.
+- *Questions only when needed, answered only by the author.* An unknown organization or product name is asked with an empty field and a one-click suggestion; sample names never fill an open question. *Needs you* appears only on questions actually asked; everything else not in the brief is *Suggested*.
+- *The brief is read the way people write.* The team's location is weighed by phrasing ("team in", "based in" versus "clients in"), US states are understood, and two plausible locations become a one-click question. Negation ("don't let them fire", "not formal") is honoured and contradictions (two session lengths, both kinds of buyers) become clarifying questions.
+- *Specific instructions are used or explained.* Weeks, target, stage names, team names, requested events and deal value are applied; anything the template cannot take (for example a team of 8, since iLead needs 10 people to require every style) is listed as *Not used yet* with the reason.
+- *The author's words are protected.* Replacing an edited item asks first; regenerating a group skips edited items; every regeneration, new names and new letter version has *Undo*. Re-reading a changed brief lists edits written for the old context with *Keep* or *Refresh*.
+- *Genie can be stopped.* While Genie reads, the brief is locked and *Stop* is available; after 20 seconds the rules take over. Duplicate requests are blocked, and a Genie answer that breaks field tokens is refused with a message.
+- *The brief stays in view* on every step and is stored with the draft for the author only, never in the definition, versions or export. *Set up without a brief* starts from questions instead.
+- *Industries without a pack say so.* Generic items carry a badge, and three optional questions (competitor, other offerings, a typical setback) make them specific.
+
 **Genie and offline behaviour.** In the hosted GenieKreator, Genie reads the brief (its answer is merged over the rules, which fill any gap) and powers every *Regenerate*. Elsewhere, built-in rules read the brief (industry, offering, buyers, organization name, any country or city, audience, length, difficulty, outcomes, constraints) and *Regenerate* offers alternative versions where one exists; buttons that need Genie explain why in their tooltip.
 
 ### 5.2 Design a harder variant for senior leaders
@@ -128,6 +138,8 @@ Two layers, so authors describe their world once and the tool does the rewriting
 ## 6b. Help in context
 
 Every main action carries a tooltip on hover and keyboard focus that says what it does and when to use it: Health check, Balance check, Play as learner, Publish, Show engine settings, Build my simulation, Regenerate, New names, Restore to draft, and others.
+
+On touch screens, where there is no hover, each explained control has a small *i* button that shows the same help on tap. Tips are kept inside the viewport on narrow screens. On phones, the step list and Studio sections collapse into a single *Step N of 6* or section menu. Drawers and dialogs take keyboard focus, keep it inside, and return it on close. The Studio has session *Undo* and *Redo* (Ctrl+Z, Ctrl+Shift+Z outside text boxes).
 
 ## 7. The iLead model, as implemented
 
@@ -202,10 +214,11 @@ The Studio shell (gallery, wizard, sections, health, balance, preview, publish) 
 
 ## 13. Out of scope for the prototype, needed for production
 
-- Backend persistence, roles and review workflow (prototype uses browser storage).
+- Backend persistence, roles and review workflow (prototype uses browser storage). Requirements from the QA pass: sign-in; separation between client organizations (tenant isolation); per-simulation saves with version checks instead of one list; an audit log of edits, publishes and Genie calls; retention rules for drafts, briefs and versions; the brief visible to its author and editors only; an AI data notice and an organization-level switch to turn Genie off.
+- Supported browsers: current Chrome, Edge, Firefox and Safari (desktop), Safari on iOS 16 or newer and Chrome on Android. The prototype was tested in Chromium only; Firefox and WebKit runs need a device lab before a pilot.
 - "Translate with Genie" (rewriting with Genie works in the hosted version; translation is not built).
 - More industry and country packs, owned by content teams (the pack format is plain data in `src/templates/ilead/context-packs.js`).
-- Group report, leaderboard and cohort data (settings exist; no runtime yet).
+- Group report, leaderboard and cohort data (settings exist and are labelled *Planned*; no runtime yet).
 - LTI and SCORM packaging.
 - Migration of the other five legacy storylines (the script in `scripts/extract_ilead.py` handles one workbook; each storyline needs its workbook).
 - GenieTracker integration of competency scores via the ontology codes.

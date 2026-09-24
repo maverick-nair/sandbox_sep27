@@ -69,6 +69,7 @@ export const INDUSTRIES = {
     label: 'Elevators',
     legacy: true,
     noun: 'elevator',
+    orgPhrase: 'a relatively small elevator company',
     vision: 'revolutionize the elevator industry through state-of-the-art innovations',
     sampleOrg: 'Innov8 Elevators',
     competitor: 'Uplift',
@@ -85,6 +86,7 @@ export const INDUSTRIES = {
   banking: {
     label: 'Banking and financial services',
     noun: 'banking',
+    orgPhrase: 'a young, fast-growing bank',
     vision: 'make banking simple, fair and fast for every customer',
     sampleOrg: 'Meridian Bank',
     competitor: 'Crestline Bank',
@@ -120,6 +122,7 @@ export const INDUSTRIES = {
   insurance: {
     label: 'Insurance',
     noun: 'insurance',
+    orgPhrase: 'a growing insurer',
     vision: 'make protection easy to understand and quick to claim',
     sampleOrg: 'Evergreen Assurance',
     competitor: 'Sentinel Life',
@@ -155,6 +158,7 @@ export const INDUSTRIES = {
   medtech: {
     label: 'Healthcare and medical devices',
     noun: 'medical technology',
+    orgPhrase: 'a growing medical technology company',
     vision: 'bring hospital-grade monitoring to every patient who needs it',
     sampleOrg: 'Northwind Medical',
     competitor: 'Vitalis',
@@ -181,6 +185,7 @@ export const INDUSTRIES = {
   pharma: {
     label: 'Pharmaceuticals',
     noun: 'pharmaceutical',
+    orgPhrase: 'a growing pharmaceutical company',
     vision: 'bring affordable, trusted medicines to every clinic',
     sampleOrg: 'Aurelia Pharma',
     competitor: 'Novaris Labs',
@@ -216,6 +221,7 @@ export const INDUSTRIES = {
   it: {
     label: 'IT services and software',
     noun: 'technology',
+    orgPhrase: 'a fast-growing technology company',
     vision: 'help businesses run on software that just works',
     sampleOrg: 'Brightpath Technologies',
     competitor: 'Stackline',
@@ -242,6 +248,7 @@ export const INDUSTRIES = {
   manufacturing: {
     label: 'Manufacturing and industrial equipment',
     noun: 'industrial equipment',
+    orgPhrase: 'a mid-sized manufacturer',
     vision: 'make factories safer and more productive',
     sampleOrg: 'Ironclad Industries',
     competitor: 'Torque Systems',
@@ -268,6 +275,7 @@ export const INDUSTRIES = {
   telecom: {
     label: 'Telecom',
     noun: 'telecom',
+    orgPhrase: 'a challenger telecom operator',
     vision: 'connect every business with fast, reliable networks',
     sampleOrg: 'Skyline Telecom',
     competitor: 'Nexa Networks',

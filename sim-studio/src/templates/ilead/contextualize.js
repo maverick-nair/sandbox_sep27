@@ -6,6 +6,7 @@
 
 import { INDUSTRIES, OTHER_INDUSTRY, LOCATIONS, STAGE_SETS, GENERIC_EVENTS, LEGACY_EVENT_ARCHETYPE, OFFERING } from './context-packs.js';
 import { COUNTRIES, REGIONS, TIER_FACTOR, fxFor } from './world.js';
+import { COUNTRY_NAMES } from './names.js';
 import { createIleadDefinition } from './index.js';
 import { collectTexts, findTokens } from '../../engine/text.js';
 import { setTextAt } from '../../engine/authoring.js';
@@ -25,7 +26,10 @@ let original = null;
 const templateOriginal = () => (original ||= createIleadDefinition());
 
 export function industryPack(profile) {
-  if (profile.industry === 'other') return { ...OTHER_INDUSTRY, label: profile.customIndustry?.trim() || 'Other', noun: profile.customIndustry?.trim().toLowerCase() || OTHER_INDUSTRY.noun };
+  if (profile.industry === 'other') {
+    const custom = profile.customIndustry?.trim();
+    return { ...OTHER_INDUSTRY, label: custom || 'Other', noun: custom?.toLowerCase() || OTHER_INDUSTRY.noun, orgPhrase: custom ? `a growing ${custom.toLowerCase()} business` : 'a growing business', generic: true };
+  }
   return INDUSTRIES[profile.industry] || OTHER_INDUSTRY;
 }
 // Any country resolves to a location profile. The eight hand-written packs refine the
@@ -41,11 +45,14 @@ export function locationPack(profile) {
   const c = COUNTRIES[profile.country] || COUNTRIES[LEGACY_COUNTRY];
   const pack = LOCATIONS[c.code];
   const base = fromCountry(c);
-  return pack ? { ...base, ...pack, cities: c.cities, region: c.region } : base;
+  return pack ? { ...base, ...pack, cities: c.cities, region: c.region, namesFrom: 'country' } : base;
 }
 
 function fromCountry(c, fictitious = false) {
   const r = REGIONS[c.region];
+  // Country pools for the most-picked markets; the regional style for the rest.
+  const own = COUNTRY_NAMES[c.code];
+  const names = own || { she: r.she, he: r.he };
   const anchor = c.cities[0] || c.name;
   return {
     code: c.code,
@@ -57,12 +64,19 @@ function fromCountry(c, fictitious = false) {
     dealFactor: TIER_FACTOR[c.tier] ?? 1,
     cities: c.cities,
     destination: r.destination,
-    ceo: r.she[5],
-    board: r.he[14],
+    ceo: names.she[5],
+    board: names.he[14],
     lunch: r.lunch,
     institutions: { 'China Bank': `${anchor} Commercial Bank`, 'Manchester Business School': `${anchor} School of Business` },
-    names: { she: r.she, he: r.he },
+    names,
+    namesFrom: own ? 'country' : 'region',
   };
+}
+
+// A plausible name for what the team sells when the brief does not give one. Shown as Suggested.
+export function suggestOfferingName(profile) {
+  const brand = String(profile.orgName || '').trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{N}-]/gu, '') || 'Nova';
+  return `${brand} ${profile.offeringType === 'service' ? 'Assist' : 'Plus'}`;
 }
 
 // Unique names from a pool; when it runs out, combine given and family names from the same pool.
@@ -150,10 +164,13 @@ function niceRound(v) {
   return Math.round(v / mag) * mag;
 }
 
+// How the letter describes the organization, per industry ("a young, fast-growing bank").
+const orgPhrase = (pack) => pack.orgPhrase || `a growing ${pack.noun} business`;
+
 const LETTER_OPENINGS = [
-  (pack, plural) => `As you know, {{company}} is a relatively small ${pack.noun} company with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.`,
+  (pack, plural) => `As you know, {{company}} is ${orgPhrase(pack)} with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.`,
   (pack, plural) => `{{company}} has one ambition: to ${pack.vision}. Our ${plural} {{product_2}} and {{product_3}} built our name, and {{product}} is the launch that will define our year.`,
-  (pack, plural) => `You are joining a ${pack.noun} company that intends to ${pack.vision}. Alongside {{product_2}} and {{product_3}}, we have just launched {{product}}, and it is where our growth must come from.`,
+  (pack, plural) => `You are joining ${orgPhrase(pack)} that intends to ${pack.vision}. Alongside {{product_2}} and {{product_3}}, we have just launched {{product}}, and it is where our growth must come from.`,
 ];
 
 function welcomeLetter(pack, offeringType, variant = 0) {
@@ -162,7 +179,7 @@ function welcomeLetter(pack, offeringType, variant = 0) {
     const opening = LETTER_OPENINGS[variant % LETTER_OPENINGS.length](pack, plural);
     return `Welcome to {{company}}!\n\n${opening}\n\nYou will lead the team selling {{product}}. The team has lost its way under its previous leader, and the board is counting on you to turn it around this quarter.\n\nThe details of {{product}} and how you will be assessed are attached.\n\nWith every good wish,\n{{ceo}}\nCEO, {{company}}`;
   }
-  return `Welcome on board {{company}}!\n\nAs you know, {{company}} is a relatively small ${pack.noun} company with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.\n\nYour role will be to lead the team selling {{product}}. Your predecessor could not inspire the team and left it in shatters. Our board trusts that your leadership experience will turn the team around.\n\nInformation on {{product}} and the parameters on which you will be assessed are attached.\n\nGood luck!\n{{ceo}}\nCEO, {{company}}`;
+  return `Welcome on board {{company}}!\n\nAs you know, {{company}} is ${orgPhrase(pack)} with a vision to ${pack.vision}. We have three ${plural} in our portfolio: {{product_2}}, {{product_3}} and the recently launched {{product}}.\n\nYour role will be to lead the team selling {{product}}. Your predecessor could not inspire the team and left it struggling. Our board trusts that your leadership experience will turn the team around.\n\nInformation on {{product}} and the parameters on which you will be assessed are attached.\n\nGood luck!\n{{ceo}}\nCEO, {{company}}`;
 }
 
 // Returns proposals: { id, area, label, target, before, after, because[], status }.
@@ -185,6 +202,8 @@ export function proposeContext(def, profile) {
   const out = [];
   const add = (area, label, target, after, because) => {
     if (after === undefined || after === null) return;
+    // A blank context field would leave gaps in every sentence that uses it.
+    if (target.kind === 'entity' && !String(after).trim()) return;
     const before = read(def, target);
     if (String(before) === String(after)) return;
     const id = targetKey(target);
@@ -196,13 +215,14 @@ export function proposeContext(def, profile) {
 
   // Organization and names: always.
   add('organization', 'Company', { kind: 'entity', key: 'company' }, profile.orgName, [tag.org]);
-  add('organization', 'Product the team sells', { kind: 'entity', key: 'product' }, profile.offeringName, [tag.org]);
+  add('organization', 'Product the team sells', { kind: 'entity', key: 'product' }, profile.offeringName?.trim() || suggestOfferingName(profile), [tag.org]);
   add('organization', 'What the product is', { kind: 'entity', key: 'category' }, profile.offeringCategory, [tag.org, tag.offering]);
   add('organization', "Learner's role", { kind: 'entity', key: 'learner_role' }, profile.learnerRole, [tag.org]);
   add('organization', 'Industry', { kind: 'industry' }, pack.label, [tag.industry]);
-  add('organization', 'Other product 1', { kind: 'entity', key: 'product_2' }, offPack.portfolio[0], [tag.industry]);
-  add('organization', 'Other product 2', { kind: 'entity', key: 'product_3' }, offPack.portfolio[1], [tag.industry]);
-  add('organization', 'Main competitor', { kind: 'entity', key: 'competitor' }, pack.competitor, [tag.industry]);
+  const portfolio = String(profile.customPortfolio || '').split(/\s*(?:,|;|\band\b)\s*/).map((x) => x.trim()).filter(Boolean);
+  add('organization', 'Other product 1', { kind: 'entity', key: 'product_2' }, portfolio[0] || offPack.portfolio[0], [portfolio[0] ? tag.org : tag.industry]);
+  add('organization', 'Other product 2', { kind: 'entity', key: 'product_3' }, portfolio[1] || offPack.portfolio[1], [portfolio[1] ? tag.org : tag.industry]);
+  add('organization', 'Main competitor', { kind: 'entity', key: 'competitor' }, profile.customCompetitor?.trim() || pack.competitor, [profile.customCompetitor?.trim() ? tag.org : tag.industry]);
   add('organization', 'Previous employer of a team member', { kind: 'entity', key: 'rival' }, pack.rival, [tag.industry]);
   add('organization', 'Home city', { kind: 'entity', key: 'city' }, profile.city?.trim() || loc.cities[0] || loc.label, [tag.location]);
   add('organization', 'Dream conference destination', { kind: 'entity', key: 'destination' }, loc.destination, [tag.location]);
@@ -234,9 +254,12 @@ export function proposeContext(def, profile) {
     for (const [eventId, archetype] of Object.entries(LEGACY_EVENT_ARCHETYPE)) {
       const ev = def.events.find((e) => e.id === eventId);
       if (!ev) continue;
-      const src = pack.legacy ? orig.events.find((e) => e.id === eventId) : pack.events?.[archetype] || GENERIC_EVENTS[archetype];
+      const setback = archetype === 'crisis' && profile.industry === 'other' && profile.customSetback?.trim().replace(/[.\s]+$/, '');
+      const src = setback
+        ? { name: 'Market setback', text: `This week brings a setback: ${setback.charAt(0).toLowerCase()}${setback.slice(1)}. Customers hesitate and the team finds it hard to close.` }
+        : pack.legacy ? orig.events.find((e) => e.id === eventId) : pack.events?.[archetype] || GENERIC_EVENTS[archetype];
       if (!src) continue;
-      const why = pack.legacy || pack.events?.[archetype] ? [tag.industry] : ['Any industry'];
+      const why = setback ? [tag.org] : pack.legacy || pack.events?.[archetype] ? [tag.industry] : ['Any industry'];
       add('events', `${ev.name}: title`, { kind: 'event', id: eventId, field: 'name' }, src.name, why);
       add('events', `${ev.name}: text`, { kind: 'event', id: eventId, field: 'text' }, src.text, why);
     }
@@ -267,6 +290,7 @@ export function proposeContext(def, profile) {
           t = t.replace(new RegExp(`\\b${o.name.split(' ')[0]}\\b`, 'g'), name.split(' ')[0]);
         }
         if (localized) for (const [from, to] of Object.entries(loc.institutions)) t = t.split(from).join(to);
+        if (!isLegacyShape) t = t.replace(/\bgo-to guy\b/g, 'go-to person').replace(/\bis a Finance Major\b/g, 'has a finance degree');
         if (stageNames) {
           for (const [term, idx] of legacyTerms) t = t.split(term).join(stageNames[idx]);
           t = t.replace(/\bconversion team\b/g, `${stageNames[4].toLowerCase()} team`).replace(/\bNegotiation department\b/g, `${stageNames[3]} team`);

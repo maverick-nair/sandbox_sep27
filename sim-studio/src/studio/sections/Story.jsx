@@ -6,12 +6,22 @@ import { AREAS } from '../../templates/ilead/contextualize.js';
 import { Button, Callout, Pill, SectionHead, TextInput, TokenArea, TokenText } from '../ui.jsx';
 import { ProfileForm, DepthPicker, ProposalReview, GeniePanel, chosen, defaultExcluded, profileSummary } from '../Tailoring.jsx';
 
-export default function Story({ def, update, focus, notify }) {
+// Profile changes not applied yet, per simulation, so they survive switching tabs and sections.
+const pendingProfiles = new Map();
+
+export default function Story({ def, update, focus, notify, sim }) {
+  const simKey = sim?.id || def.meta.name;
+  const [pending, setPendingState] = useState(() => pendingProfiles.get(simKey) || null);
+  const setPending = (p) => {
+    const same = !p || JSON.stringify(p) === JSON.stringify(def.context.profile);
+    if (same) pendingProfiles.delete(simKey); else pendingProfiles.set(simKey, p);
+    setPendingState(same ? null : p);
+  };
   const industryChanged = def.context.industry.toLowerCase() !== def.context.originalIndustry.toLowerCase();
   const bound = contextBoundItems(def);
   const [tab, setTab] = useState(focus?.field === 'rewrite' || (industryChanged && bound.length) ? 'rewrite' : focus?.field === 'context' ? 'context' : 'profile');
   const tabs = [
-    ['profile', 'Your organization'],
+    ['profile', `Your organization${pending ? ' (not applied yet)' : ''}`],
     ['context', 'Context fields'],
     ['rewrite', `Rewrite list${industryChanged && bound.length ? ` (${bound.length})` : ''}`],
     ['letters', 'Welcome and target'],
@@ -28,7 +38,12 @@ export default function Story({ def, update, focus, notify }) {
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
-      {tab === 'profile' && <OrgProfile def={def} update={update} notify={notify} />}
+      {pending && tab !== 'profile' && (
+        <Callout tone="warn" icon="!">
+          Your organization profile has changes that are not applied yet. <Button size="sm" onClick={() => setTab('profile')}>Review and apply</Button> <Button size="sm" variant="ghost" onClick={() => setPending(null)}>Discard them</Button>
+        </Callout>
+      )}
+      {tab === 'profile' && <OrgProfile def={def} update={update} notify={notify} pending={pending} setPending={setPending} />}
       {tab === 'context' && <ContextFields def={def} update={update} />}
       {tab === 'rewrite' && (
         <div className="stack" style={{ '--gap': '18px' }}>
@@ -164,9 +179,10 @@ function Tour({ def, update }) {
 }
 
 // Layer 1 (the profile) and layer 2 (what it changes), editable at any time after creation.
-function OrgProfile({ def, update, notify }) {
+function OrgProfile({ def, update, notify, pending, setPending }) {
   const ctx = TEMPLATES[def.meta.templateId].contextualize;
-  const [profile, setProfile] = useState(() => ({ ...def.context.profile }));
+  const profile = pending || def.context.profile;
+  const setProfile = (p) => setPending(p);
   const proposals = useMemo(() => ctx.proposeContext(def, profile), [ctx, def, profile]);
   const [excluded, setExcluded] = useState(() => defaultExcluded(proposals));
   const [edits, setEdits] = useState({});
@@ -185,11 +201,17 @@ function OrgProfile({ def, update, notify }) {
   const apply = () => {
     update((d) => ctx.applyProposals(d, picked, profile));
     setEdits({});
+    setPending(null);
     notify?.(picked.length ? `${picked.length} changes applied` : 'Profile saved');
   };
 
   return (
     <div className="stack" style={{ '--gap': '18px' }}>
+      {profileChanged && (
+        <Callout tone="warn" icon="!">
+          <strong>Not applied yet.</strong> The simulation does not change until you apply. Your edits here are kept if you switch tabs.
+        </Callout>
+      )}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start', gap: 20 }}>
         <div className="card stack">
           <h3>Organization profile</h3>
@@ -208,7 +230,7 @@ function OrgProfile({ def, update, notify }) {
             ) : <p className="small muted">The simulation already matches this profile.</p>}
             <div className="row">
               <Button variant="primary" disabled={!picked.length && !profileChanged} onClick={apply}>{picked.length ? `Apply ${picked.length} change${picked.length === 1 ? '' : 's'}` : 'Save profile'}</Button>
-              {profileChanged && <Button variant="ghost" onClick={() => setProfile({ ...def.context.profile })}>Reset</Button>}
+              {profileChanged && <Button variant="ghost" onClick={() => setPending(null)}>Discard changes</Button>}
             </div>
             <p className="small muted">Changes you made by hand since the last tailoring are marked and left unticked.</p>
           </div>

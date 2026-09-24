@@ -296,7 +296,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rail .tip-wrap { display: flex; }
 .tip-bubble {
   position: absolute; top: calc(100% + 8px); left: 50%; transform: translate(-50%, -2px);
-  width: max-content; max-width: 260px; padding: 7px 10px; border-radius: 7px;
+  width: max-content; max-width: min(260px, calc(100vw - 24px)); margin-left: var(--tip-dx, 0px); padding: 7px 10px; border-radius: 7px;
   background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 500; line-height: 1.4; text-align: left; white-space: normal;
   box-shadow: var(--shadow); opacity: 0; pointer-events: none; z-index: 70; transition: opacity 0.12s, transform 0.12s;
 }
@@ -307,3 +307,51 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tip-start:hover .tip-bubble, .tip-start:focus-within .tip-bubble, .tip-end:hover .tip-bubble, .tip-end:focus-within .tip-bubble { transform: translate(0, 0); }
 .tip-right:hover .tip-bubble, .tip-right:focus-within .tip-bubble { transform: translate(0, -50%); }
 @media (hover: none) { .tip-wrap:hover .tip-bubble { opacity: 0; } }
+.tip-open .tip-bubble, .tip-open:hover .tip-bubble { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.tip-start.tip-open .tip-bubble, .tip-end.tip-open .tip-bubble { transform: translate(0, 0); }
+.tip-right.tip-open .tip-bubble { transform: translate(0, -50%); }
+/* Touch screens: an info button beside each explained control, since there is no hover. */
+.tip-info { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .tip-info {
+    display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 4px; align-self: center; flex: none;
+    border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted);
+    font: 600 12px/1 var(--font-body); font-style: italic; cursor: pointer; padding: 0;
+  }
+  .rail .tip-info { margin-right: 6px; }
+}
+
+/* ---------- combobox ---------- */
+.combo { position: relative; }
+.combo-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; margin: 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow); max-height: 260px; overflow-y: auto;
+}
+.combo-list li { padding: 7px 9px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+.combo-list li.on, .combo-list li:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- save state ---------- */
+.save-banner {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+  padding: 9px 20px; background: var(--bad-soft); color: var(--ink); border-bottom: 1px solid var(--bad); font-size: 14px;
+}
+.save-state { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.save-state.error { color: var(--bad); font-weight: 600; }
+
+/* ---------- compact navigation on phones ---------- */
+.mobile-nav { display: none; }
+@media (max-width: 860px) {
+  .shell.compact-rail > .rail { display: none; }
+  .shell.compact-rail { grid-template-rows: auto minmax(0, 1fr); }
+  .mobile-nav { display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .mobile-nav .select { flex: 1 1 auto; min-width: 0; }
+}
+
+/* ---------- pinned brief ---------- */
+.brief-pin { border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface-2); padding: 8px 12px; font-size: 13px; }
+.brief-pin summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.brief-pin p { margin: 6px 0 0; white-space: pre-wrap; color: var(--ink-2); }
+
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+  .style-pill { background: var(--surface-2); }
+}

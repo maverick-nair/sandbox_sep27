@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { validate, healthSummary } from '../engine/validate.js';
 import { Button, Drawer, Modal, Pill, Switch, TextInput, Callout, Tip } from './ui.jsx';
 import Overview from './sections/Overview.jsx';
@@ -21,7 +21,10 @@ export const TIPS = {
   publish: 'Saves a numbered version that learners get from now on. Runs already in progress keep their version. Blocked while the health check has errors.',
   engine: 'Reveals the numbers behind the plain controls: impacts, probabilities, formulas and buffers. Off keeps the Studio simple.',
   all: 'Back to your list of simulations. Your work is saved automatically.',
+  undo: 'Undoes your last change in this session (Ctrl+Z or Cmd+Z outside a text box). Redo with Ctrl+Shift+Z.',
 };
+
+const SAVE_LABEL = { saved: 'Saved in this browser', saving: 'Saving…', error: 'Not saved' };
 
 export const SECTIONS = [
   { id: 'overview', label: 'Overview', group: 'Plan', component: Overview },
@@ -41,7 +44,52 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
   const [advanced, setAdvanced] = useState(false);
   const [panel, setPanel] = useState(null); // 'health' | 'balance' | 'publish' | 'preview'
   const def = sim.def;
-  const update = useCallback((mutator) => store.update(sim.id, mutator), [store, sim.id]);
+  // Session undo: every change records the definition before it. Rapid edits to the same
+  // field (typing) collapse into one step.
+  const history = useRef({ past: [], future: [], at: 0 });
+  const [, bump] = useState(0);
+  const current = useRef(def);
+  current.current = def;
+  const update = useCallback((mutator) => {
+    const h = history.current;
+    const now = Date.now();
+    if (now - h.at > 700 || !h.past.length) h.past.push(current.current);
+    if (h.past.length > 50) h.past.shift();
+    h.future = [];
+    h.at = now;
+    bump((n) => n + 1);
+    store.update(sim.id, mutator);
+  }, [store, sim.id]);
+  const undo = useCallback(() => {
+    const h = history.current;
+    if (!h.past.length) return;
+    h.future.push(current.current);
+    store.replace(sim.id, h.past.pop());
+    h.at = 0;
+    bump((n) => n + 1);
+    notify('Undone');
+  }, [store, sim.id, notify]);
+  const redo = useCallback(() => {
+    const h = history.current;
+    if (!h.future.length) return;
+    h.past.push(current.current);
+    store.replace(sim.id, h.future.pop());
+    h.at = 0;
+    bump((n) => n + 1);
+    notify('Redone');
+  }, [store, sim.id, notify]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return; // the text box's own undo
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
   const issues = useMemo(() => validate(def), [def]);
   const health = healthSummary(issues);
   const balanceStale = sim.balance && sim.balance.at < sim.updatedAt;
@@ -60,7 +108,7 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
   const ctx = { def, update, advanced, sim, store, notify, go, focus, issues, openPanel: setPanel };
 
   return (
-    <div className="shell">
+    <div className="shell compact-rail">
       <nav className="rail" aria-label="Studio sections">
         {groups.map((g) => (
           <div className="rail-group" key={g}>
@@ -90,13 +138,20 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
           </Tip>
         </div>
       </nav>
+      <div className="mobile-nav">
+        <label className="sr-only" htmlFor="studio-section">Section</label>
+        <select id="studio-section" className="select" value={section} onChange={(e) => go(e.target.value)}>
+          {SECTIONS.map((s) => { const n = bySection(s.id).length; return <option key={s.id} value={s.id}>{s.label}{n ? ` (${n} to review)` : ''}</option>; })}
+        </select>
+      </div>
       <main className="main">
         <div className="page" style={{ paddingTop: 16 }}>
           <div className="row spread" style={{ marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
             <div className="row" style={{ minWidth: 0 }}>
               <Button variant="ghost" size="sm" onClick={onExit} tip={TIPS.all} tipAlign="start">All simulations</Button>
               {sim.status === 'published' ? <Pill tone="accent">Published v{sim.versions.at(-1)?.version}{sim.updatedAt > (sim.publishedAt || sim.versions.at(-1)?.at || 0) ? ' · unpublished changes' : ''}</Pill> : <Pill>Draft</Pill>}
-              <span className="small muted">Saved in this browser</span>
+              <span className={`save-state ${store.save.state === 'error' ? 'error' : ''}`} role="status" aria-live="polite">{SAVE_LABEL[store.save.state]}</span>
+              <Button size="sm" variant="ghost" disabled={!history.current.past.length} onClick={undo} tip={TIPS.undo} tipAlign="start">Undo</Button>
             </div>
             <div className="row">
               <Tip text={TIPS.engine}><Switch checked={advanced} onChange={setAdvanced} label="Show engine settings" /></Tip>

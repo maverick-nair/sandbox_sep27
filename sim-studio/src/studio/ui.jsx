@@ -9,13 +9,81 @@ export function Button({ variant = '', size = '', className = '', tip, tipAlign 
   return <Tip id={id} text={tip} align={tipAlign}>{btn}</Tip>;
 }
 
+// Hover or keyboard focus shows the tip. On touch screens an info button next to the control
+// shows it on tap. The bubble is nudged back inside the viewport on narrow screens.
 export function Tip({ text, children, align = 'center', id }) {
   const auto = useId();
+  const wrap = useRef(null);
+  const bubble = useRef(null);
+  const [open, setOpen] = useState(false);
+  const fit = () => {
+    const b = bubble.current;
+    if (!b) return;
+    b.style.setProperty('--tip-dx', '0px');
+    const r = b.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const dx = r.left < 8 ? 8 - r.left : r.right > vw - 8 ? vw - 8 - r.right : 0;
+    b.style.setProperty('--tip-dx', `${Math.round(dx)}px`);
+  };
+  useEffect(() => {
+    if (!open) return undefined;
+    fit();
+    const close = (e) => { if (!wrap.current?.contains(e.target)) setOpen(false); };
+    const esc = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc); };
+  }, [open]);
   return (
-    <span className={`tip-wrap tip-${align}`}>
+    <span ref={wrap} className={`tip-wrap tip-${align} ${open ? 'tip-open' : ''}`} onMouseEnter={fit} onFocus={fit}>
       {children}
-      <span role="tooltip" id={id || auto} className="tip-bubble">{text}</span>
+      <button type="button" className="tip-info" aria-label="What does this do?" aria-expanded={open} onClick={() => setOpen((o) => !o)}>i</button>
+      <span ref={bubble} role="tooltip" id={id || auto} className="tip-bubble">{text}</span>
     </span>
+  );
+}
+
+// Accessible search list (replaces <datalist>, which Firefox for Android and iOS Safari handle poorly).
+export function Combobox({ id, value, options, onChange, onCommit, label, max = 8 }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const listId = `${id}-list`;
+  const q = String(value || '').trim().toLowerCase();
+  const matches = q ? options.filter((o) => o.toLowerCase().startsWith(q)).concat(options.filter((o) => !o.toLowerCase().startsWith(q) && o.toLowerCase().includes(q))).slice(0, max) : [];
+  const exact = matches.length === 1 && matches[0].toLowerCase() === q;
+  const show = open && matches.length > 0 && !exact;
+  const pick = (o) => { onChange(o); setOpen(false); };
+  return (
+    <div className="combo">
+      <input
+        id={id}
+        className="input"
+        role="combobox"
+        aria-label={label}
+        aria-expanded={show}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={show ? `${listId}-${active}` : undefined}
+        autoComplete="off"
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); setActive(0); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => { setOpen(false); onCommit?.(); }}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' && matches.length) { e.preventDefault(); setOpen(true); setActive((a) => Math.min(matches.length - 1, a + 1)); }
+          else if (e.key === 'ArrowUp' && matches.length) { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+          else if (e.key === 'Enter') { e.preventDefault(); if (show && matches[active]) pick(matches[active]); else { setOpen(false); onCommit?.(); } }
+          else if (e.key === 'Escape' && show) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
+        }}
+      />
+      {show && (
+        <ul id={listId} role="listbox" className="combo-list" aria-label={`${label} suggestions`}>
+          {matches.map((o, i) => (
+            <li key={o} id={`${listId}-${i}`} role="option" aria-selected={i === active} className={i === active ? 'on' : ''} onMouseDown={(e) => { e.preventDefault(); pick(o); }}>{o}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -213,18 +281,44 @@ export function TokenArea({ def, label, hint, value, onChange, rows = 4, tokens 
   );
 }
 
-export function Drawer({ title, subtitle, onClose, children, wide, actions }) {
+// Dialog focus: move focus to the heading on open, keep Tab inside, return focus on close.
+function useDialogFocus(onClose) {
+  const box = useRef(null);
+  const head = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    const opener = document.activeElement;
+    head.current?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') { closeRef.current(); return; }
+      if (e.key !== 'Tab' || !box.current) return;
+      const items = [...box.current.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0];
+      const last = items.at(-1);
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === head.current)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      else if (!box.current.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
+    };
+  }, []);
+  return { box, head };
+}
+
+export function Drawer({ title, subtitle, onClose, children, wide, actions }) {
+  const { box, head } = useDialogFocus(onClose);
+  const hid = useId();
   return (
     <div className="drawer-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className={`drawer ${wide ? 'wide' : ''}`} role="dialog" aria-label={title}>
+      <aside ref={box} className={`drawer ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={hid}>
         <div className="drawer-head">
           <div className="grow">
-            <h2>{title}</h2>
+            <h2 id={hid} ref={head} tabIndex={-1} style={{ outline: 'none' }}>{title}</h2>
             {subtitle && <div className="small muted">{subtitle}</div>}
           </div>
           {actions}
@@ -237,16 +331,13 @@ export function Drawer({ title, subtitle, onClose, children, wide, actions }) {
 }
 
 export function Modal({ title, onClose, children, wide }) {
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const { box, head } = useDialogFocus(onClose);
+  const hid = useId();
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-label={title}>
+      <div ref={box} className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={hid}>
         <div className="row spread" style={{ marginBottom: 12 }}>
-          <h2>{title}</h2>
+          <h2 id={hid} ref={head} tabIndex={-1} style={{ outline: 'none' }}>{title}</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
         </div>
         {children}

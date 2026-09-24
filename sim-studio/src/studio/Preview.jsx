@@ -7,6 +7,7 @@ import { computeReport } from '../engine/report.js';
 import { renderText } from '../engine/text.js';
 import { Button, Callout, Pill, StylePill, Switch, Tip } from './ui.jsx';
 import { ReportView } from './sections/Report.jsx';
+import { clone } from '../engine/clone.js';
 
 const rag = (def, v) => (v < def.leadership.rag.red ? 'var(--bad)' : v < def.leadership.rag.green ? 'var(--warn)' : 'var(--good)');
 
@@ -16,7 +17,7 @@ export default function Preview({ def, onClose }) {
   const [xray, setXray] = useState(true);
   const [error, setError] = useState('');
   const act = (fn) => {
-    const next = structuredClone(state);
+    const next = clone(state);
     const res = fn(next);
     if (res && res.ok === false) { setError(res.error); return res; }
     setError('');
