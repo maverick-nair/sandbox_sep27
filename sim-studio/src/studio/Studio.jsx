@@ -12,6 +12,8 @@ import Report from './sections/Report.jsx';
 import Settings from './sections/Settings.jsx';
 import Balance from './Balance.jsx';
 import Preview from './Preview.jsx';
+import HealthDrawer from './Health.jsx';
+import { TEMPLATES } from '../templates/registry.js';
 
 // What each main action does, shown as tooltips.
 export const TIPS = {
@@ -169,49 +171,15 @@ export default function Studio({ sim, store, initialSection, notify, onExit }) {
         </div>
       </main>
 
-      {panel === 'health' && <HealthDrawer issues={issues} onClose={() => setPanel(null)} go={go} update={update} notify={notify} />}
+      {panel === 'health' && <HealthDrawer def={def} issues={issues} onClose={() => setPanel(null)} go={go} update={update} notify={notify} />}
       {panel === 'balance' && <Balance sim={sim} def={def} store={store} update={update} onClose={() => setPanel(null)} notify={notify} advanced={advanced} />}
-      {panel === 'publish' && <PublishModal sim={sim} health={health} store={store} onClose={() => setPanel(null)} notify={notify} openHealth={() => setPanel('health')} />}
+      {panel === 'publish' && <PublishModal sim={sim} health={health} store={store} onClose={() => setPanel(null)} notify={notify} openHealth={() => setPanel('health')} update={update} />}
       {panel === 'preview' && <Preview def={def} onClose={() => setPanel(null)} />}
     </div>
   );
 }
 
-function HealthDrawer({ issues, onClose, go, update, notify }) {
-  const tones = { error: 'bad', warning: 'warn', info: '' };
-  const labels = { error: 'Fix before publishing', warning: 'Review', info: 'For information' };
-  return (
-    <Drawer title="Health check" subtitle="Runs on every change" onClose={onClose}>
-      {issues.length === 0 && <Callout tone="good" icon="✓">No issues. Run the balance check before you publish.</Callout>}
-      <div className="stack" style={{ '--gap': '18px' }}>
-        {['error', 'warning', 'info'].map((sev) => {
-          const list = issues.filter((i) => i.severity === sev);
-          if (!list.length) return null;
-          return (
-            <div key={sev} className="stack" style={{ '--gap': '8px' }}>
-              <div className="row"><Pill tone={tones[sev]}>{list.length}</Pill><h3>{labels[sev]}</h3></div>
-              {list.map((i) => (
-                <div key={i.id} className="card tight stack" style={{ '--gap': '6px' }}>
-                  <div className="row spread nowrap">
-                    <strong>{i.title}</strong>
-                    <span className="small muted" style={{ textTransform: 'capitalize' }}>{i.section}</span>
-                  </div>
-                  <p className="small ink2">{i.detail}</p>
-                  <div className="row">
-                    <Button size="sm" onClick={() => go(i.section, i.ref)}>Go to {i.section}</Button>
-                    {i.fix && <Button size="sm" variant="primary" onClick={() => { update(i.fix.patch); notify('Fixed'); }} tip="Applies the suggested change for you. You can change it again later.">{i.fix.label}</Button>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-    </Drawer>
-  );
-}
-
-function PublishModal({ sim, health, store, onClose, notify, openHealth }) {
+function PublishModal({ sim, health, store, onClose, notify, openHealth, update }) {
   const [note, setNote] = useState('');
   const [confirmRestore, setConfirmRestore] = useState(null);
   const next = (sim.versions.at(-1)?.version || 0) + 1;
@@ -221,7 +189,13 @@ function PublishModal({ sim, health, store, onClose, notify, openHealth }) {
       <div className="stack">
         {health.errors > 0 ? (
           <Callout tone="bad" icon="!">
-            {health.errors} issue{health.errors === 1 ? '' : 's'} must be fixed first. <Button size="sm" onClick={openHealth}>Open health check</Button>
+            {health.errors} issue{health.errors === 1 ? '' : 's'} must be fixed first. Each has a suggested fix.{' '}
+            {TEMPLATES[sim.def.meta.templateId]?.fixes && <Button size="sm" variant="primary" onClick={() => {
+              const r = TEMPLATES[sim.def.meta.templateId].fixes.applyAllSuggested(sim.def, validate, ['error']);
+              update(() => r.def);
+              notify(r.left.length ? `${r.left.length} still need you. Open the health check to see them.` : 'Fixed with the suggestions. Undo is at the top.');
+            }}>Fix them with the suggestions</Button>}{' '}
+            <Button size="sm" onClick={openHealth}>Review each fix</Button>
           </Callout>
         ) : (
           <Callout tone="good" icon="✓">No blocking issues.</Callout>

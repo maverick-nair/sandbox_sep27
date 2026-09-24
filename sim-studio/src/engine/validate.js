@@ -3,6 +3,20 @@
 import { collectTexts, unknownTokens, contextBoundItems } from './text.js';
 import { desiredStyle } from './engine.js';
 
+// What each outcome of a mechanic means, in the author's words.
+export const OUTCOME_LABELS = {
+  styleChoice: { 0: 'Style fits', 1: 'Partly fits', 2: 'Wrong style' },
+  weeklyStyleCheck: { 0: 'Style fits', 1: 'Partly fits', 2: 'Wrong style' },
+  training: { 0: 'Well timed', 1: 'Partly useful', 2: 'Badly timed' },
+  performanceTrend: { 0: 'Matches the trend', 1: 'Against the trend', 2: 'Against the trend' },
+  roleChange: { 0: 'Better fit', 1: 'Similar fit', 2: 'Worse fit' },
+  reward: { 0: 'Person rewarded', 1: 'Top performer passed over', 2: 'Not deserved' },
+  fire: { 0: 'Fired', 1: 'Rest of the team reacts', 2: 'Rest of the team reacts' },
+  hire: { 0: 'Announcement' },
+  assess: { 0: 'Result' },
+};
+export const outcomeLabel = (mechanic, k) => OUTCOME_LABELS[mechanic]?.[k] || { 0: 'Positive', 1: 'Mixed', 2: 'Negative' }[k];
+
 const LEGACY_MARKERS = [/NO STRING AVAILABLE/i, /PLACEHOLDER_[A-Z_]+/, /_REPLACEMENT\b/];
 
 export function validate(def) {
@@ -13,41 +27,42 @@ export function validate(def) {
 
   // Structure
   for (const st of def.stages) {
-    if (!team.some((a) => a.startStage === st.id)) add('error', 'team', `No one starts in ${st.name}`, 'Every stage needs at least one person on day one, or the funnel stops at that stage.', { ref: { stageId: st.id } });
-    if (!(st.conversion > 0 && st.conversion <= 1)) add('error', 'funnel', `${st.name} conversion must be between 1% and 100%`, `It is ${Math.round(st.conversion * 100)}%.`, { ref: { stageId: st.id } });
+    if (!team.some((a) => a.startStage === st.id)) add('error', 'team', `No one starts in ${st.name}`, 'Every stage needs at least one person on day one, or the funnel stops at that stage.', { ref: { stageId: st.id }, code: 'stage-empty', data: { stageId: st.id } });
+    if (!(st.conversion > 0 && st.conversion <= 1)) add('error', 'funnel', `${st.name} conversion must be between 1% and 100%`, `It is ${Math.round(st.conversion * 100)}%.`, { ref: { stageId: st.id }, code: 'conversion-range', data: { stageId: st.id } });
   }
   const combos = new Set(def.leadership.styles.map((s) => `${s.skill}/${s.morale}`));
-  if (combos.size !== 4) add('error', 'leadership', 'Styles must cover all four skill and morale combinations', 'Each style maps to one combination of low or high skill and low or high morale.');
-  if (!(def.funnel.target > 0)) add('error', 'funnel', 'Set a target', 'The learner needs a conversion target to aim for.');
+  if (combos.size !== 4) add('error', 'leadership', 'Styles must cover all four skill and morale combinations', 'Each style maps to one combination of low or high skill and low or high morale.', { code: 'styles-combos' });
+  if (!(def.funnel.target > 0)) add('error', 'funnel', 'Set a target', 'The learner needs a conversion target to aim for.', { code: 'no-target' });
   if (def.funnel.weeklyInflow.length !== weeks) {
     add('warning', 'funnel', 'Lead inflow does not match the duration', `There are ${def.funnel.weeklyInflow.length} weekly values for a ${weeks}-week simulation.`, {
+      code: 'inflow-length',
       fix: { label: 'Match inflow to duration', patch: (d) => { d.funnel.weeklyInflow = Array.from({ length: weeks }, (_, i) => d.funnel.weeklyInflow[i] ?? d.funnel.weeklyInflow.at(-1) ?? 200); } },
     });
   }
-  if (team.length > def.team.maxSize) add('error', 'team', 'Starting team is larger than the maximum team size', `${team.length} people start; the maximum is ${def.team.maxSize}.`);
+  if (team.length > def.team.maxSize) add('error', 'team', 'Starting team is larger than the maximum team size', `${team.length} people start; the maximum is ${def.team.maxSize}.`, { code: 'team-over-max', data: { size: team.length } });
 
   // Learning design: the starting team should need more than one style.
   const needs = new Set(team.map((a) => desiredStyle(def, a.stats[a.startStage].s, a.stats[a.startStage].m)));
   if (needs.size < 3) {
-    add('warning', 'team', `The starting team needs only ${needs.size} leadership style${needs.size === 1 ? '' : 's'}`, 'Learners can do well without adapting. Aim for people in at least three of the four skill and morale quadrants.');
+    add('warning', 'team', `The starting team needs only ${needs.size} leadership style${needs.size === 1 ? '' : 's'}`, 'Learners can do well without adapting. Aim for people in at least three of the four skill and morale quadrants.', { code: 'few-styles', data: { needs: [...needs] } });
   }
 
   // Actions
   const hireOn = def.actions.some((a) => a.enabled && a.mechanic === 'hire');
-  if (hireOn && !def.actors.some((a) => a.pool === 'hire')) add('warning', 'actions', 'Hiring is on but the hiring pool is empty', 'Add candidates in Team, or switch off Hire member.');
+  if (hireOn && !def.actors.some((a) => a.pool === 'hire')) add('warning', 'actions', 'Hiring is on but the hiring pool is empty', 'Add candidates in Team, or switch off Hire member.', { code: 'hire-empty-pool' });
   const totalDays = weeks * def.timeline.daysPerWeek;
   for (const a of def.actions.filter((x) => x.enabled)) {
     for (const o of a.options) {
-      if (a.mechanic === 'styleChoice' && !o.style) add('error', 'actions', `${a.name}: an option has no style`, 'Style choice actions judge the learner by the style of the option they pick.', { ref: { actionId: a.id } });
-      if (o.cooldownDays >= totalDays) add('warning', 'actions', `${a.name}: can only be used once`, `The ${o.cooldownDays}-day wait is longer than the ${totalDays}-day simulation.`, { ref: { actionId: a.id } });
-      if (o.dayCost > def.timeline.daysPerWeek) add('error', 'actions', `${a.name}: takes longer than a week`, 'Actions must fit inside one week.', { ref: { actionId: a.id } });
+      if (a.mechanic === 'styleChoice' && !o.style) add('error', 'actions', `${a.name}: an option has no style`, 'Style choice actions judge the learner by the style of the option they pick.', { ref: { actionId: a.id }, code: 'option-no-style', data: { actionId: a.id, optionId: o.id } });
+      if (o.cooldownDays >= totalDays) add('warning', 'actions', `${a.name}: can only be used once`, `The ${o.cooldownDays}-day wait is longer than the ${totalDays}-day simulation.`, { ref: { actionId: a.id }, code: 'cooldown-too-long', data: { actionId: a.id, optionId: o.id } });
+      if (o.dayCost > def.timeline.daysPerWeek) add('error', 'actions', `${a.name}: takes longer than a week`, 'Actions must fit inside one week.', { ref: { actionId: a.id }, code: 'daycost-too-long', data: { actionId: a.id, optionId: o.id } });
       const needMessages = a.mechanic !== 'fire' && a.mechanic !== 'hire' && a.mechanic !== 'assess' ? (a.mechanic === 'reward' ? ['0', '1'] : ['0', '1', '2']) : [];
       for (const k of needMessages) {
         if (a.mechanic === 'performanceTrend' && k === '2') continue;
         if (a.mechanic === 'roleChange' && k === '1') continue;
         if (!o.outcomes[k]?.messages.length) {
-          const label = { 0: 'Positive', 1: 'Mixed', 2: 'Negative' }[k];
-          add('warning', 'actions', `${a.name}${a.options.length > 1 ? ` (${o.label})` : ''}: no ${label} response`, 'The learner will see the nearest response that has copy instead.', { ref: { actionId: a.id, optionId: o.id } });
+          const label = outcomeLabel(a.mechanic, k);
+          add('warning', 'actions', `${a.name}${a.options.length > 1 ? ` (${o.label})` : ''}: no response for "${label}"`, 'Learners who get this result see the nearest response that has text instead, which may not make sense.', { ref: { actionId: a.id, optionId: o.id }, code: 'missing-response', data: { actionId: a.id, optionId: o.id, outcome: k } });
         }
       }
     }
@@ -56,6 +71,8 @@ export function validate(def) {
       if (i.s >= 0 && i.m >= 0 && i.p >= 0) {
         add('warning', 'actions', 'Firing has no cost for the rest of the team', 'The model says everyone else reacts negatively, but the Mixed impact is zero. Learners can fire people without consequence.', {
           ref: { actionId: a.id },
+          code: 'fire-no-cost',
+          data: { actionId: a.id },
           fix: { label: 'Use a small negative reaction (-3 morale, -2 performance)', patch: (d) => { d.actions.find((x) => x.id === a.id).options[0].outcomes['1'].impact = { s: 0, m: -3, p: -2 }; } },
         });
       }
@@ -63,7 +80,7 @@ export function validate(def) {
     for (const k of ['1', '2']) {
       for (const o of a.options) {
         const i = o.outcomes[k]?.impact;
-        if (a.mechanic === 'styleChoice' && i && i.s + i.m + i.p > 0) add('warning', 'actions', `${a.name}: a wrong style still helps`, `The ${k === '1' ? 'Mixed' : 'Negative'} outcome adds to skill, morale and performance.`, { ref: { actionId: a.id, optionId: o.id } });
+        if (a.mechanic === 'styleChoice' && i && i.s + i.m + i.p > 0) add('warning', 'actions', `${a.name}: a wrong style still helps`, `The ${k === '1' ? 'Mixed' : 'Negative'} outcome adds to skill, morale and performance.`, { ref: { actionId: a.id, optionId: o.id }, code: 'wrong-style-helps', data: { actionId: a.id, optionId: o.id, outcome: k } });
       }
     }
   }
@@ -71,23 +88,24 @@ export function validate(def) {
   // Events
   for (const e of def.events) {
     if (!e.enabled) {
-      if (e.week < 1) add('info', 'events', `${e.name} is not scheduled`, 'It is in the library but switched off. Schedule it on the timeline to use it.', { ref: { eventId: e.id } });
+      if (e.week < 1) add('info', 'events', `${e.name} is not scheduled`, 'It is in the library but switched off. Schedule it on the timeline to use it.', { ref: { eventId: e.id }, code: 'event-unscheduled', data: { eventId: e.id } });
       continue;
     }
-    if (e.week < 1 || e.week > weeks) add('error', 'events', `${e.name} is outside the simulation`, `It is set for week ${e.week}; the simulation has ${weeks} weeks.`, { ref: { eventId: e.id } });
-    if (e.day > def.timeline.daysPerWeek) add('error', 'events', `${e.name} falls on a day that does not exist`, `Day ${e.day} of a ${def.timeline.daysPerWeek}-day week.`, { ref: { eventId: e.id } });
+    if (e.week < 1 || e.week > weeks) add('error', 'events', `${e.name} is outside the simulation`, `It is set for week ${e.week}; the simulation has ${weeks} weeks.`, { ref: { eventId: e.id }, code: 'event-outside', data: { eventId: e.id } });
+    if (e.day > def.timeline.daysPerWeek) add('error', 'events', `${e.name} falls on a day that does not exist`, `Day ${e.day} of a ${def.timeline.daysPerWeek}-day week.`, { ref: { eventId: e.id }, code: 'event-bad-day', data: { eventId: e.id } });
   }
   for (const t of def.triggers.filter((x) => x.enabled)) {
     const inside = t.windows.filter((w) => w.week <= weeks);
-    if (!inside.length) add('warning', 'events', `${t.name} can never happen`, 'All of its check points are after the last week.', { ref: { triggerId: t.id } });
-    else if (inside.length < t.windows.length) add('info', 'events', `${t.name}: some check points are after the last week`, `${t.windows.length - inside.length} of ${t.windows.length} are ignored.`, { ref: { triggerId: t.id } });
+    if (!inside.length) add('warning', 'events', `${t.name} can never happen`, 'All of its check points are after the last week.', { ref: { triggerId: t.id }, code: 'trigger-never', data: { triggerId: t.id } });
+    else if (inside.length < t.windows.length) add('info', 'events', `${t.name}: some check points are after the last week`, `${t.windows.length - inside.length} of ${t.windows.length} are ignored.`, { ref: { triggerId: t.id }, code: 'trigger-some-after', data: { triggerId: t.id } });
   }
 
   // Blanks and duplicates: the mistakes quick editing and AI rewrites produce most often.
   // Blanks are errors, so they block publishing.
+  if (!String(def.context.industry ?? '').trim()) add('warning', 'story', 'Industry is empty', 'The industry names the world the simulation is set in and tells the health check which wording still belongs to the original storyline.', { ref: { field: 'context' }, code: 'industry-empty' });
   const REQUIRED_FIELDS = ['company', 'product', 'learner_role', 'ceo', 'city'];
   for (const e of def.context.entities) {
-    if (!String(e.value ?? '').trim()) add(REQUIRED_FIELDS.includes(e.key) ? 'error' : 'warning', 'story', `${e.label || e.key} is empty`, 'Every sentence that uses this field would show a gap. Fill it in under Story and context.', { ref: { field: 'context', key: e.key } });
+    if (!String(e.value ?? '').trim()) add(REQUIRED_FIELDS.includes(e.key) ? 'error' : 'warning', 'story', `${e.label || e.key} is empty`, 'Every sentence that uses this field would show a gap. Fill it in under Story and context.', { ref: { field: 'context', key: e.key }, code: 'entity-empty', data: { key: e.key } });
   }
   const dupes = (list, label) => {
     const seen = new Map();
@@ -98,45 +116,45 @@ export function validate(def) {
     }
     return [...seen.values()].filter((g) => g.length > 1).map((g) => ({ name: g[0].name, count: g.length, label, first: g[0] }));
   };
-  def.stages.forEach((st, i) => { if (!st.name?.trim()) add('error', 'funnel', `Stage ${i + 1} has no name`, 'Learners see stage names on every screen.', { ref: { stageId: st.id } }); });
-  for (const d of dupes(def.stages, 'stages')) add('error', 'funnel', `Two stages are called ${d.name}`, 'Learners cannot tell the stages apart. Give each stage its own name.', { ref: { stageId: d.first.id } });
+  def.stages.forEach((st, i) => { if (!st.name?.trim()) add('error', 'funnel', `Stage ${i + 1} has no name`, 'Learners see stage names on every screen.', { ref: { stageId: st.id }, code: 'stage-no-name', data: { stageId: st.id } }); });
+  for (const d of dupes(def.stages, 'stages')) add('error', 'funnel', `Two stages are called ${d.name}`, 'Learners cannot tell the stages apart. Give each stage its own name.', { ref: { stageId: d.first.id }, code: 'stage-dup', data: { name: d.name } });
   const people = def.actors.filter((a) => a.pool === 'team' || a.pool === 'hire');
-  people.forEach((a) => { if (!a.name?.trim()) add('error', 'team', 'A team member has no name', 'Give every person a name; it appears in events, responses and the report.', { ref: { actorId: a.id } }); });
-  for (const d of dupes(people, 'people')) add('error', 'team', `${d.count} people are called ${d.name}`, 'Learners cannot tell them apart in events and responses. Give each person a different name.', { ref: { actorId: d.first.id } });
+  people.forEach((a) => { if (!a.name?.trim()) add('error', 'team', 'A team member has no name', 'Give every person a name; it appears in events, responses and the report.', { ref: { actorId: a.id }, code: 'actor-no-name', data: { actorId: a.id } }); });
+  for (const d of dupes(people, 'people')) add('error', 'team', `${d.count} people are called ${d.name}`, 'Learners cannot tell them apart in events and responses. Give each person a different name.', { ref: { actorId: d.first.id }, code: 'actor-dup', data: { name: d.name } });
   const blank = (v) => !String(v ?? '').trim();
-  if (blank(def.story.welcome)) add('error', 'story', 'The welcome letter is empty', 'It is the first thing learners read.', { ref: { field: 'welcome' } });
-  if (blank(def.story.overview)) add('error', 'story', 'The product brief is empty', 'Learners read it before the first week.', { ref: { field: 'overview' } });
+  if (blank(def.story.welcome)) add('error', 'story', 'The welcome letter is empty', 'It is the first thing learners read.', { ref: { field: 'welcome' }, code: 'story-empty', data: { field: 'welcome' } });
+  if (blank(def.story.overview)) add('error', 'story', 'The product brief is empty', 'Learners read it before the first week.', { ref: { field: 'overview' }, code: 'story-empty', data: { field: 'overview' } });
   for (const e of def.events.filter((x) => x.enabled)) {
-    if (blank(e.name)) add('error', 'events', 'An event has no title', `The event in week ${e.week} needs a title.`, { ref: { eventId: e.id } });
-    if (blank(e.text)) add('error', 'events', `${e.name || 'An event'} has no text`, 'Learners would see an empty message.', { ref: { eventId: e.id } });
+    if (blank(e.name)) add('error', 'events', 'An event has no title', `The event in week ${e.week} needs a title.`, { ref: { eventId: e.id }, code: 'event-no-title', data: { eventId: e.id } });
+    if (blank(e.text)) add('error', 'events', `${e.name || 'An event'} has no text`, 'Learners would see an empty message.', { ref: { eventId: e.id }, code: 'event-no-text', data: { eventId: e.id } });
   }
   const enabledActions = def.actions.filter((a) => a.enabled);
-  if (!enabledActions.length) add('error', 'actions', 'Every action is switched off', 'Learners would have nothing to do. Switch on at least the leadership actions.');
-  else if (!enabledActions.some((a) => a.mechanic === 'styleChoice')) add('error', 'actions', 'No leadership style action is switched on', 'The simulation measures leadership style through these actions. Switch on at least one.');
-  for (const a of enabledActions) if (blank(a.name)) add('error', 'actions', 'An action has no name', 'Learners pick actions by name.', { ref: { actionId: a.id } });
+  if (!enabledActions.length) add('error', 'actions', 'Every action is switched off', 'Learners would have nothing to do. Switch on at least the leadership actions.', { code: 'actions-all-off' });
+  else if (!enabledActions.some((a) => a.mechanic === 'styleChoice')) add('error', 'actions', 'No leadership style action is switched on', 'The simulation measures leadership style through these actions. Switch on at least one.', { code: 'no-style-action' });
+  for (const a of enabledActions) if (blank(a.name)) add('error', 'actions', 'An action has no name', 'Learners pick actions by name.', { ref: { actionId: a.id }, code: 'action-no-name', data: { actionId: a.id } });
 
   // Numbers that are allowed but almost certainly a slip.
   if (def.funnel.target > 0 && def.meta.baseTarget > 0) {
     const ratio = def.funnel.target / def.meta.baseTarget;
-    if (ratio < 0.2 || ratio > 5) add('warning', 'funnel', `A target of ${def.funnel.target} looks ${ratio < 1 ? 'too easy' : 'out of reach'}`, `The template is designed around about ${def.meta.baseTarget}. Run the balance check to see what a skilled leader reaches.`);
-  } else if (def.funnel.target > 0 && def.funnel.target < 5) add('warning', 'funnel', `A target of ${def.funnel.target} looks too easy`, 'Run the balance check to see what a skilled leader reaches.');
-  if (!(def.funnel.valuePerConversion > 0)) add('warning', 'funnel', 'Value per conversion is zero', 'Revenue on the dashboard and in the report would show as nothing.');
+    if (ratio < 0.2 || ratio > 5) add('warning', 'funnel', `A target of ${def.funnel.target} looks ${ratio < 1 ? 'too easy' : 'out of reach'}`, `The template is designed around about ${def.meta.baseTarget}. Run the balance check to see what a skilled leader reaches.`, { code: 'target-implausible' });
+  } else if (def.funnel.target > 0 && def.funnel.target < 5) add('warning', 'funnel', `A target of ${def.funnel.target} looks too easy`, 'Run the balance check to see what a skilled leader reaches.', { code: 'target-implausible' });
+  if (!(def.funnel.valuePerConversion > 0)) add('warning', 'funnel', 'Value per conversion is zero', 'Revenue on the dashboard and in the report would show as nothing.', { code: 'value-zero' });
 
   // Copy
   for (const t of collectTexts(def)) {
-    if (LEGACY_MARKERS.some((re) => re.test(t.text))) add('error', t.section, `Missing copy: ${t.label}`, 'This text still holds a legacy placeholder. Write the learner-facing text.', { ref: t.ref });
+    if (LEGACY_MARKERS.some((re) => re.test(t.text))) add('error', t.section, `Missing copy: ${t.label}`, 'This text still holds a legacy placeholder. Write the learner-facing text.', { ref: t.ref, code: 'legacy-marker', data: { ref: t.ref } });
     const unknown = unknownTokens(def, t.text);
-    if (unknown.length) add('error', t.section, `Unknown field in ${t.label}`, `{{${unknown.join('}}, {{')}}} is not a context field or a runtime field.`, { ref: t.ref });
+    if (unknown.length) add('error', t.section, `Unknown field in ${t.label}`, `{{${unknown.join('}}, {{')}}} is not a context field or a runtime field.`, { ref: t.ref, code: 'unknown-token', data: { ref: t.ref, tokens: unknown } });
   }
-  if (def.context.industry.trim().toLowerCase() !== def.context.originalIndustry.trim().toLowerCase()) {
+  if (String(def.context.industry ?? '').trim() && def.context.industry.trim().toLowerCase() !== def.context.originalIndustry.trim().toLowerCase()) {
     const bound = contextBoundItems(def);
-    if (bound.length) add('warning', 'story', `${bound.length} item${bound.length === 1 ? '' : 's'} still describe the ${def.context.originalIndustry.toLowerCase()} world`, 'Names update automatically, but these situations need rewriting for the new industry. Open the rewrite list in Story.', { ref: { field: 'rewrite' } });
+    if (bound.length) add('warning', 'story', `${bound.length} item${bound.length === 1 ? '' : 's'} still describe the ${def.context.originalIndustry.toLowerCase()} world`, 'Names update automatically, but these situations need rewriting for the new industry. Open the rewrite list in Story.', { ref: { field: 'rewrite' }, code: 'industry-bound' });
   }
 
   // Assumptions carried from the migration
   const ack = new Set(def.meta.acknowledged || []);
   const open = (def.meta.assumptions || []).filter((a) => !ack.has(a.id));
-  if (open.length) add('info', 'overview', `${open.length} migration assumption${open.length === 1 ? '' : 's'} to confirm`, 'Values the legacy documents did not specify. Review them on the Overview page.');
+  if (open.length) add('info', 'overview', `${open.length} migration assumption${open.length === 1 ? '' : 's'} to confirm`, 'Values the legacy documents did not specify. Review them on the Overview page.', { code: 'assumptions' });
 
   const order = { error: 0, warning: 1, info: 2 };
   return issues.sort((a, b) => order[a.severity] - order[b.severity]);

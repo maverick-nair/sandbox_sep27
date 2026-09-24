@@ -401,3 +401,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .soon-tag { margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
 .rail-item.soon-on { background: var(--surface-2); color: var(--ink); }
+
+/* ---------- health check suggestions ---------- */
+.suggestion { background: var(--accent-soft); border-radius: var(--radius-sm); padding: 12px; }
+.suggestion .eyebrow { color: var(--accent); }
+.suggestion .input, .suggestion .select, .suggestion .textarea { background: var(--surface); }
+.health-summary { border-color: var(--accent); }

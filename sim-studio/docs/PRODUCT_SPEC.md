@@ -134,6 +134,18 @@ Two layers, so authors describe their world once and the tool does the rewriting
 
 **Genie (hosted AI) for what packs cannot cover.** Inside GenieKreator on claude.ai, *Go further with Genie* rewrites a chosen scope (items still tied to the original storyline, story and events, team profiles, or action responses) for the profile plus the author's notes. Genie must keep every field token; answers that drop or invent tokens are flagged. Every Genie change goes through the same review before it applies. Outside the hosted version the panel explains that it is unavailable and the rewrite list remains.
 
+## 6c. Health check with suggested fixes
+
+Every health check issue comes with a suggested fix, so no author is left with a problem and no way forward. A suggestion has three parts:
+
+- **What it will do**, in one line: "Move Kent Goldberg to Qualify", "Add a response for *Against the trend*", "Accept the 8 migration assumptions as they are".
+- **The values it will write**, pre-filled and editable: a drafted response the author can reword, a person to pick from a list, a number to adjust, checkboxes to untick. Drafts come from the simulation itself: the tailored profile (organization, product, location names), the template's original content, and response drafts written for each mechanic and outcome (a warning email to someone whose numbers are improving reads differently from one to someone slipping).
+- **Apply fix** (or *Apply my version* once edited), *Back to the suggestion*, *Rewrite with Genie* for text when Genie is available, and a link to fix it by hand in the right section.
+
+*Fix all with the suggestions* applies every suggestion as it is and repeats until nothing more can be fixed (switching actions back on can reveal their missing responses). The Publish dialog offers *Fix them with the suggestions* for blocking issues. Every fix goes through the Studio's undo. Informational items are collapsed by default.
+
+Coverage: all 37 checks have a suggestion (empty or duplicate names and text, empty stages, conversion rates, style mapping, targets and deal value, team size and style mix, hiring pool, option styles, waits and durations, missing responses, firing cost, wrong styles that help, events and triggers outside the calendar, legacy placeholders, unknown fields, old-industry wording, migration assumptions). Tests apply the suggestions to 30 broken simulations and require a clean health check afterwards.
+
 ## 6b. Help in context
 
 Every main action carries a tooltip on hover and keyboard focus that says what it does and when to use it: Health check, Balance check, Play as learner, Publish, Show engine settings, Build my simulation, Regenerate, New names, Restore to draft, and others.
