@@ -78,3 +78,19 @@ export function orderOpening(ob) {
 export function newChapter(id) {
   return { id, kind: 'custom', enabled: true, title: 'A new chapter', lead: '', body: '' };
 }
+
+// The briefing a learner actually gets. The three opening screens are unconditional: they come
+// first for every simulation, every published version (however old) and every setting, using the
+// author's chapter when there is one and the standard chapter when there is not. The rest of the
+// briefing follows the author's order and switches.
+export function briefingSteps(def) {
+  const ob = def?.onboarding || {};
+  const chapters = ob.chapters || [];
+  const std = defaultOnboarding().chapters;
+  const opening = OPENING.map((kind) => {
+    const own = chapters.find((c) => c.kind === kind);
+    return own ? { ...own, enabled: true } : { ...std.find((c) => c.kind === kind) };
+  });
+  const rest = ob.enabled === false ? [] : chapters.filter((c) => c.enabled !== false && !OPENING.includes(c.kind));
+  return { opening, rest };
+}

@@ -36,9 +36,9 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
       <div className="card stack" style={{ '--gap': '10px' }}>
         <div className="row spread">
           <h3>Briefing</h3>
-          <Switch checked={ob.enabled !== false} onChange={(v) => set((o) => { o.enabled = v; })} label={ob.enabled !== false ? `On, ${on.length} part${on.length === 1 ? '' : 's'}` : 'Off'} />
+          <Switch checked={ob.enabled !== false} onChange={(v) => set((o) => { o.enabled = v; })} label={ob.enabled !== false ? 'Rest of the briefing on' : 'Only the opening screens'} />
         </div>
-        {ob.enabled === false && <Callout tone="warn" icon="!">Learners go straight to accepting the role and their first Monday plan, without any context. Recommended only for a repeat run.</Callout>}
+        {ob.enabled === false && <Callout tone="warn" icon="!">Learners still see Welcome, About Product and Your Targets, then go straight to accepting the role. They skip meeting the team and how to lead them. Recommended only for a repeat run.</Callout>}
         <div className="row" style={{ '--gap': '16px' }}>
           <label className="row nowrap small" style={{ '--gap': '6px' }}>Team cards to turn over before continuing <NumberInput className="xs" value={ob.teamToMeet ?? 3} min={0} max={teamSize} onChange={(v) => set((o) => { o.teamToMeet = v; })} aria-label="Team cards to turn over" /> <span className="muted">of {teamSize}</span></label>
           <Switch checked={ob.practice !== false} onChange={(v) => set((o) => { o.practice = v; })} label="Practice round on the leadership styles (not scored)" />
@@ -60,10 +60,10 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
               <div className="row nowrap">
                 <Button size="sm" variant="ghost" disabled={i === 0 || opening(c) || opening(chapters[i - 1] || {})} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`} title={opening(c) ? 'The three opening screens always come first, in this order.' : undefined}>↑</Button>
                 <Button size="sm" variant="ghost" disabled={i === chapters.length - 1 || opening(c)} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`} title={opening(c) ? 'The three opening screens always come first, in this order.' : undefined}>↓</Button>
-                <Switch checked={c.enabled !== false} onChange={(v) => set((o) => { o.chapters[i].enabled = v; })} label={<span className="sr-only">Show {c.title}</span>} />
+                {opening(c) ? <span className="small muted">Always shown</span> : <Switch checked={c.enabled !== false} onChange={(v) => set((o) => { o.chapters[i].enabled = v; })} label={<span className="sr-only">Show {c.title}</span>} />}
               </div>
             </div>
-            {(c.enabled !== false || c.kind === 'company') && (
+            {(c.enabled !== false || c.kind === 'company' || opening(c)) && (
               <div className="stack" style={{ '--gap': '10px' }}>
                 <TextInput label="Title" value={c.title} onChange={(v) => set((o) => { o.chapters[i].title = v; })} hint="Context fields like {{company}} fill in for every tailoring." />
                 <TokenArea def={def} label="Lead line" rows={2} value={c.lead} onChange={(v) => set((o) => { o.chapters[i].lead = v; })} hint="One or two sentences under the title." />

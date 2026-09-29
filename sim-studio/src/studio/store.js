@@ -71,7 +71,15 @@ function load(list) {
       delete def.meta.brief;
       const problems = schemaProblems(def);
       if (problems.length) { console.warn('Skipped a stored simulation that is not complete', s.id, problems); return null; }
-      const versions = (s.versions || []).map((v) => (v.def?.meta?.brief ? { ...v, def: (() => { const d = clone(v.def); delete d.meta.brief; return d; })() } : v));
+      // Published versions are frozen copies. They are brought up to date the same way as the
+      // draft, so a version published before a learner-experience change (for example the opening
+      // Welcome, About Product and Your Targets screens) still plays with it. Author content is kept.
+      const versions = (s.versions || []).map((v) => {
+        if (!v.def) return v;
+        const d = clone(v.def);
+        delete d.meta?.brief;
+        try { return { ...v, def: TEMPLATES[d.meta?.templateId || s.def.meta.templateId].migrate(d) }; } catch { return { ...v, def: d }; }
+      });
       return { ...s, brief, def, versions, touchedAt: s.touchedAt || s.updatedAt };
     })
     .filter(Boolean);

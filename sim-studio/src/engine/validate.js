@@ -183,7 +183,7 @@ export function validate(def) {
   const ob = def.onboarding;
   if (ob) {
     const onCh = (ob.chapters || []).filter((c) => c.enabled !== false);
-    if (ob.enabled === false || !onCh.length) add('warning', 'onboarding', 'Learners start without a briefing', 'They go straight to their first decisions without learning about the organization, the team or how the simulation works.', { ref: { field: 'onboarding' }, code: 'ob-off' });
+    if (ob.enabled === false || !onCh.length) add('warning', 'onboarding', 'Learners see only the opening screens', 'After Welcome, About Product and Your Targets they go straight to their first decisions, without meeting the team or learning how to lead them and how the simulation works.', { ref: { field: 'onboarding' }, code: 'ob-off' });
     else {
       // Organization facts also show on the welcome screen, so they are checked even when the
       // organization chapter itself is off.

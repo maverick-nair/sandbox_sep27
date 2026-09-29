@@ -68,3 +68,26 @@ test('onboarding health checks each have a fix that clears them', () => {
   assert.equal(back.def.onboarding.enabled, true);
   assert.equal(defaultOnboarding().chapters.length, 7);
 });
+
+test('every learner starts on Welcome, About Product and Your Targets, whatever the settings', async () => {
+  const { briefingSteps } = await import('../src/templates/ilead/onboarding.js');
+  const kinds = (d) => briefingSteps(d).opening.map((c) => c.kind);
+  const fresh = createIleadDefinition();
+  assert.deepEqual(kinds(fresh), ['welcome', 'product', 'targets']);
+  // briefing switched off
+  const off = createIleadDefinition(); off.onboarding.enabled = false;
+  assert.deepEqual(kinds(off), ['welcome', 'product', 'targets']);
+  assert.equal(briefingSteps(off).rest.length, 0);
+  // the opening chapters switched off or moved to the end
+  const moved = createIleadDefinition();
+  for (const c of moved.onboarding.chapters) if (['welcome', 'product', 'targets'].includes(c.kind)) c.enabled = false;
+  moved.onboarding.chapters.reverse();
+  assert.deepEqual(kinds(moved), ['welcome', 'product', 'targets']);
+  // a published version from before the opening screens existed, or before onboarding existed
+  const old = createIleadDefinition();
+  old.onboarding.chapters = old.onboarding.chapters.filter((c) => !['welcome', 'product', 'targets'].includes(c.kind));
+  assert.deepEqual(kinds(old), ['welcome', 'product', 'targets']);
+  const none = createIleadDefinition(); delete none.onboarding;
+  assert.deepEqual(kinds(none), ['welcome', 'product', 'targets']);
+  assert.ok(!briefingSteps(fresh).rest.some((c) => ['welcome', 'product', 'targets'].includes(c.kind)));
+});

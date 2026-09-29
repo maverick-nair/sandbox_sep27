@@ -2,6 +2,7 @@
 // The author gives direction; everything else is drafted and shown in plain words, with
 // questions only for what could not be worked out. Every step is derived from one state, so a
 // change to the basics flows into the draft while the author's own edits stay. The flow autosaves.
+import { OPENING } from '../templates/ilead/onboarding.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TEMPLATES } from '../templates/registry.js';
 import { INDUSTRIES } from '../templates/ilead/context-packs.js';
@@ -725,15 +726,16 @@ function ReviewStep({ draft, profile, settings, setS, overrides, found, calibrat
         <div className="card stack">
           <div>
             <h3>What learners see first</h3>
-            <p className="small muted">Before any decision, learners go through a short briefing built from this draft. Switch off any part you do not need; you can edit every part in the Studio under Learner onboarding.</p>
+            <p className="small muted">Every learner starts on Welcome, About Product and Your Targets, in that order, as the original iLead does. Switch off any later part you do not need; you can edit every part in the Studio under Learner onboarding.</p>
           </div>
           <ol className="onboard-list">
-            {draft.onboarding.chapters.map((c) => {
-              const off = (settings.obOff || []).includes(c.id);
+            {[...draft.onboarding.chapters].sort((a, b) => (OPENING.indexOf(a.kind) + 1 || 99) - (OPENING.indexOf(b.kind) + 1 || 99)).map((c) => {
+              const fixed = OPENING.includes(c.kind);
+              const off = !fixed && ((settings.obOff || []).includes(c.id) || c.enabled === false);
               return (
                 <li key={c.id} className={off ? 'off' : ''}>
                   <span className="grow"><strong className="small">{renderText(draft, c.title)}</strong><span className="small muted" style={{ display: 'block' }}>{renderText(draft, c.lead)}</span></span>
-                  <Switch checked={!off} onChange={(v) => setS({ obOff: v ? (settings.obOff || []).filter((x) => x !== c.id) : [...(settings.obOff || []), c.id] })} label={<span className="sr-only">Show {renderText(draft, c.title)}</span>} />
+                  {fixed ? <span className="small muted">Always shown</span> : <Switch checked={!off} onChange={(v) => setS({ obOff: v ? (settings.obOff || []).filter((x) => x !== c.id) : [...(settings.obOff || []), c.id] })} label={<span className="sr-only">Show {renderText(draft, c.title)}</span>} />}
                 </li>
               );
             })}

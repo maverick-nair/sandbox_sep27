@@ -8,8 +8,8 @@ import { renderText } from '../engine/text.js';
 import { ProductArt, TargetArt, Icon, sceneBackground } from './art.jsx';
 import { Face } from './look.jsx';
 import { Shell, TopChip, Profile, StatCard, HeroStage, ProgressStrip } from './Shell.jsx';
-import { chaptersOf, minutesFor, LANG_NAMES, CompanyChapter, MissionChapter, FlowChapter, TeamChapter, ModelChapter, HowtoChapter, CustomChapter } from './Prologue.jsx';
-import { OPENING } from '../templates/ilead/onboarding.js';
+import { minutesFor, LANG_NAMES, CompanyChapter, MissionChapter, FlowChapter, TeamChapter, ModelChapter, HowtoChapter, CustomChapter } from './Prologue.jsx';
+import { OPENING, briefingSteps } from '../templates/ilead/onboarding.js';
 
 const t = (def, s, vars) => renderText(def, s || '', vars);
 const team = (def) => def.actors.filter((a) => a.pool === 'team');
@@ -17,17 +17,16 @@ const paragraphs = (text) => String(text || '').split(/\n{2,}|\n/).map((p) => p.
 const cur = (def) => (def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `);
 const money = (def, v) => `${cur(def)}${Math.round(v).toLocaleString('en')}`;
 const compact = (def, v) => `${cur(def)}${new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 }).format(v)}`;
-const isOpening = (c) => OPENING.includes(c.kind) || c.kind === 'mission';
+const isOpening = (c) => OPENING.includes(c.kind);
 
 const ICON = { welcome: 'letter', mission: 'letter', product: 'box', targets: 'target', company: 'building', flow: 'funnel', team: 'team', model: 'grid', howto: 'help', custom: 'book', ready: 'play' };
 const KICKER = { welcome: 'Welcome on board', mission: 'Your mission', product: 'About the product', targets: 'Your targets' };
 const TAB = { welcome: 'Welcome', mission: 'Welcome', product: 'About Product', targets: 'Your Targets' };
 
 export default function Briefing({ def, preview, saved, savedWeek, langs = ['en'], language, setLanguage, onResume, onSkip, onExit, ready, identity }) {
-  const chapters = chaptersOf(def);
-  const opening = chapters.filter(isOpening).slice(0, 3);
-  const rest = chapters.filter((c) => !opening.includes(c));
-  const steps = useMemo(() => [...opening, ...rest, { id: 'ready', kind: 'ready', title: 'Accept the role' }], [chapters]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Welcome, About Product and Your Targets always come first, whatever the settings or version.
+  const { opening, rest } = useMemo(() => briefingSteps(def), [def]);
+  const steps = useMemo(() => [...opening, ...rest, { id: 'ready', kind: 'ready', title: 'Accept the role' }], [opening, rest]);
   const [i, setI] = useState(0);
   const [gate, setGate] = useState({});
   const top = useRef(null);
@@ -82,7 +81,7 @@ export default function Briefing({ def, preview, saved, savedWeek, langs = ['en'
             <select value={language} onChange={(e) => setLanguage(e.target.value)} aria-label="Language">{langs.map((l) => <option key={l} value={l}>{LANG_NAMES[l] || l}</option>)}</select>
           </label>
         )}
-        {preview && <TopChip icon="play" onClick={onSkip} title="Author preview only">Skip to week 1</TopChip>}
+        {preview && !isOpening(step) && <TopChip icon="play" onClick={onSkip} title="Author preview only: jumps past the rest of the briefing">Skip to week 1</TopChip>}
         {onExit && <TopChip icon="exit" onClick={onExit}>{preview ? 'Back to Studio' : 'Leave'}</TopChip>}
         <Profile name={identity?.name && identity.name !== 'Author preview' ? identity.name : `New ${t(def, '{{learner_role}}')}`} sub={preview ? 'Author preview' : t(def, '{{company}}')} />
       </div>
@@ -106,7 +105,7 @@ export default function Briefing({ def, preview, saved, savedWeek, langs = ['en'
     <Shell def={def} nav={nav} active={step.id} top={topBar} sideCard={sideCard} className="nx-briefing" label="Briefing">
       <div className="nx-page" ref={top}>
         <div key={step.id} className="nx-enter">
-          {step.kind === 'welcome' || step.kind === 'mission' ? <WelcomeScreen def={def} ch={step} />
+          {step.kind === 'welcome' ? <WelcomeScreen def={def} ch={step} />
             : step.kind === 'product' ? <ProductScreen def={def} ch={step} />
               : step.kind === 'targets' ? <TargetsScreen def={def} ch={step} />
                 : step.kind === 'ready' ? <ReadyScreen def={def}>{ready}</ReadyScreen>
