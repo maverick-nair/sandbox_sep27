@@ -2,13 +2,15 @@
  *   #pm        Task Creation      (product managers)   requests -> funnel
  *   #designer  Designer Tracker   (product designers)  daily progress, weekly leave
  *   #owner     Owner Dashboard    (the owner only)     funnel approval, dashboard, export
- * Store layout (see README): config/main, config/people, claims/{uid},
+ * Store layout (see README): config/main, members/{uid}, invites/{email}, claims/{uid},
  * requests/{uid}/items/*, tasks/*, progress/{uid}/tasks/*, leave/{uid}, leave/{uid}/items/*
  */
 (function () {
 "use strict";
 const M = window.DTHMetrics, X = window.DTHExport;
-const ARTIFACT_URL = "https://claude.ai/artifact/861G225qPnkPvoad3XYy1b";
+const P = window.DTHPlatform;
+const CFG = (P && P.config) || window.DTH_CONFIG || {};
+const baseUrl = () => location.origin + location.pathname;
 const APPS = {
   pm: { name: "Task Creation", who: "product managers", role: "pm" },
   designer: { name: "Designer Tracker", who: "product designers", role: "designer" },
@@ -29,18 +31,18 @@ const REQ = { draft: ["Draft", "neutral"], pending: ["Awaiting approval", "warn"
 // ------------------------------------------------------------------ state
 const S = {
   ready: false, noDb: false,
-  me: { id: null, name: "", avatarUrl: "", isOwner: false },
-  config: null, people: {}, ownerId: null, peopleLoaded: false,
-  claims: {}, myClaim: undefined,
+  me: { id: null, name: "", email: "", avatarUrl: "", isOwner: false, emailVerified: false },
+  config: null, people: {}, myMember: null, memberLoaded: false, coreStarted: false,
+  claims: {}, myClaim: undefined, invites: {}, authView: "signin", auth: null, platformError: null,
   tasksRaw: [], progress: {}, leaveItems: {}, leaveDocs: {}, requests: {},
   tab: { owner: "overview", pm: "new", designer: "tasks" },
   form: null, joinForm: null, review: {}, drafts: {}, edit: null, confirm: null,
   filters: { q: "", designer: "", project: "", stage: "" }, funnelTab: "pending", pmFilter: "active",
   period: "month", custom: { from: "", to: "" }, actingDesigner: "", showDone: false,
   cfgDraft: null, exportOpts: { designerCopy: false, from: "", to: "" }, template: null, exportMsg: null,
-  profiles: {}, toast: null, busy: {},
+  profiles: {}, toast: null, busy: {}, sessions: {}, auditLog: null, session: null, signedOutReason: "", keep: false, menu: false, confirmSignOut: false,
 };
-let db = null, userApi = null, downloads = null;
+let db = null;
 const subs = new Map();
 
 // ---------------------------------------------------------------- helpers
@@ -81,12 +83,29 @@ function fmtDate(iso, withDay) {
   const base = `${d} ${MONTHS[m - 1]}${yr}`;
   return withDay ? `${DAYS[M.isoWeekday(M.toDay(iso.slice(0, 10))) - 1]} ${base}` : base;
 }
+function fmtWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const t = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const local = M.todayIso(d);
+  return (local === today() ? "Today" : local === M.addDays(today(), -1) ? "Yesterday" : fmtDate(local)) + ", " + t;
+}
 const fmt1 = (v) => (v === null || v === undefined || v === "" ? "-" : (Math.round(Number(v) * 10) / 10).toLocaleString());
 const fmt0 = (v) => (v === null || v === undefined || v === "" ? "-" : Math.round(Number(v)).toLocaleString());
 const pct = (v) => (v === null || v === undefined || v === "" ? "-" : Math.round(Number(v) * 100) + "%");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const EMPTY_CFG = { designers: [], pms: [], projects: [], lines: [], subTags: [], holidays: [], scoring: {} };
 const cfg = () => S.config || EMPTY_CFG;
+// Written once when the owner first signs in to a new deployment (names from the workbook's Settings sheet)
+const STARTER_CFG = {
+  designers: ["Pragati", "Swathi"], pms: ["Raghav", "SL", "Arun", "Naveen", "Manu"],
+  projects: [1, 2, 3, 4, 5].map((i) => ({ name: `Project ${i} (rename)`, lead: ["Raghav", "SL", "Arun", "Naveen", "Manu"][i - 1] })),
+  lines: [{ name: "Evaluate", products: ["Conversation AI", "Nano AI", "PitchPerfect AI"] }, { name: "Educate", products: ["AI Microlearn", "Interactive Learn"] },
+    { name: "Experience", products: ["Simulations", "AI RolePlay"] }, { name: "Enable", products: ["AI Koach"] }],
+  subTags: ["Feature design", "UX research", "Wireframes", "Prototype", "Visual design", "Design QA", "Product demo video", "Explainer video"],
+  holidays: [], scoring: {},
+};
 function pill(text, kind) { return h("span", { class: "pill " + (kind || "neutral") }, text); }
 function deliveryPill(t) { return t.delivery ? pill(t.delivery, DELIVERY[t.delivery]) : null; }
 function reqPill(status) { const r = REQ[status] || REQ.draft; return pill(r[0], r[1]); }
@@ -159,10 +178,12 @@ function tasks() {
   memo = { key, value: M.deriveAll(merged, cfg(), today()) };
   return memo.value;
 }
+function ownerUid() { return Object.keys(S.people).find((id) => S.people[id].role === "owner") || null; }
 function uidsWithRole(role) { return Object.entries(S.people).filter(([, p]) => p.role === role).map(([id]) => id); }
 function progressUids() {
   const set = new Set(uidsWithRole("designer"));
-  if (S.ownerId) set.add(S.ownerId);
+  const owner = ownerUid();
+  if (owner) set.add(owner);
   if (S.me.id) set.add(S.me.id);
   return [...set];
 }
@@ -179,20 +200,28 @@ function syncSubs() {
     sub("li:" + uid, () => db.collection(`leave/${uid}/items`).onSnapshot((q) => { S.leaveItems = { ...S.leaveItems, [uid]: q.docs.map((d) => ({ id: d.id, ...d.data() })) }; render(); }, onErr));
     sub("ld:" + uid, () => db.doc(`leave/${uid}`).onSnapshot((s) => { S.leaveDocs = { ...S.leaveDocs, [uid]: s.exists ? s.data() : null }; render(); }, onErr));
   }
+  if (S.me.isOwner) {
+    want.add("audit");
+    sub("audit", () => db.doc("audit/log").onSnapshot((d) => { S.auditLog = d.exists ? d.data() : null; render(); }, onErr));
+    for (const uid of Object.keys(S.people)) {
+      want.add("s:" + uid);
+      sub("s:" + uid, () => db.doc(`sessions/${uid}`).onSnapshot((d) => { S.sessions = { ...S.sessions, [uid]: d.exists ? d.data() : null }; render(); }, onErr));
+    }
+  }
   const reqUids = S.me.isOwner ? [...new Set(uidsWithRole("pm").concat(S.me.id ? [S.me.id] : []))] : (S.me.id ? [S.me.id] : []);
   for (const uid of reqUids) {
     want.add("r:" + uid);
     sub("r:" + uid, () => db.collection(`requests/${uid}/items`).onSnapshot((q) => { S.requests = { ...S.requests, [uid]: q.docs.map((d) => ({ id: d.id, ...d.data() })) }; render(); }, onErr));
   }
-  for (const [k, un] of subs) if (/^(p|li|ld|r):/.test(k) && !want.has(k)) { try { un(); } catch (e) {} subs.delete(k); }
+  for (const [k, un] of subs) if (/^(p|li|ld|r|s):/.test(k) && !want.has(k)) { try { un(); } catch (e) {} subs.delete(k); }
 }
 function onErr(e) { console.error(e); }
 
 // ---------------------------------------------------------------- roles
 function roleOf() {
-  if (S.me.isOwner) return "admin";
-  const p = S.people[S.me.id];
-  return p ? p.role : null;
+  const p = S.people[S.me.id] || S.myMember;
+  if (!p) return null;
+  return p.role === "owner" ? "admin" : p.role;
 }
 function rosterName() { const p = S.people[S.me.id]; return p ? p.name : ""; }
 function homeApp() { const r = roleOf(); return r === "admin" ? "owner" : r === "pm" ? "pm" : r === "designer" ? "designer" : null; }
@@ -223,6 +252,9 @@ const ICONS = {
   pen: "M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z",
   compass: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z",
   layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  key: "M21 2l-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4",
 };
 function icon(name) {
   return svg("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" },
@@ -255,8 +287,68 @@ function alerts(app) {
     return { n, label: `${n} task${n === 1 ? "" : "s"} not updated today`, go: () => { S.tab.designer = "tasks"; } }; }
   return { n: 0, label: "", go: () => {} };
 }
+const ROLE_OPTIONS = [{ value: "designer", label: "Product designer" }, { value: "pm", label: "Product manager" }];
+const ROLE_NAME = { pm: "Product manager", designer: "Product designer", admin: "Owner" };
 const DOCK_LABEL = { overview: "Overview", funnel: "Funnel", tasks: "Tasks", designers: "Designers", leave: "Leave", people: "People", lists: "Lists", export: "Export", new: "New", mine: "Requests" };
 const SEARCH_HINT = { owner: "Search tasks, products, IDs", pm: "Search my requests", designer: "Search my tasks" };
+
+// ---------------------------------------------------------------- session
+// Accounts live in the platform (Firebase Authentication): email + password,
+// verified email, reset by email link. The database rules enforce each role on
+// the server. This section adds the session behaviour around it: "keep me
+// signed in", a 30 minute idle sign-out on shared devices, a sign-in history,
+// and clearing anything typed when someone signs out.
+const IDLE_MS = 30 * 60 * 1000, WARN_MS = 2 * 60 * 1000;
+const KEEP_KEY = "dth-keep";
+function keepFlag() { try { return window.localStorage.getItem(KEEP_KEY) === "1"; } catch (e) { return false; } }
+function setKeepFlag(v) { try { if (v) window.localStorage.setItem(KEEP_KEY, "1"); else window.localStorage.removeItem(KEEP_KEY); } catch (e) {} }
+let lastActivity = Date.now(), warned = false;
+function touch() {
+  lastActivity = Date.now();
+  if (warned) { warned = false; S.toast = null; render(); }
+}
+["pointerdown", "keydown", "wheel", "touchstart"].forEach((ev) => document.addEventListener(ev, touch, { passive: true }));
+setInterval(() => {
+  if (!S.me.id || keepFlag()) return;
+  const idle = Date.now() - lastActivity;
+  if (idle > IDLE_MS) signOut("idle");
+  else if (idle > IDLE_MS - WARN_MS && !warned) { warned = true; S.toast = "You'll be signed out in 2 minutes for inactivity. Move the mouse or press a key to stay signed in."; render(); }
+}, 20000);
+async function recordSession(kind) {
+  if (!db || !S.me.id) return;
+  const ref = db.doc(`sessions/${S.me.id}`);
+  try {
+    const cur = await ref.get();
+    const prev = cur.exists ? cur.data() : {};
+    const at = nowIso();
+    const events = (prev.events || []).concat([{ at, kind, app: currentApp() || "" }]).slice(-20);
+    await ref.set({ ...prev, email: S.me.email, events, [kind === "sign-in" ? "lastSignIn" : "lastSignOut"]: at });
+  } catch (e) { console.error(e); }
+}
+function hasUnsaved() {
+  const f = S.form;
+  const pmDirty = f && (f.masterTitle || f.project || (f.subtasks || []).some((x) => x.detail || x.sub || x.effort));
+  const desDirty = Object.values(S.drafts || {}).some((d) => d.note || d.hours);
+  return !!(pmDirty || desDirty || S.cfgDraft || (S.addForm && (S.addForm.email || "").trim()));
+}
+function clearLocalState() {
+  S.form = null; S.drafts = {}; S.review = {}; S.addForm = null; S.cfgDraft = null; S.edit = null; S.search = ""; S.joinForm = null; S.leaveForm = null;
+  S.menu = false; S.confirmSignOut = false; S.accountForm = null; S.toast = null; warned = false;
+}
+async function signOut(reason) {
+  if (!S.me.id) return;
+  await recordSession("sign-out");
+  clearLocalState();
+  S.signedOutReason = reason || "signed-out";
+  S.authView = "signin";
+  setKeepFlag(false);
+  try { await P.auth.signOut(); } catch (e) { console.error(e); }
+  render(); window.scrollTo(0, 0);
+}
+function requestSignOut() {
+  if (hasUnsaved()) { S.confirmSignOut = true; S.menu = false; render(); return; }
+  signOut("signed-out");
+}
 
 // ---------------------------------------------------------------- render
 let raf = 0;
@@ -271,6 +363,7 @@ function paint() {
   const scrollY = window.scrollY;
   const app = currentApp();
   document.body.dataset.app = app || "owner";
+  document.body.classList.toggle("auth", S.ready && (!S.me.id || !S.me.emailVerified || (S.memberLoaded && !roleOf())));
   document.title = app ? APPS[app].name : "Design Task Hub";
   paintHeader(app);
   const next = h("main", { id: "main" });
@@ -287,7 +380,7 @@ function paint() {
 function go(app, id) { S.tab[app] = id; S.confirm = null; if (app === "owner") S.edit = null; render(); window.scrollTo(0, 0); }
 function paintHeader(app) {
   const role = roleOf();
-  const ok = S.ready && app && role && allowed(app);
+  const ok = S.ready && S.me.id && app && role && allowed(app);
   const list = ok ? tabsFor(app) : [];
   if (list.length && !list.find((t) => t[0] === S.tab[app])) S.tab[app] = list[0][0];
   const cur = list.find((t) => t[0] === S.tab[app]);
@@ -299,17 +392,18 @@ function paintHeader(app) {
   let group = null;
   for (const [id, label, count, ic, grp] of list) {
     if (grp !== group) { group = grp; tabs.appendChild(h("div", { class: "nav-group", role: "presentation" }, grp)); }
-    tabs.appendChild(h("button", { class: "tab", role: "tab", "aria-selected": String(S.tab[app] === id), title: label, onclick: () => go(app, id) },
+    tabs.appendChild(h("button", { class: "tab", role: "tab", "data-tab": id, "aria-selected": String(S.tab[app] === id), title: label, onclick: () => go(app, id) },
       icon(ic), h("span", { class: "label" }, label), count ? h("span", { class: "count" }, String(count)) : null));
   }
   const dock = document.getElementById("dock");
-  dock.replaceChildren(...list.map(([id, label, count, ic]) => h("button", { "aria-current": S.tab[app] === id ? "page" : null, "aria-label": label, onclick: () => go(app, id) },
+  dock.replaceChildren(...list.map(([id, label, count, ic]) => h("button", { "data-tab": id, "aria-current": S.tab[app] === id ? "page" : null, "aria-label": label, onclick: () => go(app, id) },
     icon(ic), h("span", null, DOCK_LABEL[id] || label), count ? h("span", { class: "count" }, String(count)) : null)));
   dock.hidden = !list.length;
   const name = role === "admin" ? (S.me.name || "Owner") : rosterName() || S.me.name || "";
-  const roleLabel = role === "admin" ? "Owner" : role === "pm" ? "Product manager" : role === "designer" ? "Product designer" : S.me.email || "";
+  const roleLabel = role ? ROLE_NAME[role] : S.me.email || "";
   document.getElementById("who").replaceChildren(h("span", { class: "warmline" }),
-    S.me.id ? h("div", { class: "me" }, avatar(S.me.avatarUrl, name, "avatar"), h("div", { style: "min-width:0" }, h("b", null, name || "You"), h("small", null, roleLabel))) : null);
+    S.me.id && role ? h("div", { class: "me" }, avatar(S.me.avatarUrl, name, "avatar"), h("div", { style: "min-width:0" }, h("b", null, name || "You"), h("small", null, roleLabel))) : null,
+    S.me.id && role ? h("button", { class: "tab signout", title: "Sign out", onclick: requestSignOut }, icon("logout"), h("span", { class: "label" }, "Sign out")) : null);
   const top = document.getElementById("top");
   const al = ok ? alerts(app) : { n: 0 };
   const logo = document.querySelector(".logo.dark"), logoW = document.querySelector(".logo.white");
@@ -319,11 +413,23 @@ function paintHeader(app) {
       oninput: (e) => { S.search = e.target.value; if (app === "owner") { S.filters.q = S.search; S.tab.owner = "tasks"; } if (app === "pm") S.tab.pm = "mine"; if (app === "designer") S.tab.designer = "tasks"; softRender(); } })) : null,
     ok ? h("button", { class: "icon-btn", "aria-label": al.n ? al.label : "Nothing needs you", "data-tip": al.n ? al.label : "Nothing needs you right now", onclick: () => { al.go(); render(); window.scrollTo(0, 0); } },
       icon("bell"), al.n ? h("span", { class: "count" }, String(al.n)) : null) : null,
-    S.me.id ? avatar(S.me.avatarUrl, name, "me-mini") : null);
+    S.me.id && role ? h("div", { class: "acct" },
+      h("button", { class: "acct-btn", "aria-haspopup": "menu", "aria-expanded": String(!!S.menu), "aria-label": "Account", onclick: (e) => { e.stopPropagation(); S.menu = !S.menu; render(); } }, avatar(S.me.avatarUrl, name, "me-mini")),
+      S.menu ? h("div", { class: "menu", role: "menu", onclick: (e) => e.stopPropagation() },
+        h("div", { class: "menu-head" }, avatar(S.me.avatarUrl, name, "avatar"), h("div", { style: "min-width:0" }, h("b", null, name || "You"), h("small", null, roleLabel))),
+        h("div", { class: "menu-meta" }, h("div", null, S.me.email), h("div", null, h("span", null, "Signed in "), fmtWhen(S.signedInAt || nowIso())),
+          h("div", null, keepFlag() ? "Kept signed in on this device" : "Signs out after 30 minutes of inactivity")),
+        h("button", { class: "menu-item", role: "menuitem", onclick: () => { S.menu = false; S.accountForm = { name: S.me.name || "", current: "", next: "", confirm: "", err: "", info: "" }; render(); } }, icon("key"), "Account settings"),
+        h("button", { class: "menu-item", role: "menuitem", onclick: requestSignOut }, icon("logout"), "Sign out")) : null) : null);
 }
+document.addEventListener("click", () => { if (S.menu) { S.menu = false; render(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && (S.menu || S.confirmSignOut || S.accountForm)) { S.menu = false; S.confirmSignOut = false; S.accountForm = null; render(); } });
 function body(root, app) {
-  if (S.noDb) root.appendChild(h("div", { class: "banner warn" }, "Saving is unavailable in this view. Open the link from claude.ai while signed in."));
-  if (!S.me.id) return root.appendChild(gate("Sign in to continue", "Design Task Hub uses your claude.ai account to know whether you create tasks, design them, or run the dashboard."));
+  if (!S.me.id) return viewAuth(root, app);
+  if (!S.me.emailVerified) return viewVerify(root);
+  if (!S.memberLoaded) return root.appendChild(h("div", { class: "skeleton" }, "Checking your access"));
+  if (S.confirmSignOut) root.appendChild(signOutConfirm());
+  if (S.accountForm) root.appendChild(accountModal());
   const role = roleOf();
   if (!role) return viewJoin(root, app);
   if (!app) app = homeApp();
@@ -375,31 +481,201 @@ function tile(product, line, sm) {
 }
 function lineTag(line) { return line ? h("span", { class: "tag sub" }, h("i", { class: "dot", style: `background:${lineColor(line)}` }), line) : null; }
 
+// ------------------------------------------------------------- auth views
+const AUTH_MSG = {
+  "auth/invalid-credential": "That email and password don't match. Check both, or reset your password.",
+  "auth/wrong-password": "That email and password don't match. Check both, or reset your password.",
+  "auth/user-not-found": "That email and password don't match. Check both, or reset your password.",
+  "auth/invalid-email": "Enter a valid email address.",
+  "auth/email-already-in-use": "An account with this email already exists. Sign in instead, or reset the password.",
+  "auth/weak-password": "Choose a stronger password.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes, or reset your password.",
+  "auth/network-request-failed": "No connection. Check your network and try again.",
+  "auth/user-disabled": "This account has been disabled. Contact the owner.",
+  "auth/requires-recent-login": "For your security, sign in again before changing your password.",
+  not_configured: "The platform isn't connected to its backend yet. The administrator needs to finish setup (firebase-config.js).",
+};
+const authMsg = (e) => AUTH_MSG[e && e.code] || "Something went wrong. Try again.";
+const domainOk = (email) => { const d = (CFG.allowedDomain || "").toLowerCase(); return !d || String(email).toLowerCase().trim().endsWith("@" + d); };
+function passwordIssues(pw) {
+  const out = [];
+  if (pw.length < 10) out.push("at least 10 characters");
+  if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw)) out.push("upper and lower case letters");
+  if (!/\d/.test(pw)) out.push("a number");
+  if (!/[^A-Za-z0-9]/.test(pw)) out.push("a symbol");
+  return out;
+}
+const put = (el, ...kids) => el.append(...kids.flat().filter((k) => k !== null && k !== undefined && k !== false));
+function authShell(root, card) {
+  const logoW = document.querySelector(".logo.white");
+  const brand = h("div", { class: "auth-brand" },
+    h("div", { class: "shapes", "aria-hidden": "true" }, h("i", { class: "shape torus" }), h("i", { class: "shape sphere" }), h("i", { class: "shape cube" }), h("i", { class: "shape cone" })),
+    logoW ? h("img", { class: "auth-logo", src: logoW.src, alt: "KNOLSKAPE" }) : null,
+    h("div", { class: "auth-copy" }, h("div", { class: "eyebrow" }, "Design Task Hub"), h("h2", null, "Plan, approve and track design work across the 4E products."),
+      h("ul", null, h("li", null, "Product managers request work with timelines"), h("li", null, "The owner approves and assigns designers"), h("li", null, "Designers post daily progress and deliverables"))));
+  put(card, h("div", { class: "auth-foot" }, icon("shield"), h("span", null, "Role based access. You only see what your role allows, and every access change is recorded.")));
+  root.appendChild(h("div", { class: "auth-wrap" }, brand, card));
+}
+function authField(label, id, type, value, oninput, opts = {}) {
+  return h("div", { class: "field" }, h("label", { for: id }, label),
+    h("div", { class: "pw-wrap" }, h("input", { id, type: opts.show ? "text" : type, value, autocomplete: opts.autocomplete || "off", placeholder: opts.placeholder || "", required: true, oninput: (e) => oninput(e.target.value) }),
+      type === "password" ? h("button", { type: "button", class: "pw-toggle", "aria-label": opts.show ? "Hide password" : "Show password", onclick: opts.toggle }, opts.show ? "Hide" : "Show") : null),
+    opts.hint ? h("div", { class: "hint" }, opts.hint) : null);
+}
+function viewAuth(root, app) {
+  const f = S.auth || (S.auth = { email: "", password: "", confirm: "", name: "", show: false, err: "", info: "" });
+  const view = S.authView || "signin";
+  const target = app ? APPS[app].name : "Design Task Hub";
+  const card = h("form", { class: "auth-card", novalidate: true, onsubmit: (e) => { e.preventDefault(); submitAuth(view); } });
+  const reason = { idle: "You were signed out after 30 minutes of inactivity.", "signed-out": "You're signed out. Nothing you typed was kept on this device.",
+    reset: "Password updated. Sign in with your new password." }[S.signedOutReason];
+  const switchTo = (v) => { S.authView = v; f.err = ""; f.info = ""; S.signedOutReason = ""; render(); };
+  const toggle = () => { f.show = !f.show; render(); };
+  const errBox = f.err ? h("div", { class: "banner warn", role: "alert" }, f.err) : null;
+  const infoBox = f.info ? h("div", { class: "banner good", role: "status" }, f.info) : null;
+  if (S.platformError) {
+    put(card, h("div", { class: "eyebrow" }, "Setup needed"), h("h1", null, "Almost ready"), h("div", { class: "banner warn" }, authMsg(S.platformError)));
+    return authShell(root, card);
+  }
+  if (view === "signin") {
+    put(card, h("div", { class: "eyebrow" }, "Sign in"), h("h1", null, `Sign in to ${target}`),
+      h("p", { class: "muted" }, `Use your official ${CFG.allowedDomain ? "@" + CFG.allowedDomain : "work"} email.`),
+      reason ? h("div", { class: "banner " + (S.signedOutReason === "idle" ? "warn" : "good") }, reason) : null, errBox, infoBox,
+      authField("Work email", "a-email", "email", f.email, (v) => { f.email = v; }, { autocomplete: "username", placeholder: `name@${CFG.allowedDomain || "company.com"}` }),
+      authField("Password", "a-pw", "password", f.password, (v) => { f.password = v; }, { autocomplete: "current-password", show: f.show, toggle }),
+      h("div", { class: "row" }, h("label", { class: "row", style: "gap:8px;cursor:pointer" }, h("input", { id: "keep", type: "checkbox", checked: S.keep, onchange: (e) => { S.keep = e.target.checked; } }), h("span", { class: "small" }, "Keep me signed in")),
+        h("span", { class: "spacer" }), h("button", { type: "button", class: "linkish", onclick: () => switchTo("forgot") }, "Forgot password?")),
+      h("button", { id: "signin-submit", type: "submit", class: "btn accent auth-cta", disabled: S.busy.auth }, S.busy.auth ? "Signing in" : "Sign in"),
+      h("div", { class: "hint" }, "Leave \"Keep me signed in\" unticked on shared computers. You'll be signed out after 30 minutes of inactivity."),
+      h("div", { class: "auth-switch" }, "First time here? ", h("button", { type: "button", class: "linkish", onclick: () => switchTo("signup") }, "Create your account")));
+  } else if (view === "signup") {
+    const issues = f.password ? passwordIssues(f.password) : [];
+    put(card, h("div", { class: "eyebrow" }, "Create account"), h("h1", null, "Set up your account"),
+      h("p", { class: "muted" }, "Use the work email the owner invited. You'll get an email to confirm it's you."), errBox,
+      authField("Full name", "a-name", "text", f.name, (v) => { f.name = v; }, { autocomplete: "name", placeholder: "First and last name" }),
+      authField("Work email", "a-email", "email", f.email, (v) => { f.email = v; }, { autocomplete: "username", placeholder: `name@${CFG.allowedDomain || "company.com"}` }),
+      authField("Password", "a-pw", "password", f.password, (v) => { f.password = v; softRender(); }, { autocomplete: "new-password", show: f.show, toggle,
+        hint: f.password ? (issues.length ? "Still needs " + issues.join(", ") + "." : "Strong password.") : "At least 10 characters with upper and lower case letters, a number and a symbol." }),
+      authField("Confirm password", "a-pw2", "password", f.confirm, (v) => { f.confirm = v; }, { autocomplete: "new-password", show: f.show, toggle }),
+      h("button", { id: "signup-submit", type: "submit", class: "btn accent auth-cta", disabled: S.busy.auth }, S.busy.auth ? "Creating account" : "Create account"),
+      h("div", { class: "auth-switch" }, "Already have an account? ", h("button", { type: "button", class: "linkish", onclick: () => switchTo("signin") }, "Sign in")));
+  } else if (view === "forgot") {
+    put(card, h("div", { class: "eyebrow" }, "Reset password"), h("h1", null, "Forgot your password?"),
+      h("p", { class: "muted" }, "Enter your work email and we'll send you a link to choose a new password."), errBox, infoBox,
+      authField("Work email", "a-email", "email", f.email, (v) => { f.email = v; }, { autocomplete: "username", placeholder: `name@${CFG.allowedDomain || "company.com"}` }),
+      h("button", { id: "reset-submit", type: "submit", class: "btn accent auth-cta", disabled: S.busy.auth }, S.busy.auth ? "Sending" : "Send reset link"),
+      h("div", { class: "hint" }, "The link works once and expires after an hour. Check your spam folder if it doesn't arrive."),
+      h("div", { class: "auth-switch" }, h("button", { type: "button", class: "linkish", onclick: () => switchTo("signin") }, "Back to sign in")));
+  }
+  authShell(root, card);
+}
+async function submitAuth(view) {
+  const f = S.auth;
+  f.err = ""; f.info = "";
+  const email = (f.email || "").trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { f.err = "Enter a valid email address."; return render(); }
+  if (view !== "forgot" && !domainOk(email)) { f.err = `Use your official @${CFG.allowedDomain} email.`; return render(); }
+  if (view === "signin" && !f.password) { f.err = "Enter your password."; return render(); }
+  if (view === "signup") {
+    if (!f.name.trim()) { f.err = "Enter your full name."; return render(); }
+    const issues = passwordIssues(f.password);
+    if (issues.length) { f.err = "Choose a stronger password: " + issues.join(", ") + "."; return render(); }
+    if (f.password !== f.confirm) { f.err = "The two passwords don't match."; return render(); }
+  }
+  S.busy.auth = true; render();
+  try {
+    if (view === "signin") { setKeepFlag(S.keep); await P.auth.signIn(email, f.password, S.keep); S.pendingSignInRecord = true; }
+    else if (view === "signup") { setKeepFlag(false); await P.auth.signUp(email, f.password, f.name.trim()); S.pendingSignInRecord = true; }
+    else {
+      try { await P.auth.resetPassword(email); } catch (e) { if (e.code === "auth/too-many-requests" || e.code === "auth/network-request-failed") throw e; }
+      // Same answer whether or not the account exists, so the form can't be used to discover emails
+      f.info = `If an account exists for ${email}, a reset link is on its way.`;
+    }
+    f.password = ""; f.confirm = ""; lastActivity = Date.now();
+  } catch (e) { f.err = authMsg(e); if (view === "signin") f.password = ""; }
+  S.busy.auth = false; render();
+}
+function viewVerify(root) {
+  const f = S.auth || (S.auth = {});
+  const card = h("div", { class: "auth-card" },
+    h("div", { class: "eyebrow" }, "Confirm your email"), h("h1", null, "Check your inbox"),
+    h("p", { class: "muted" }, `We sent a confirmation link to ${S.me.email}. Open it, then come back here.`),
+    f.info ? h("div", { class: "banner good", role: "status" }, f.info) : null, f.err ? h("div", { class: "banner warn", role: "alert" }, f.err) : null,
+    h("button", { id: "verify-done", class: "btn accent auth-cta", disabled: S.busy.auth, onclick: async () => {
+      S.busy.auth = true; f.err = ""; render();
+      try { const u = await P.auth.refresh(); if (u && u.emailVerified) { S.me.emailVerified = true; startSession(); } else f.err = "Not confirmed yet. Open the link in the email first."; }
+      catch (e) { f.err = authMsg(e); }
+      S.busy.auth = false; render();
+    } }, "I've confirmed my email"),
+    h("div", { class: "row" }, h("button", { class: "btn sm", disabled: S.busy.auth, onclick: async () => { try { await P.auth.sendVerification(); f.info = "Sent again. It can take a minute."; } catch (e) { f.err = authMsg(e); } render(); } }, "Send the email again"),
+      h("button", { class: "btn sm ghost", onclick: () => signOut("signed-out") }, "Use a different account")));
+  authShell(root, card);
+}
+function signOutConfirm() {
+  return h("div", { class: "modal-back", onclick: () => { S.confirmSignOut = false; render(); } },
+    h("div", { class: "modal card pad stack", role: "dialog", "aria-modal": "true", "aria-labelledby": "so-title", onclick: (e) => e.stopPropagation() },
+      h("h2", { id: "so-title" }, "Sign out with unsaved changes?"),
+      h("p", { class: "muted", style: "margin:0" }, "Something you typed hasn't been saved yet. Signing out clears it from this device."),
+      h("div", { class: "row" }, h("button", { class: "btn", onclick: () => { S.confirmSignOut = false; render(); } }, "Stay signed in"),
+        h("button", { class: "btn accent", onclick: () => signOut("signed-out") }, "Sign out anyway"))));
+}
+// Account settings: name and password
+function accountModal() {
+  const f = S.accountForm;
+  const issues = f.next ? passwordIssues(f.next) : [];
+  return h("div", { class: "modal-back", onclick: () => { S.accountForm = null; render(); } },
+    h("form", { class: "modal card pad stack", role: "dialog", "aria-modal": "true", "aria-labelledby": "acc-title", novalidate: true, onclick: (e) => e.stopPropagation(), onsubmit: async (e) => {
+      e.preventDefault(); f.err = ""; f.info = "";
+      if (f.next || f.current) {
+        if (!f.current) { f.err = "Enter your current password."; return render(); }
+        if (issues.length) { f.err = "Choose a stronger password: " + issues.join(", ") + "."; return render(); }
+        if (f.next !== f.confirm) { f.err = "The new passwords don't match."; return render(); }
+      }
+      S.busy.acct = true; render();
+      try {
+        if (f.name.trim() && f.name.trim() !== S.me.name) { await P.auth.updateName(f.name.trim()); S.me.name = f.name.trim(); if (S.people[S.me.id]) await db.doc(`members/${S.me.id}`).update({ displayName: S.me.name }); }
+        if (f.next) { await P.auth.changePassword(f.current, f.next); f.current = ""; f.next = ""; f.confirm = ""; }
+        f.info = "Saved.";
+      } catch (err) { f.err = err && err.code === "auth/invalid-credential" ? "Your current password isn't right." : authMsg(err); }
+      S.busy.acct = false; render();
+    } },
+      h("h2", { id: "acc-title" }, "Account settings"), h("div", { class: "small muted" }, S.me.email),
+      f.err ? h("div", { class: "banner warn", role: "alert" }, f.err) : null, f.info ? h("div", { class: "banner good", role: "status" }, f.info) : null,
+      authField("Full name", "acc-name", "text", f.name, (v) => { f.name = v; }, { autocomplete: "name" }),
+      h("div", { class: "label", style: "margin-top:6px" }, "Change password"),
+      authField("Current password", "acc-cur", "password", f.current, (v) => { f.current = v; }, { autocomplete: "current-password", show: f.show, toggle: () => { f.show = !f.show; render(); } }),
+      authField("New password", "acc-new", "password", f.next, (v) => { f.next = v; softRender(); }, { autocomplete: "new-password", show: f.show, toggle: () => { f.show = !f.show; render(); },
+        hint: f.next ? (issues.length ? "Still needs " + issues.join(", ") + "." : "Strong password.") : "Leave blank to keep your current password." }),
+      authField("Confirm new password", "acc-new2", "password", f.confirm, (v) => { f.confirm = v; }, { autocomplete: "new-password", show: f.show, toggle: () => { f.show = !f.show; render(); } }),
+      h("div", { class: "row" }, h("button", { type: "button", class: "btn", onclick: () => { S.accountForm = null; render(); } }, "Close"), h("button", { type: "submit", class: "btn accent", disabled: S.busy.acct }, "Save"))));
+}
+
 // ------------------------------------------------------------------ join
 function viewJoin(root, app) {
   const claim = S.myClaim;
+  const card = h("div", { class: "auth-card" });
   if (claim) {
-    root.appendChild(gate("Waiting for approval", `You asked to join as ${claim.role === "pm" ? "a product manager" : "a designer"}, named ${claim.name}. The owner approves requests from the Owner Dashboard.`,
-      h("button", { class: "btn", onclick: () => guard("claim", () => db.doc("claims/" + S.me.id).delete()) }, "Change my request")));
-    return;
+    put(card, h("div", { class: "eyebrow" }, "Access requested"), h("h1", null, "Waiting for approval"),
+      h("p", { class: "muted" }, `You asked to join as ${claim.role === "pm" ? "a product manager" : "a product designer"} ("${claim.name}"). The owner will approve it from the Owner Dashboard, and this page updates on its own.`),
+      h("div", { class: "row" }, h("button", { class: "btn", onclick: () => guard("claim", () => db.doc("claims/" + S.me.id).delete()) }, "Change my request"),
+        h("button", { class: "btn ghost", onclick: () => signOut("signed-out") }, "Sign out")));
+    return authShell(root, card);
   }
   const fixed = app === "pm" ? "pm" : app === "designer" ? "designer" : null;
-  if (app === "owner") return root.appendChild(gate("This dashboard is private", "Only the owner can open the Owner Dashboard. Use the link you were given for Task Creation or the Designer Tracker."));
-  if (S.me.guest) return root.appendChild(gate("Use your official ID", "You're signed in with an account from outside the organisation. Access is given to official KNOLSKAPE accounts only. Sign in to claude.ai with your work account and open this link again."));
   const f = S.joinForm || (S.joinForm = { role: fixed || "designer", name: "", err: "" });
-  if (fixed) f.role = fixed;
   const names = f.role === "pm" ? cfg().pms : cfg().designers;
-  root.appendChild(head("Access", `You don't have access to ${fixed ? APPS[app].name : "Design Task Hub"} yet`,
-    "Access is role based and tied to your official KNOLSKAPE ID. The owner adds people directly, or you can send a request below."));
-  root.appendChild(h("div", { class: "card pad stack", style: "max-width:560px" },
-    fixed ? null : h("div", { class: "field" }, h("span", { class: "label" }, "I am a"),
-      h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
-        h("button", { "aria-pressed": String(f.role === k), onclick: () => { f.role = k; f.name = ""; render(); } }, l)))),
-    field("My name on the tracker", "join-name", select("join-name", f.name, names, (v) => { f.name = v; f.err = ""; }, names.length ? "Choose your name" : "The owner has not added names yet"), f.err),
-    h("div", null, h("button", { class: "btn accent", disabled: S.busy.claim, onclick: () => {
-      if (!f.name) { f.err = "Choose your name from the list."; return render(); }
-      guard("claim", () => db.doc("claims/" + S.me.id).set({ role: f.role, name: f.name, at: nowIso() }));
-    } }, "Request access"))));
+  put(card, h("div", { class: "eyebrow" }, "No access yet"), h("h1", null, "Request access"),
+    h("p", { class: "muted" }, `You're signed in as ${S.me.email}, but the owner hasn't given this account a role yet. If you were invited, check you used the invited email. Otherwise, send a request.`),
+    f.err ? h("div", { class: "banner warn" }, f.err) : null,
+    field("I am a", "join-role", select("join-role", f.role, ROLE_OPTIONS, (v) => { f.role = v; f.name = ""; render(); })),
+    field("My name on the tracker", "join-name", select("join-name", f.name, names, (v) => { f.name = v; f.err = ""; }, names.length ? "Choose your name" : "Ask the owner to add your name"), null,
+      "The owner can also correct this when approving."),
+    h("button", { class: "btn accent auth-cta", disabled: S.busy.claim, onclick: () => {
+      if (!f.name && names.length) { f.err = "Choose your name from the list."; return render(); }
+      guard("claim", () => db.doc("claims/" + S.me.id).set({ role: f.role, name: f.name || "", email: S.me.email, displayName: S.me.name || "", at: nowIso() }));
+    } }, "Request access"),
+    h("div", { class: "auth-switch" }, h("button", { class: "linkish", onclick: () => signOut("signed-out") }, "Sign out")));
+  authShell(root, card);
 }
 
 // ============================================================ TASK CREATION
@@ -517,7 +793,8 @@ function viewPmForm(root) {
     f.id ? h("button", { class: "btn ghost", onclick: () => { S.form = blankRequest(); render(); } }, "Start a new request") : null,
     h("span", { class: "hint" }, `Submitted by ${pmName() || "you"}`));
 
-  root.appendChild(h("div", { class: "stack", style: "gap:20px;max-width:880px" }, master, subSection, timeline, preview, actions));
+  root.appendChild(h("div", { class: "grid2" }, h("div", { class: "stack section-stack" }, master, subSection),
+    h("aside", { class: "stack section-stack sticky-col" }, timeline, preview, h("div", { class: "card pad" }, actions))));
 }
 function subtaskEditor(f, s, i, e) {
   const c = cfg();
@@ -838,10 +1115,7 @@ function viewDesignerLeave(root) {
 }
 
 // ========================================================== OWNER DASHBOARD
-async function ensureOwnerId() {
-  if (!S.me.isOwner || !S.peopleLoaded || S.ownerId === S.me.id) return;
-  await savePeople(S.people);
-}
+async function ensureOwnerId() {}
 function funnelStages() {
   const reqs = allRequests(), all = tasks();
   const open = all.filter((t) => !t.actualEnd);
@@ -891,7 +1165,7 @@ function viewOverview(root) {
       S.period === "custom" ? h("div", { class: "row" }, h("input", { id: "p-from", type: "date", value: S.custom.from, "aria-label": "Period from", onchange: (e) => { S.custom.from = e.target.value; render(); } }),
         h("input", { id: "p-to", type: "date", value: S.custom.to, "aria-label": "Period to", onchange: (e) => { S.custom.to = e.target.value; render(); } })) : null] }));
   root.appendChild(h("div", { class: "stack", style: "gap:10px" }, h("div", { class: "section-title" }, h("h2", null, "Task funnel"), h("span", { class: "muted" }, "From request to done")), funnelStrip()));
-  root.appendChild(h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("h2", null, `Designer scorecard, ${p.label}`)),
+  root.appendChild(h("div", { class: "card" }, h("div", { class: "pad card-head" }, h("h2", null, `Designer scorecard, ${p.label}`)),
     h("div", { class: "tbl-wrap" }, h("table", null,
       h("thead", null, h("tr", null, h("th", null, "Designer"), h("th", { class: "n" }, "Done"), h("th", { class: "n" }, "Avg TAT"), h("th", { class: "n" }, "On-time"), h("th", null, "Speed"), h("th", null, "Quality"), h("th", null, "Commitment"), h("th", { class: "n" }, "Overall"), h("th", null, "Rating"), h("th", null, "Focus area"))),
       h("tbody", null, sc.length ? sc.map((r) => h("tr", null, h("td", { style: "font-weight:600" }, r.designer), h("td", { class: "n" }, r.completed), h("td", { class: "n" }, fmt1(r.avgTat)), h("td", { class: "n" }, pct(r.onTime)),
@@ -921,7 +1195,7 @@ function viewOverview(root) {
   const stale = all.filter((t) => !t.actualEnd && t.start && t.start <= today() && (!t.lastUpdate || workdays(t.lastUpdate, today()) > 2));
   const attention = all.filter((t) => t.delivery === "Overdue" || t.delivery === "Blocked").concat(stale.filter((t) => t.delivery !== "Overdue" && t.delivery !== "Blocked"));
   root.appendChild(h("div", { class: "grid-half" },
-    h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("h2", null, "Tasks by requesting PM")),
+    h("div", { class: "card" }, h("div", { class: "pad card-head" }, h("h2", null, "Tasks by requesting PM")),
       h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, h("th", null, "PM"), ["Approved", "Open", "Blocked", "Overdue", "Avg revisions"].map((x) => h("th", { class: "n" }, x)))),
         h("tbody", null, pmRows.map((r) => h("tr", null, h("td", null, r.pm), h("td", { class: "n" }, r.created), h("td", { class: "n" }, r.open), h("td", { class: "n" }, r.blocked), h("td", { class: "n" }, r.overdue), h("td", { class: "n" }, fmt1(r.avgRevisions)))))))),
     h("div", { class: "card pad stack" }, h("div", null, h("h2", null, "Needs attention"), h("div", { class: "hint" }, "Overdue, blocked, or no update for more than 2 working days.")),
@@ -1151,80 +1425,112 @@ function viewLeaveAdmin(root) {
 }
 
 // ---- people & links
+function personOf(id) {
+  const m = S.people[id] || S.claims[id];
+  if (m) return { name: m.displayName || (m.email || "").split("@")[0] || "Member", email: m.email || "" };
+  return { name: String(id || "").includes("@") ? id : "a member", email: String(id || "").includes("@") ? id : "" };
+}
+function inviteMessage(inv) {
+  const link = `${baseUrl()}#${inv.role === "pm" ? "pm" : "designer"}`;
+  return `Hi ${inv.name || ""},\n\nYou've been given access to Design Task Hub as ${ROLE_NAME[inv.role].toLowerCase()}.\n\n1. Open ${link}\n2. Choose "Create your account" and sign up with ${inv.email}\n3. Confirm your email from the message you receive\n\nAfter that the link opens straight to your page.`;
+}
 function viewPeople(root) {
-  const ids = Object.keys(S.claims).concat(Object.keys(S.people));
-  if (userApi && ids.some((id) => !S.profiles[id])) userApi.profiles(ids).then((ps) => { let ch = false; for (const id of ids) if (!S.profiles[id] || S.profiles[id].name !== ps[id].name) { S.profiles[id] = ps[id]; ch = true; } if (ch) render(); });
-  const prof = (id) => S.profiles[id] || { name: "", avatarUrl: "", email: null };
-  const idPill = (p) => isOfficial(p) ? pill("Official ID", "good") : pill("Guest, not an official ID", "critical");
   const c = cfg();
-  root.appendChild(head("Role based access", "People & access", "Everyone signs in with their official ID. Give each person one role: product managers only see Task Creation, designers only see the Designer Tracker, and only you see this dashboard."));
-
-  // add a person by official ID
-  const f = S.addForm || (S.addForm = { q: "", results: [], picked: null, role: "designer", name: "", err: "" });
+  root.appendChild(head("Role based access", "People & access", "Invite people by their official email and give each one a role. Product managers only see Task Creation, designers only see the Designer Tracker, and only you see this dashboard. The rules are enforced on the server, not just in the page."));
+  const f = S.addForm || (S.addForm = { email: "", role: "designer", name: "", err: "", sent: null });
   const names = f.role === "pm" ? c.pms : c.designers;
-  const add = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Give someone access"), h("span", { class: "muted" }, "Search your organisation by official email or name")),
+  const memberEmails = new Set(Object.values(S.people).map((m) => (m.email || "").toLowerCase()));
+  const invite = h("form", { class: "card pad stack", novalidate: true, onsubmit: (e) => {
+    e.preventDefault();
+    const email = f.email.trim().toLowerCase();
+    f.err = ""; f.sent = null;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { f.err = "Enter their work email."; return render(); }
+    if (!domainOk(email)) { f.err = `Only official @${CFG.allowedDomain} emails can be invited.`; return render(); }
+    if (memberEmails.has(email)) { f.err = "This person already has access. Change their role in Members below."; return render(); }
+    if (!f.name) { f.err = "Choose their name on the tracker."; return render(); }
+    const inv = { email, role: f.role, name: f.name, invitedBy: S.me.id, at: nowIso() };
+    guard("people", async () => { await db.doc(`invites/${email}`).set(inv); await audit("Invitation sent", email, `${ROLE_NAME[inv.role]} "${inv.name}"`);
+      S.addForm = { email: "", role: f.role, name: "", err: "", sent: inv }; toast(`Invitation ready for ${email}`); });
+  } },
+    h("div", { class: "section-title" }, h("h2", null, "Invite someone"), h("span", { class: "muted" }, "They create their account with this email")),
     h("div", { class: "fields" },
-      field("Official email or name", "add-q", h("input", { id: "add-q", type: "search", autocomplete: "off", placeholder: "name@knolskape.com", value: f.q,
-        onfocus: () => { if (!f.q && userApi && userApi.search) userApi.search("").then((r) => { if (!f.q) { f.results = r; render(); } }); },
-        oninput: (e) => { const v = e.target.value; f.q = v; f.picked = null; f.err = ""; if (userApi && userApi.search) userApi.search(v).then((r) => { if (f.q === v) { f.results = r; render(); } }); softRender(); } })),
-      h("div", { class: "field" }, h("span", { class: "label" }, "Role"), h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
-        h("button", { "aria-pressed": String(f.role === k), onclick: () => { f.role = k; f.name = ""; render(); } }, l)))),
+      field("Work email", "add-email", h("input", { id: "add-email", type: "email", autocomplete: "off", placeholder: `name@${CFG.allowedDomain || "company.com"}`, value: f.email, oninput: (e) => { f.email = e.target.value; f.err = ""; } })),
+      field("Role", "add-role", select("add-role", f.role, ROLE_OPTIONS, (v) => { f.role = v; f.name = ""; render(); })),
       field("Name on the tracker", "add-name", select("add-name", f.name, names, (v) => { f.name = v; f.err = ""; }, names.length ? "Choose" : "Add names under Lists & 4E"))),
-    f.results.length && !f.picked ? h("div", { class: "results" }, f.results.filter((p) => !S.people[p.id]).slice(0, 6).map((p) => h("button", { type: "button", onclick: () => { f.picked = p; f.q = p.email || p.name; S.profiles[p.id] = p;
-      const guess = names.find((n) => (p.name || "").toLowerCase().startsWith(n.toLowerCase())); if (guess && !f.name) f.name = guess; render(); } },
-      avatar(p.avatarUrl, p.name), h("span", { style: "flex:1;min-width:0" }, h("b", { style: "display:block;color:var(--ink)" }, p.name), p.email ? h("span", { class: "small muted" }, p.email) : null), idPill(p)))) : null,
-    f.picked ? h("div", { class: "row" }, avatar(f.picked.avatarUrl, f.picked.name), h("b", null, f.picked.name), f.picked.email ? h("span", { class: "muted small" }, f.picked.email) : null, idPill(f.picked),
-      h("button", { class: "btn sm ghost", onclick: () => { f.picked = null; render(); } }, "Change")) : f.q.length > 2 && !f.results.length ? h("div", { class: "hint" }, "No one in your organisation matches. Check the spelling of the official email.") : null,
     f.err ? h("div", { class: "err" }, f.err) : null,
-    h("div", { class: "row" }, h("button", { class: "btn accent", disabled: S.busy.people, onclick: () => {
-      if (!f.picked) { f.err = "Pick the person from the search results."; return render(); }
-      if (!isOfficial(f.picked)) { f.err = "Guests from outside the organisation can't be given access. Use their official KNOLSKAPE account."; return render(); }
-      if (!f.name) { f.err = "Choose their name on the tracker."; return render(); }
-      const pick = f.picked, role = f.role, nm = f.name;
-      guard("people", async () => { await savePeople({ ...S.people, [pick.id]: { role, name: nm } }); if (S.claims[pick.id]) await db.doc("claims/" + pick.id).delete(); S.addForm = null; toast(`${pick.name || nm} can now use ${APPS[role].name}`); });
-    } }, "Give access"),
-      h("span", { class: "hint" }, "They open their link and land straight in their interface. Nothing else is visible to them.")));
+    h("div", { class: "row" }, h("button", { type: "submit", class: "btn accent", disabled: S.busy.people }, "Invite"),
+      h("span", { class: "hint" }, "Nothing is emailed automatically. Send them the invitation message below.")),
+    f.sent ? h("div", { class: "banner good" }, h("span", null, h("b", null, `${f.sent.email} is invited. `), "Send them the sign-up steps."),
+      h("span", { class: "spacer" }), h("button", { type: "button", class: "btn sm", onclick: () => copyText(inviteMessage(f.sent)) }, "Copy invitation message")) : null);
+
+  const invites = Object.values(S.invites).sort((x, y) => (x.at < y.at ? 1 : -1));
+  const pending = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Pending invitations"), h("span", { class: "muted" }, String(invites.length))),
+    invites.length ? invites.map((inv) => h("div", { class: "row", style: "gap:12px" }, avatar(null, inv.name || inv.email),
+      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600;color:var(--ink)" }, inv.email), h("div", { class: "small muted" }, `${ROLE_NAME[inv.role]} "${inv.name}", invited ${fmtWhen(inv.at)}`)),
+      h("button", { class: "btn sm", onclick: () => copyText(inviteMessage(inv)) }, "Copy message"),
+      h("button", { class: "btn sm ghost danger", onclick: () => guard("people", async () => { await db.doc(`invites/${inv.email}`).delete(); await audit("Invitation revoked", inv.email, `${ROLE_NAME[inv.role]} "${inv.name}"`); toast("Invitation revoked"); }) }, "Revoke")))
+      : h("div", { class: "hint" }, "No open invitations. Invitations are used up when the person creates their account."));
 
   const claims = Object.entries(S.claims);
   const requests = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Access requests"), h("span", { class: "muted" }, String(claims.length))),
-    claims.length ? claims.map(([id, cl]) => h("div", { class: "row", style: "gap:12px" }, avatar(prof(id).avatarUrl, prof(id).name),
-      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600;color:var(--ink)" }, prof(id).name || "Someone in your organisation"),
-        h("div", { class: "small muted" }, `Asks to join as ${cl.role === "pm" ? "product manager" : "designer"} "${cl.name}"`)), idPill(prof(id)),
-      h("button", { class: "btn sm accent", disabled: S.busy.people || !isOfficial(prof(id)), onclick: () => approveMember(id, cl) }, "Approve"),
-      h("button", { class: "btn sm ghost danger", onclick: () => guard("people", () => db.doc("claims/" + id).delete()) }, "Decline"))) : h("div", { class: "hint" }, "No pending requests."));
+    claims.length ? claims.map(([id, cl]) => h("div", { class: "row", style: "gap:12px" }, avatar(null, cl.displayName || cl.email),
+      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600;color:var(--ink)" }, cl.displayName || cl.email), h("div", { class: "small muted" }, `${cl.email} asks to join as ${ROLE_NAME[cl.role].toLowerCase()} "${cl.name || "?"}"`)),
+      domainOk(cl.email) ? null : pill("Not an official email", "critical"),
+      h("button", { class: "btn sm accent", disabled: S.busy.people || !domainOk(cl.email) || !cl.name, title: cl.name ? "" : "Pick a tracker name first", onclick: () => approveMember(id, cl) }, "Approve"),
+      h("button", { class: "btn sm ghost danger", onclick: () => declineRequest(id, cl) }, "Decline"))) : h("div", { class: "hint" }, "No pending requests."));
 
-  const link = (app, note) => h("div", { class: "link-row" }, h("div", null, h("b", { style: "color:var(--ink)" }, APPS[app].name), h("div", { class: "small muted" }, note), h("code", null, `${ARTIFACT_URL}#${app}`)),
-    h("button", { class: "btn sm", onclick: () => copyText(`${ARTIFACT_URL}#${app}`) }, "Copy link"));
+  const link = (app, note) => h("div", { class: "link-row" }, h("div", null, h("b", { style: "color:var(--ink)" }, APPS[app].name), h("div", { class: "small muted" }, note), h("code", null, `${baseUrl()}#${app}`)),
+    h("button", { class: "btn sm", onclick: () => copyText(`${baseUrl()}#${app}`) }, "Copy link"));
   const links = h("div", { class: "card pad stack" }, h("h2", null, "Links"), h("div", { class: "links" },
-    link("pm", "For product managers. Create requests and follow approval."), link("designer", "For product designers. Daily progress, deliverables and weekly leave."), link("owner", "For you only. Anyone else is turned away.")),
-    h("div", { class: "hint" }, "Only members of your KNOLSKAPE claude.ai organisation can be given access. Guests invited from outside are turned away."));
+    link("pm", "For product managers. Create requests and follow approval."), link("designer", "For product designers. Daily progress, deliverables and weekly leave."), link("owner", "For you only. Anyone else is turned away.")));
 
-  const members = Object.entries(S.people);
-  const table = h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("div", { class: "section-title" }, h("h2", null, "Members"), h("span", { class: "muted" }, String(members.length)))),
-    members.length ? h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Person", "Official ID", "Role", "Name on tracker", ""].map((x) => h("th", null, x)))),
-      h("tbody", null, members.map(([id, p]) => h("tr", null,
-        h("td", null, h("span", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, avatar(prof(id).avatarUrl, prof(id).name, "avatar", "width:28px;height:28px"), prof(id).name || "Member")),
-        h("td", { class: "small" }, idPill(prof(id))),
-        h("td", null, select("role-" + id, p.role, [{ value: "pm", label: "Product manager" }, { value: "designer", label: "Product designer" }], (v) => changeRole(id, { role: v, name: "" }))),
-        h("td", null, select("rname-" + id, p.name, p.role === "pm" ? c.pms : c.designers, (v) => changeRole(id, { name: v }), "Choose")),
-        h("td", { style: "text-align:right" }, S.confirm === id ? h("span", null, h("button", { class: "btn sm danger", onclick: () => removeMember(id) }, "Remove"), h("button", { class: "btn sm ghost", onclick: () => { S.confirm = null; render(); } }, "Keep"))
-          : h("button", { class: "btn sm ghost danger", onclick: () => { S.confirm = id; render(); } }, "Remove access"))))))) : h("div", { class: "pad hint" }, "Nobody has access yet."));
-  root.appendChild(h("div", { class: "grid2" }, h("div", { class: "stack", style: "gap:20px" }, add, table), h("div", { class: "stack", style: "gap:20px" }, requests, links)));
+  const members = Object.entries(S.people).sort(([, x], [, y]) => (x.role === "owner" ? -1 : y.role === "owner" ? 1 : (x.displayName || "").localeCompare(y.displayName || "")));
+  const table = h("div", { class: "card" }, h("div", { class: "pad card-head" }, h("div", { class: "section-title" }, h("h2", null, "Members"), h("span", { class: "muted" }, String(members.length)))),
+    h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Person", "Role", "Name on tracker", "Last signed in", ""].map((x) => h("th", null, x)))),
+      h("tbody", null, members.map(([id, m]) => h("tr", null,
+        h("td", null, h("span", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, avatar(null, m.displayName || m.email, "avatar", "width:28px;height:28px"),
+          h("span", { style: "min-width:0" }, h("b", { style: "display:block;color:var(--ink)" }, m.displayName || m.email), h("span", { class: "small muted" }, m.email)))),
+        h("td", null, m.role === "owner" ? pill("Owner", "warn") : select("role-" + id, m.role, ROLE_OPTIONS, (v) => changeRole(id, { role: v, name: "" }))),
+        h("td", null, m.role === "owner" ? h("span", { class: "muted small" }, "-") : select("rname-" + id, m.name, m.role === "pm" ? c.pms : c.designers, (v) => changeRole(id, { name: v }), "Choose")),
+        h("td", { class: "small muted", style: "white-space:nowrap" }, S.sessions[id] && S.sessions[id].lastSignIn ? fmtWhen(S.sessions[id].lastSignIn) : "Not yet"),
+        h("td", { style: "text-align:right" }, m.role === "owner" ? null : S.confirm === id
+          ? h("span", null, h("button", { class: "btn sm danger", onclick: () => removeMember(id) }, "Remove"), h("button", { class: "btn sm ghost", onclick: () => { S.confirm = null; render(); } }, "Keep"))
+          : h("button", { class: "btn sm ghost danger", onclick: () => { S.confirm = id; render(); } }, "Remove access"))))))));
+
+  const log = ((S.auditLog && S.auditLog.entries) || []).slice(-40).reverse();
+  const history = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Access history"), h("span", { class: "muted" }, "Last 40 changes")),
+    log.length ? h("div", { class: "stack", style: "gap:10px" }, log.map((e) => h("div", { class: "row", style: "gap:10px;align-items:flex-start;flex-wrap:nowrap" },
+      avatar(null, personOf(e.target).name, "avatar", "width:28px;height:28px"),
+      h("div", { style: "flex:1;min-width:0" }, h("div", { class: "small" }, h("b", { style: "color:var(--ink)" }, e.action), `: ${personOf(e.target).name}${e.detail ? ", " + e.detail : ""}`),
+        h("div", { class: "hint" }, `${fmtWhen(e.at)} by ${e.by === S.me.id ? "you" : personOf(e.by).name}`))))) : h("div", { class: "hint" }, "Changes to access appear here."));
+  root.appendChild(h("div", { class: "grid2" }, h("div", { class: "stack" }, invite, requests), h("div", { class: "stack" }, pending, links)));
+  root.appendChild(table);
+  root.appendChild(history);
 }
-function savePeople(map) {
-  return db.doc("config/people").set({ map, ownerId: S.me.id });
+// Access history (owner only): who changed whose access, and when. Bounded to the last 300 events.
+async function audit(action, target, detail) {
+  const entries = ((S.auditLog && S.auditLog.entries) || []).concat([{ at: nowIso(), by: S.me.id, action, target, detail: detail || "" }]).slice(-300);
+  try { await db.doc("audit/log").set({ entries }); } catch (e) { console.error(e); }
 }
-// Official ID = a member of the organisation that owns this page (not an invited guest)
-function isOfficial(profile) { return !(profile && profile.guest); }
 function approveMember(id, cl) {
-  guard("people", async () => { await savePeople({ ...S.people, [id]: { role: cl.role, name: cl.name } }); await db.doc("claims/" + id).delete(); toast(`${cl.name} can now use ${APPS[cl.role === "pm" ? "pm" : "designer"].name}`); });
+  guard("people", async () => {
+    await db.doc(`members/${id}`).set({ role: cl.role, name: cl.name, email: cl.email, displayName: cl.displayName || "", joinedAt: nowIso(), approvedBy: S.me.id });
+    await db.doc("claims/" + id).delete();
+    await audit("Request approved", cl.email || id, `${ROLE_NAME[cl.role]} "${cl.name}"`); toast(`${cl.displayName || cl.email} can now use ${APPS[cl.role === "pm" ? "pm" : "designer"].name}`);
+  });
+}
+function declineRequest(id, cl) {
+  guard("people", async () => { await db.doc("claims/" + id).delete(); await audit("Request declined", cl.email || id, `${ROLE_NAME[cl.role]} "${cl.name}"`); toast("Request declined"); });
 }
 function removeMember(id) {
-  const map = { ...S.people }; delete map[id];
-  guard("people", async () => { await savePeople(map); S.confirm = null; toast("Access removed"); });
+  const prev = S.people[id] || {};
+  guard("people", async () => { await db.doc(`members/${id}`).delete(); await audit("Access removed", prev.email || id, `${ROLE_NAME[prev.role] || ""} "${prev.name || ""}"`); S.confirm = null; toast("Access removed"); });
 }
 function changeRole(id, patch) {
-  guard("people", async () => { await savePeople({ ...S.people, [id]: { ...S.people[id], ...patch } }); toast("Access updated"); });
+  const prev = S.people[id] || {};
+  guard("people", async () => { await db.doc(`members/${id}`).update(patch);
+    await audit(patch.role && patch.role !== prev.role ? "Role changed" : "Tracker name changed", id,
+      patch.role && patch.role !== prev.role ? `${ROLE_NAME[prev.role]} to ${ROLE_NAME[patch.role]}. Pick their tracker name next.` : `"${prev.name || ""}" to "${patch.name}"`); toast("Access updated"); });
 }
 
 // ---- lists & 4E
@@ -1335,7 +1641,7 @@ async function pickTemplate(e) {
 function b64ToBytes(b64) { const s = atob(b64); const out = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i); return out; }
 async function runExport() {
   const o = S.exportOpts;
-  if (!downloads) { S.exportMsg = { kind: "warn", text: "Downloads aren't available in this view. Open the page in claude.ai to download the workbook." }; return render(); }
+
   if (!o.from || !o.to || o.to < o.from) { S.exportMsg = { kind: "warn", text: "Set a Scorecard period where the end date is on or after the start date." }; return render(); }
   S.busy.export = true; S.exportMsg = null; render();
   try {
@@ -1346,7 +1652,7 @@ async function runExport() {
     const tpl = S.template ? S.template.bytes : b64ToBytes(window.DTH_TEMPLATE_B64);
     const { bytes, warnings } = await X.build({ JSZip, DOMParser, XMLSerializer }, tpl, { config: conf, tasks: list, leave, requests, period: { from: o.from, to: o.to }, designerCopy: o.designerCopy });
     const name = `Product Designer Task Manager ${today()}${o.designerCopy ? " (designer copy)" : ""}.xlsx`;
-    await downloads.save({ filename: name, data: new Blob([bytes]) });
+    await P.download(name, new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
     S.exportMsg = { kind: "good", text: `Saved "${name}". Excel recalculates every formula and chart when you open it.`, list: warnings };
   } catch (e) {
     const code = e && e.code;
@@ -1401,33 +1707,92 @@ document.addEventListener("scroll", () => { tip.hidden = true; }, { passive: tru
 window.addEventListener("hashchange", () => { S.confirm = null; render(); window.scrollTo(0, 0); });
 
 // -------------------------------------------------------------------- boot
+const coreSubs = [];
+function stopAll() {
+  for (const un of coreSubs.splice(0)) { try { un(); } catch (e) {} }
+  for (const [k, un] of subs) { try { un(); } catch (e) {} subs.delete(k); }
+  Object.assign(S, { people: {}, myMember: null, memberLoaded: false, coreStarted: false, config: null, tasksRaw: [], progress: {}, leaveItems: {}, leaveDocs: {},
+    requests: {}, claims: {}, myClaim: undefined, invites: {}, sessions: {}, auditLog: null });
+  memo = { key: null, value: [] };
+}
 function normalizeConfig(c) {
   return { designers: c.designers || [], pms: c.pms || [], projects: c.projects || [], lines: (c.lines || []).map((l) => ({ name: l.name, products: l.products || [] })),
     subTags: c.subTags || [], holidays: c.holidays || [], scoring: c.scoring || {} };
 }
-async function boot() {
-  const claude = window.claude;
-  const [u, d, dl] = claude && claude.use ? await Promise.all([claude.use("user"), claude.use("db"), claude.use("downloads")]) : [null, null, null];
-  userApi = u; db = d; downloads = dl;
-  if (u) {
-    const me = await u.me();
-    S.me = { id: me.id, name: me.name, avatarUrl: me.avatarUrl, isOwner: me.isOwner, email: me.email || null, guest: false };
-    if (me.id && u.profiles) { try { const ps = await u.profiles([me.id]); S.me.guest = !!(ps[me.id] && ps[me.id].guest); } catch (e) {} }
+// A verified account joins by: being the configured owner, holding an invitation, or asking for access.
+async function tryJoin() {
+  const email = S.me.email;
+  const base = { email, displayName: S.me.name || "", joinedAt: nowIso() };
+  if (CFG.ownerEmail && email === String(CFG.ownerEmail).toLowerCase()) {
+    await db.doc(`members/${S.me.id}`).set({ ...base, role: "owner", name: "" });
+    const conf = await db.doc("config/main").get().catch(() => null);
+    if (conf && !conf.exists) await db.doc("config/main").set(clone(STARTER_CFG));
+    return true;
   }
-  if (!db) { S.noDb = true; S.ready = true; return render(); }
-  let pending = 3;
-  const done = () => { if (--pending <= 0) S.ready = true; render(); };
-  db.doc("config/main").onSnapshot((s) => { S.config = s.exists ? normalizeConfig(s.data()) : null; done(); }, (e) => { onErr(e); done(); });
-  db.doc("config/people").onSnapshot((s) => {
-    const data = s.exists ? s.data() : {};
-    S.people = data.map || {}; S.ownerId = data.ownerId || null; S.peopleLoaded = true;
-    syncSubs(); done();
-    if (S.me.isOwner && S.ownerId !== S.me.id) ensureOwnerId().catch(onErr);
-  }, (e) => { onErr(e); done(); });
-  db.collection("tasks").onSnapshot((q) => { S.tasksRaw = q.docs.map((x) => ({ id: x.id, ...x.data() })); done(); }, (e) => { onErr(e); done(); });
-  if (S.me.isOwner) db.collection("claims").onSnapshot((q) => { const m = {}; q.docs.forEach((x) => { m[x.id] = x.data(); }); S.claims = m; render(); }, onErr);
-  else if (S.me.id) db.doc("claims/" + S.me.id).onSnapshot((s) => { S.myClaim = s.exists ? s.data() : null; render(); }, onErr);
+  const inv = await db.doc(`invites/${email}`).get().catch(() => null);
+  if (inv && inv.exists) {
+    const d = inv.data();
+    await db.doc(`members/${S.me.id}`).set({ ...base, role: d.role, name: d.name, invitedBy: d.invitedBy || "" });
+    await db.doc(`invites/${email}`).delete().catch(() => {});
+    return true;
+  }
+  return false;
+}
+function startSession() {
+  S.memberLoaded = false; S.signedInAt = nowIso(); lastActivity = Date.now();
+  let joining = false;
+  coreSubs.push(db.doc(`members/${S.me.id}`).onSnapshot(async (d) => {
+    if (d.exists) {
+      S.myMember = d.data(); S.me.isOwner = S.myMember.role === "owner";
+      if (!S.coreStarted) startCore();
+      S.memberLoaded = true;
+      if (S.pendingSignInRecord) { S.pendingSignInRecord = false; recordSession("sign-in"); }
+      const home = homeApp();
+      if (!(location.hash || "").slice(1) && home) location.hash = home;
+    } else {
+      S.myMember = null; S.me.isOwner = false;
+      if (S.coreStarted) { const keep = { ...S.me }; stopAll(); S.me = keep; startSession(); return; } // access was removed
+      if (!joining) { joining = true; try { if (await tryJoin()) return; } catch (e) { console.error(e); } }
+      startGuest();
+      S.memberLoaded = true;
+    }
+    render();
+  }, (e) => { onErr(e); S.memberLoaded = true; render(); }));
+}
+let guestStarted = false;
+function startGuest() {
+  if (guestStarted) return;
+  guestStarted = true;
+  coreSubs.push(db.doc("config/main").onSnapshot((d) => { S.config = d.exists ? normalizeConfig(d.data()) : null; render(); }, onErr));
+  coreSubs.push(db.doc("claims/" + S.me.id).onSnapshot((d) => { S.myClaim = d.exists ? d.data() : null; render(); }, onErr));
+}
+function startCore() {
+  S.coreStarted = true; guestStarted = false;
+  coreSubs.push(db.collection("members").onSnapshot((q) => { const m = {}; q.docs.forEach((x) => { m[x.id] = x.data(); }); S.people = m; syncSubs(); render(); }, onErr));
+  coreSubs.push(db.doc("config/main").onSnapshot((d) => { S.config = d.exists ? normalizeConfig(d.data()) : null; render(); }, onErr));
+  // Each role asks only for the tasks the server lets it read
+  const mm = S.myMember || {};
+  const taskQuery = mm.role === "owner" ? db.collection("tasks") : db.collection("tasks").where(mm.role === "designer" ? "designer" : "assignedBy", "==", mm.name || "-");
+  coreSubs.push(taskQuery.onSnapshot((q) => { S.tasksRaw = q.docs.map((x) => ({ id: x.id, ...x.data() })); render(); }, onErr));
+  if (S.me.isOwner) {
+    coreSubs.push(db.collection("claims").onSnapshot((q) => { const m = {}; q.docs.forEach((x) => { m[x.id] = x.data(); }); S.claims = m; render(); }, onErr));
+    coreSubs.push(db.collection("invites").onSnapshot((q) => { const m = {}; q.docs.forEach((x) => { m[x.id] = x.data(); }); S.invites = m; render(); }, onErr));
+  }
   syncSubs();
+}
+async function boot() {
+  if (!P) { S.platformError = { code: "not_configured" }; S.ready = true; return render(); }
+  try { await P.init(); } catch (e) { S.platformError = e; S.ready = true; return render(); }
+  db = P.db;
+  S.keep = keepFlag();
+  P.auth.onChange((u) => {
+    stopAll(); guestStarted = false;
+    if (!u) { S.me = { id: null, name: "", email: "", avatarUrl: "", isOwner: false, emailVerified: false }; S.ready = true; render(); return; }
+    S.me = { id: u.uid, email: u.email, emailVerified: u.emailVerified, name: u.displayName || u.email.split("@")[0], avatarUrl: "", isOwner: false };
+    S.ready = true;
+    if (u.emailVerified) startSession();
+    render();
+  });
 }
 render();
 boot().catch((e) => { console.error(e); S.ready = true; S.noDb = true; render(); });

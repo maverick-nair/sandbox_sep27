@@ -1,0 +1,104 @@
+rules_version = '2';
+// Design Task Hub: role based access, enforced by Firestore on the server.
+// Generated into firestore.rules by tools/build_web.js (owner email and domain
+// come from web/firebase-config.js). Roles live in members/{uid}.role:
+//   owner     everything: approves requests, manages people, lists and exports
+//   pm        own requests only, and the tasks that came from them
+//   designer  own tasks, own progress and own leave
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email.lower(); }
+    // Official ID: verified email on the company domain
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true
+        && email().matches('^[^@]+@__DOMAIN_RE__$');
+    }
+    function memberPath() { return /databases/$(database)/documents/members/$(request.auth.uid); }
+    function isMember() { return verified() && exists(memberPath()); }
+    function me() { return get(memberPath()).data; }
+    function hasRole(r) { return isMember() && me().role == r; }
+    function isOwner() { return hasRole('owner'); }
+    function isPM() { return hasRole('pm'); }
+    function isDesigner() { return hasRole('designer'); }
+    function ownerEmail() { return '__OWNER_EMAIL__'; }
+    function invitePath(e) { return /databases/$(database)/documents/invites/$(e); }
+
+    // People: the owner bootstraps from the configured email; others join from an invitation
+    match /members/{uid} {
+      allow read: if isMember() || (verified() && request.auth.uid == uid);
+      allow create: if (verified() && request.auth.uid == uid && request.resource.data.email == email() && (
+            (email() == ownerEmail() && request.resource.data.role == 'owner')
+            || (exists(invitePath(email()))
+                && request.resource.data.role == get(invitePath(email())).data.role
+                && request.resource.data.name == get(invitePath(email())).data.name)))
+        || (isOwner() && uid != request.auth.uid && request.resource.data.role in ['pm', 'designer']);
+      allow update: if (isOwner() && uid != request.auth.uid && request.resource.data.role in ['pm', 'designer'])
+        || (isMember() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']));
+      allow delete: if isOwner() && uid != request.auth.uid;
+    }
+    match /invites/{inviteEmail} {
+      allow read: if isOwner() || (verified() && email() == inviteEmail);
+      allow create, update: if isOwner() && inviteEmail == inviteEmail.lower()
+        && inviteEmail.matches('^[^@]+@__DOMAIN_RE__$')
+        && request.resource.data.email == inviteEmail
+        && request.resource.data.role in ['pm', 'designer'];
+      allow delete: if isOwner() || (verified() && email() == inviteEmail);
+    }
+    match /claims/{uid} {
+      allow read: if isOwner() || (verified() && request.auth.uid == uid);
+      allow create, update: if verified() && request.auth.uid == uid && !exists(memberPath())
+        && request.resource.data.email == email()
+        && request.resource.data.role in ['pm', 'designer'];
+      allow delete: if isOwner() || (verified() && request.auth.uid == uid);
+    }
+
+    // Lists and settings: readable by verified company accounts (the access request form needs the names)
+    match /config/{doc} {
+      allow read: if verified();
+      allow write: if isOwner();
+    }
+    match /audit/{doc} {
+      allow read, write: if isOwner();
+    }
+    match /sessions/{uid} {
+      allow read: if isOwner() || (verified() && request.auth.uid == uid);
+      allow write: if verified() && request.auth.uid == uid;
+    }
+
+    // Approved tasks: written by the owner only; each role reads only its own slice
+    match /tasks/{taskId} {
+      allow read: if isOwner()
+        || (isDesigner() && resource.data.designer == me().name)
+        || (isPM() && resource.data.assignedBy == me().name);
+      allow write: if isOwner();
+    }
+    match /requests/{uid}/items/{reqId} {
+      allow read: if isOwner() || (isPM() && request.auth.uid == uid);
+      allow create: if (isPM() || isOwner()) && request.auth.uid == uid
+        && request.resource.data.status in ['draft', 'pending'];
+      allow update: if isOwner()
+        || (isPM() && request.auth.uid == uid
+            && resource.data.status in ['draft', 'pending', 'changes']
+            && request.resource.data.status in ['draft', 'pending']);
+      allow delete: if isOwner() || (isPM() && request.auth.uid == uid && resource.data.status == 'draft');
+    }
+    // Daily progress: a designer writes only for tasks assigned to them
+    match /progress/{uid}/tasks/{taskId} {
+      allow read: if isMember();
+      allow write: if request.auth.uid == uid && (isOwner()
+        || (isDesigner() && get(/databases/$(database)/documents/tasks/$(taskId)).data.designer == me().name));
+    }
+    match /leave/{uid} {
+      allow read: if isMember();
+      allow write: if request.auth.uid == uid && (isOwner() || isDesigner());
+      match /items/{itemId} {
+        allow read: if isMember();
+        allow create, update: if request.auth.uid == uid
+          && (isOwner() || (isDesigner() && request.resource.data.designer == me().name));
+        allow delete: if request.auth.uid == uid && (isOwner() || isDesigner());
+      }
+    }
+  }
+}

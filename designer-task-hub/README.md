@@ -1,10 +1,11 @@
 # Design Task Hub
 
-A small web app for requesting, approving and tracking product design work,
+A standalone web platform for requesting, approving and tracking product design work,
 built around the **Product Designer Task Manager** workbook. Product managers
 submit task requests, the owner approves them through a task funnel, designers
 post daily progress and weekly leave, and the owner gets everything back as
-that same Excel workbook with a Dashboard sheet added.
+that same Excel workbook with a Dashboard sheet added. It runs on Firebase
+(Hosting, Authentication and Firestore); see [DEPLOY.md](DEPLOY.md) to put it live.
 
 ## Three interfaces, three links
 
@@ -13,23 +14,40 @@ and each interface has its own header, colour and navigation:
 
 | Link | Interface | For | What they do |
 |---|---|---|---|
-| `#pm` | **Task Creation** (navy) | Product managers | Build a request: 4E line, product (options depend on the line), project name, master task title, priority, brief, then one or more detailed subtasks, each with its own start, end and hours, shown on a live timeline. PMs don't choose designers; the owner assigns every subtask. Submit to the owner, save a draft, and follow each request's status and, once approved, its live progress. |
-| `#designer` | **Designer Tracker** (teal) | Product designers | Only their own approved tasks and a personal timeline. Post one update per task per day (status, progress, hours, revision rounds, note, blocker) and log leave weekly. |
-| `#owner` | **Owner Dashboard** (graphite) | The owner only | Task funnel (approve, send back with a note, or reject; adjust designers and dates first, with a capacity check), overview dashboard, all tasks, leave, people and links, lists and 4E setup, Excel export. |
+| `#pm` | **Task Creation** (blue) | Product managers | Build a request: 4E line, product (options depend on the line), project name, master task title, priority, brief, then one or more detailed subtasks, each with its own start, end and hours, shown on a live timeline. PMs don't choose designers; the owner assigns every subtask. Submit to the owner, save a draft, and follow each request's status and, once approved, its live progress. |
+| `#designer` | **Designer Tracker** (orange) | Product designers | Only their own approved tasks and a personal timeline. Post one update per task per day (status, progress, hours, revision rounds, note, blocker) and log leave weekly. |
+| `#owner` | **Owner Dashboard** (gold on ebony) | The owner only | Task funnel (approve, send back with a note, or reject; adjust designers and dates first, with a capacity check), overview dashboard, all tasks, leave, people and access, lists and 4E setup, Excel export. |
 
 Opening another group's link shows a short "this page is for ..." notice.
 
 ## Role based access by official ID
 
-Everyone signs in with their claude.ai work account. Under **People & access**
-the owner searches the organisation by official email, picks the person, and
-gives them one role (product manager or product designer) plus their name on
-the tracker. An official ID means a member of the KNOLSKAPE claude.ai
-organisation; guest accounts invited from outside are turned away (the page
-cannot read email addresses, so membership is the check). People who are not set up
-yet can send an access request from their link, which the owner approves or
-declines. The page stores only each person's opaque account id with their
-role; names, photos and emails are looked up live and never saved.
+Everyone signs in with their official email and a password. Accounts outside
+the company domain are refused, and nobody sees anything until they confirm
+their email. Under **People & access** the owner invites a person by email,
+picks their **Role** from a dropdown (product manager or product designer) and
+their name on the tracker. When that person creates their account with the
+invited email they land in their own interface. Someone who was not invited
+can send an access request, which the owner approves or declines. The owner
+can change a role or remove access from the Members table at any time, and
+every change is kept in **Access history** with the last sign-in per person.
+
+The roles are enforced by Firestore security rules on the server
+(`firebase/firestore.rules`): a designer can only read their own tasks and
+write their own progress and leave, a PM only their own requests and the tasks
+that came from them, and only the owner can approve work, manage people or
+change the lists. The owner account is fixed by email at build time.
+
+## Sign in and sign out
+
+Sign-in, account creation, email confirmation and password reset pages, with
+a show/hide password toggle, a strong password rule (10+ characters, upper and
+lower case, a number and a symbol), the same answer for a wrong email or wrong
+password, and a reset form that never reveals whether an account exists.
+"Keep me signed in" is off by default; without it the session ends with the
+browser or after 30 minutes of inactivity (with a warning two minutes before).
+Signing out warns about unsaved changes and clears anything typed from the
+device. Account settings in the account menu change the name and password.
 
 ## The task funnel
 
@@ -105,9 +123,11 @@ in-app dashboard shows the same numbers Excel does.
 ```
 npm install
 npm run build:template   # workbook/template.xlsx from the original workbook
-npm run build            # dist/index.html, the single page to publish
+npm run build            # dist-web/ (the site) and firebase/firestore.rules
 npm test                 # export structure + Excel-vs-app formula parity
-node tests/ui.smoke.js   # browser walk-through with a mocked runtime
+npm run test:rules       # security rules against the Firestore emulator
+npm run test:ui          # browser walk-through with an in-memory backend
+npm run deploy           # build, then deploy hosting and rules (see DEPLOY.md)
 ```
 
 The parity test recalculates a 60-task workbook in LibreOffice and compares
@@ -115,21 +135,37 @@ every auto-calculated Tracker column, the Scorecard and the weekly workload
 with `metrics.js`. It needs LibreOffice Calc and `RECALC=<path to recalc.py>`;
 without them it is skipped.
 
+The UI test (`tests/ui.smoke.js`, with `tests/mock-platform.js` in place of
+Firebase) walks sign up, email confirmation, invitations and role changes,
+wrong password, reset, keep me signed in, unsaved-changes sign-out, password
+change, idle sign-out, and the request, funnel, batch, designer and export
+flows. It also checks that every interface keeps the same page margins at
+desktop, tablet and phone widths with no sideways scrolling.
+
+## Code
+
+- `app/index.src.html`: styles and page shell. `app/app.js`: all three
+  interfaces. `app/metrics.js`: the workbook formulas. `app/export.js`: the
+  Excel export.
+- `app/platform.firebase.js`: the only file that talks to Firebase (auth and
+  database), published as `platform.js`.
+- `web/firebase-config.js`: project keys, owner email and company domain.
+- `firebase/`: hosting config with security headers, and the rules template.
+- `tools/build_web.js`: builds the site and the rules.
+
 ## Data
 
-The page keeps its data in the artifact's own database, with access rules so
-each group can only write its own part:
+Firestore collections, and who may write each one (enforced by the rules):
 
 | Path | Written by | Holds |
 |---|---|---|
+| `members/<uid>` | Owner (the person may only change their display name) | Role, name on the tracker, email |
+| `invites/<email>` | Owner | Pending invitations with role and tracker name |
+| `claims/<uid>` | That person | Access request |
 | `config/main` | Owner | Designers, PMs, projects with lead PM, 4E lines with products, subtask types, holidays, scoring |
-| `config/people` | Owner | Approved members (role, name on the tracker) |
-| `claims/<person>` | That person | Access request |
-| `requests/<pm>/items/*` | That PM (the owner reads and decides) | Requests with their subtasks and decision history |
+| `requests/<uid>/items/*` | That PM (the owner reads and decides) | Requests with their subtasks and decision history |
 | `tasks/*` | Owner (on approval) | Approved tasks, one per subtask |
-| `progress/<designer>/tasks/*` | That designer | Status, progress, revisions, blockers and daily updates |
-| `leave/<designer>`, `leave/<designer>/items/*` | That designer | Weekly leave confirmations and leave entries |
-
-PMs and designers need Contributor access to the page to save. PMs cannot
-see each other's requests, and nobody but the owner can create or change
-approved tasks or the lists.
+| `progress/<uid>/tasks/*` | That designer, for their own tasks | Status, progress, revisions, blockers, batch items and daily updates |
+| `leave/<uid>`, `leave/<uid>/items/*` | That designer | Weekly leave confirmations and leave entries |
+| `sessions/<uid>` | That person (owner reads) | Recent sign-ins and sign-outs |
+| `audit/log` | Owner | Access history |

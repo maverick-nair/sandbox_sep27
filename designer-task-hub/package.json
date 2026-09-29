@@ -4,11 +4,18 @@
   "type": "commonjs",
   "scripts": {
     "build:template": "python3 tools/build_template.py \"workbook/Product Designer Task Manager (original).xlsx\" workbook/template.xlsx",
-    "build": "node tools/build_artifact.js",
-    "test": "node --test tests/*.test.js"
+    "build": "node tools/build_web.js",
+    "test": "node --test tests/export.test.js tests/metrics.test.js",
+    "test:rules": "cd firebase && firebase emulators:exec --only firestore --project demo-dth \"node --test ../tests/rules.test.js\"",
+    "test:ui": "node tests/ui.smoke.js",
+    "serve": "cd firebase && firebase emulators:start --only auth,firestore,hosting --project demo-dth",
+    "deploy": "npm run build && cd firebase && firebase deploy --only hosting,firestore:rules"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
     "@xmldom/xmldom": "^0.8.10",
+    "firebase": "^10.14.1",
+    "firebase-tools": "^13.35.1",
     "jszip": "^3.10.1"
   }
 }
