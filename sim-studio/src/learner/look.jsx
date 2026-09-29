@@ -23,10 +23,10 @@ export const useLook = () => useContext(LookCtx);
 const SYSTEM = { 'Business news': 'objective', Consequence: 'flame', 'Sales dashboard': 'funnel', 'Team chat': 'team', 'Team meeting': 'team' };
 
 // A person's face: their photo, their illustrated portrait, or an icon for a system sender.
-export function Face({ name, size = 36, mood, shape = 'circle', className = '' }) {
+export function Face({ name, size = 36, mood, shape = 'circle', className = '', bare }) {
   const ctx = useLook();
   const p = ctx?.people.get(name);
-  if (p) return <Portrait name={name} pronoun={p.pronoun} photo={p.photo} variant={p.variant} size={size} mood={mood} shape={shape} className={className} />;
+  if (p) return <Portrait name={name} pronoun={p.pronoun} photo={p.photo} variant={p.variant} size={size} mood={mood} shape={shape} className={className} bare={bare} />;
   if (name === 'You') return <span className={`lx-avatar you ${className}`} style={{ width: size, height: size, fontSize: size * 0.36 }} aria-hidden="true">You</span>;
   const icon = SYSTEM[name] || (/(news|update|dashboard)/i.test(name || '') ? 'funnel' : null);
   return <span className={`lx-avatar sys ${className}`} style={{ width: size, height: size }} aria-hidden="true"><Icon name={icon || 'mail'} size={size * 0.5} /></span>;

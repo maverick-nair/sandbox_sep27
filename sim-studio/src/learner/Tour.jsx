@@ -3,14 +3,15 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 
 export const TOUR_STEPS = [
-  { sel: '.lx-clock', title: 'Your time', text: 'The day, the week and, when there is a time limit, the minutes left in this session. Each week has a Monday plan and a Friday review.' },
-  { sel: '.lx-hud-team', title: 'Your team at a glance', text: 'Average skill, morale and result across the team. Lead each person well and all three rise.' },
-  { sel: '.lx-hud-target', title: 'Your target', text: 'Revenue against the target the board set, with the conversions behind it and the business numbers your decisions move.' },
-  { sel: '.lx-hud-level', title: 'Your level', text: 'Strong decisions earn XP, with a bonus for streaks. Level up and collect badges for good leadership habits.' },
-  { sel: '.lx-inbox', title: 'Your inbox', text: 'Emails, chats, meeting invites and business updates land here. A blue dot means it needs your reply by Friday.' },
+  { sel: '.nx-clock', title: 'Your time', text: 'The week and the day, and next to it the minutes left when there is a time limit. Each week has a Monday plan and a Friday review.' },
+  { sel: '.nx-queue, .nx-hero.play', title: 'What needs you today', text: 'Whoever needs you first stands in the spotlight. Open what is waiting before Friday, or the moment passes without you.' },
+  { sel: '.nx-stats-team', title: 'Your team at a glance', text: 'Average skill, morale and result across the team, with the change this week. Lead each person well and all three rise.' },
+  { sel: '.nx-stat-revenue', title: 'Your target', text: 'Revenue against the target the board set. Open it for the full objective.' },
+  { sel: '.nx-side-card', title: 'Your level', text: 'Strong decisions earn XP, with a bonus for streaks. Level up and collect badges for good leadership habits.' },
+  { sel: '.nx-nav-inbox', title: 'Your inbox', text: 'Emails, chats, meeting invites and business updates. The number shows how many need your reply.' },
   { sel: '.lx-org', title: 'Your team floor', text: 'Everyone by stage, with skill, morale, result and the style you chose. Open anyone to see their profile, your history with them and what you can do.' },
-  { sel: '.lx-dock', title: 'Your actions', text: 'One-to-ones, training, role changes and more. Each takes days out of your week, so choose. The sales funnel shows where work gets stuck.' },
-  { sel: '.lx-today-end', title: 'Moving time on', text: 'When you have done what you want today, end the day. Work flows through the stages and people respond.' },
+  { sel: '.nx-nav-actions', title: 'Your actions', text: 'One-to-ones, training, role changes and more. Each takes days out of your week, so choose where your time goes.' },
+  { sel: '.nx-end-day', title: 'Moving time on', text: 'When you have done what you want today, end the day. Work flows through the stages and people respond.' },
 ];
 
 const visible = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 ? r : null; };

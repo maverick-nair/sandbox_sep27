@@ -174,7 +174,7 @@ export function TeamFloor({ def, state, identity, onPerson, xray, pending, onOpe
 
 // ---------- actions dock ----------
 
-const daysLabel = (a) => { const d = [...new Set(a.options.map((o) => o.dayCost))]; return `${d.join(' or ')} day${d.length === 1 && d[0] === 1 ? '' : 's'}`; };
+export const daysLabel = (a) => { const d = [...new Set(a.options.map((o) => o.dayCost))]; return `${d.join(' or ')} day${d.length === 1 && d[0] === 1 ? '' : 's'}`; };
 
 export function ActionsDock({ def, state, onPick, onFunnel }) {
   const left = daysLeftInWeek(def, state);
@@ -277,7 +277,7 @@ export function ProfileModal({ def, state, id, xray, onClose, onAction }) {
   );
 }
 
-export function FunnelPanel({ def, state, onClose }) {
+export function FunnelBody({ def, state }) {
   const totals = state.funnel.stageTotals;
   const max = Math.max(1, ...totals);
   const ids = teamIds(state);
@@ -286,7 +286,7 @@ export function FunnelPanel({ def, state, onClose }) {
   let weakest = 1;
   flows.forEach((f, i) => { if (i > 0 && f.v / Math.max(1, flows[i - 1].v) < flows[weakest].v / Math.max(1, flows[weakest - 1].v)) weakest = i; });
   return (
-    <Side title="Sales funnel" onClose={onClose}>
+    <>
       <p className="small muted">Work passed on by each stage so far this quarter. Conversions come out of the last stage.</p>
       <div className="lx-funnel">
         {flows.map((f, i) => (
@@ -299,8 +299,12 @@ export function FunnelPanel({ def, state, onClose }) {
         <div className="lx-funnel-row out"><span className="lx-funnel-name">Conversions</span><span className="lx-funnel-bar" style={{ '--w': `${Math.max(4, (state.funnel.conversions / max) * 100)}%` }}><span /></span><strong className="num">{state.funnel.conversions.toFixed(1)}</strong></div>
       </div>
       {state.day > 2 && <p className="small">The narrowest point is <strong>{flows[weakest].s.name}</strong>. Skill and morale there decide how much reaches the end.</p>}
-    </Side>
+    </>
   );
+}
+
+export function FunnelPanel({ def, state, onClose }) {
+  return <Side title="Sales funnel" onClose={onClose}><FunnelBody def={def} state={state} /></Side>;
 }
 
 export function ObjectivePanel({ def, state, onClose }) {

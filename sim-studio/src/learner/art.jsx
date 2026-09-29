@@ -47,7 +47,7 @@ const shade = (hex, amt) => {
 
 // ---------- portraits ----------
 
-export function Portrait({ name, pronoun, photo, size = 64, shape = 'circle', variant = 0, className = '', mood }) {
+export function Portrait({ name, pronoun, photo, size = 64, shape = 'circle', variant = 0, className = '', mood, bare }) {
   const id = useId().replace(/:/g, '');
   if (photo) {
     return <img className={`gk-portrait ${shape} ${className}`} src={photo} alt="" width={size} height={size} style={{ width: size, height: size }} loading="lazy" />;
@@ -61,9 +61,17 @@ export function Portrait({ name, pronoun, photo, size = 64, shape = 'circle', va
       <defs>
         <clipPath id={`c${id}`}>{shape === 'circle' ? <circle cx="50" cy="50" r="50" /> : <rect width="100" height="100" rx="10" />}</clipPath>
         <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={shade(L.bg, 12)} /><stop offset="1" stopColor={shade(L.bg, -14)} /></linearGradient>
+        {bare && (
+          <>
+            <linearGradient id={`f${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0.72" stopColor="#fff" /><stop offset="1" stopColor="#000" /></linearGradient>
+            <mask id={`m${id}`}><rect width="100" height="100" fill={`url(#f${id})`} /></mask>
+            <radialGradient id={`h${id}`} cx="0.38" cy="0.3" r="0.7"><stop offset="0" stopColor="#fff" stopOpacity="0.38" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+            <linearGradient id={`s${id}`} x1="0" y1="0" x2="1" y2="0"><stop offset="0.35" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity="0.38" /></linearGradient>
+          </>
+        )}
       </defs>
-      <g clipPath={`url(#c${id})`}>
-        <rect width="100" height="100" fill={`url(#g${id})`} />
+      <g clipPath={bare ? undefined : `url(#c${id})`} mask={bare ? `url(#m${id})` : undefined}>
+        {!bare && <rect width="100" height="100" fill={`url(#g${id})`} />}
         {/* hair behind the head */}
         {L.style === 'long' && <path d="M29 42 C27 64 30 84 38 92 L62 92 C70 84 73 64 71 42 Z" fill={L.hair} />}
         {L.style === 'ponytail' && <path d="M64 30 C82 36 80 62 70 74 C74 58 72 44 64 38 Z" fill={L.hair} />}
@@ -102,6 +110,13 @@ export function Portrait({ name, pronoun, photo, size = 64, shape = 'circle', va
         <ellipse cx="40" cy="52" rx="3" ry="1.6" fill="#e58f86" opacity="0.28" />
         <ellipse cx="60" cy="52" rx="3" ry="1.6" fill="#e58f86" opacity="0.28" />
         {L.glasses && <g fill="none" stroke="#2a2a33" strokeWidth="1.3"><circle cx="43.5" cy="45" r="4.6" /><circle cx="56.5" cy="45" r="4.6" /><path d="M48.1 45 L51.9 45" /></g>}
+        {bare && (
+          <>
+            <ellipse cx="46" cy="42" rx="16" ry="19" fill={`url(#h${id})`} />
+            <path d="M8 100 C10 80 28 71 50 71 C72 71 90 80 92 100 Z" fill={`url(#s${id})`} />
+            <ellipse cx="50" cy="45" rx="17.5" ry="21" fill={`url(#s${id})`} opacity="0.6" />
+          </>
+        )}
       </g>
     </svg>
   );
@@ -223,6 +238,30 @@ const ICON_PATHS = {
   book: 'M4 4h7a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4zM20 4h-3a3 3 0 0 0-3 3',
   star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   flame: 'M12 22c-4 0-7-2.7-7-6.5C5 11 9 9 9 4c3 2 4 4 4 6 1-1 1.5-2 1.5-3.5C17 9 19 12 19 15.5 19 19.3 16 22 12 22z',
+  home: 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6',
+  inbox: 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
+  globe: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18',
+  letter: 'M3 6h18v12H3zM3 7l9 6 9-6',
+  box: 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
+  target: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM12 13a1 1 0 1 1 0-2 1 1 0 0 1 0 2z',
+  skill: 'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.5 8z',
+  heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+  chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  money: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM15 9c-.5-1.2-1.7-2-3-2-1.7 0-3 1-3 2.5S10.3 12 12 12s3 .9 3 2.5S13.7 17 12 17c-1.3 0-2.5-.8-3-2M12 5v2M12 17v2',
+  play: 'M7 4l13 8-13 8z',
+  arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  arrowLeft: 'M19 12H5M11 6l-6 6 6 6',
+  calendar: 'M4 5h16v15H4zM4 10h16M9 3v4M15 3v4',
+  exit: 'M14 4h6v16h-6M10 16l4-4-4-4M14 12H3',
+  grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  flag: 'M5 21V4M5 4h12l-2 4 2 4H5',
+  building: 'M4 21V5l8-3v19M12 8l8 3v10M8 8h.01M8 12h.01M8 16h.01M16 13h.01M16 17h.01M2 21h20',
+  pin: 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  check: 'M5 12l4 4 10-10',
+  layers: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',
 };
 const ACTION_ICON = { 'meet-team': 'team', energise: 'energy', email: 'mail', reassign: 'swap', training: 'training', hire: 'hire', fire: 'fire', 'face-to-face': 'meet', assess: 'assess', reward: 'reward', 'set-goals': 'goals', coach: 'coach', feedback: 'feedback' };
 

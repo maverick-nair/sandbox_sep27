@@ -10,11 +10,12 @@ import { setTextAt } from '../src/engine/authoring.js';
 import { translateDef } from '../src/learner/model.js';
 import { refKey } from '../src/templates/ilead/contextualize.js';
 
-test('every new simulation has a seven-part briefing before play', () => {
+test('every new simulation opens on Welcome, About the product and Your targets', () => {
   const def = createIleadDefinition();
   assert.equal(def.onboarding.enabled, true);
-  assert.deepEqual(def.onboarding.chapters.map((c) => c.kind), ['welcome', 'company', 'product', 'targets', 'team', 'model', 'howto']);
+  assert.deepEqual(def.onboarding.chapters.map((c) => c.kind), ['welcome', 'product', 'targets', 'company', 'team', 'model', 'howto']);
   for (const c of def.onboarding.chapters) assert.ok(CHAPTER_KINDS[c.kind]);
+  assert.equal(def.onboarding.chapters.find((c) => c.kind === 'company').enabled, false, 'the organization shows on the welcome screen instead');
   assert.equal(validate(def).filter((i) => i.section === 'onboarding').length, 0);
 });
 
@@ -29,7 +30,7 @@ test('a briefing saved before welcome, product and targets gains them, in place'
   const { upgradeOnboarding } = await import('../src/templates/ilead/onboarding.js');
   const ob = { chapters: [{ id: 'company', kind: 'company' }, { id: 'mission', kind: 'mission' }, { id: 'values', kind: 'custom' }, { id: 'team', kind: 'team' }] };
   upgradeOnboarding(ob);
-  assert.deepEqual(ob.chapters.map((c) => c.kind), ['company', 'mission', 'product', 'targets', 'custom', 'team']);
+  assert.deepEqual(ob.chapters.map((c) => c.kind), ['mission', 'product', 'targets', 'company', 'custom', 'team']);
 });
 
 test('onboarding texts use known fields, follow tailoring and can be translated and edited', () => {

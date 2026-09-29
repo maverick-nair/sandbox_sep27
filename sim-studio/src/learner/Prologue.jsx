@@ -435,7 +435,7 @@ function HowtoChapter({ def }) {
       <ul className="lx-tips">
         {(def.learning?.rewinds ?? 2) > 0 && <li>If a decision does not land, you can <strong>rethink</strong> it straight away, {def.learning?.rewinds ?? 2} times in the whole quarter.</li>}
         <li>Written replies are read for reasoning, relevance and judgement, not grammar.</li>
-        <li><strong>How it works</strong> and your <strong>Notebook</strong> are at the top of the screen whenever you need them.</li>
+        <li><strong>How it works</strong> and your <strong>Notebook</strong> are in the menu on the left whenever you need them.</li>
       </ul>
     </div>
   );
@@ -444,3 +444,5 @@ function HowtoChapter({ def }) {
 function CustomChapter({ def, ch }) {
   return <div className="lx-ch-text">{paragraphs(t(def, ch.body)).map((p, k) => <p key={k}>{p}</p>)}</div>;
 }
+
+export { WelcomeChapter, ProductChapter, TargetsChapter, CompanyChapter, MissionChapter, FlowChapter, TeamChapter, ModelChapter, HowtoChapter, CustomChapter };

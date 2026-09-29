@@ -161,6 +161,9 @@ const REPORT_FIXES = [
 ];
 const tidy = (t) => REPORT_FIXES.reduce((x, [a, b]) => x.replace(a, b), String(t ?? ''));
 
+const WELCOME_LETTER = 'Welcome on board {{company}}!\n\nAs you know, we are a relatively small company with a vision to revolutionize the {{category}} industry through state-of-the-art innovations. Our portfolio has three products: the {{product_2}}, the {{product_3}}, and the recently launched {{product}}.\n\nYou will lead the sales team of {{product}}. Your predecessor was a complete misfit and left the team in shambles. He could not inspire the team enough to perform. Our board trusts that your leadership experience will help turn the team around.\n\nInformation on the {{product}} and the parameters on which you will be assessed are attached.\n\nGood luck!\n\n{{ceo}}\nCEO, {{company}}';
+const TARGET_LINE = "The targets we've set for you are quite attainable. But see if you can exceed them! Good luck!";
+
 function reportSection(page, section) {
   return legacy.report.filter((r) => r.page === page && (section === undefined || r.section.trim() === section)).map((r) => ({ ...r, text: tidy(r.text) }));
 }
@@ -363,9 +366,11 @@ function buildDefinition() {
       generated: {},
     },
     story: {
-      welcome: legacy.story.welcome,
+      // The welcome letter and target line as the live iLead shows them (the workbook has an
+      // older wording).
+      welcome: WELCOME_LETTER,
       overview: legacy.story.overview,
-      target: legacy.story.target,
+      target: TARGET_LINE,
       briefing: legacy.briefing.slice(1),
       walkthrough: legacy.walkthrough.map((w) => ({ title: w.title, text: w.text })),
     },

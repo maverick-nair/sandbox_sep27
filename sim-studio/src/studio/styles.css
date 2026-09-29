@@ -226,6 +226,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
 .pill.good { background: var(--good-soft); color: var(--good); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
 .pill.bad { background: var(--bad-soft); color: var(--bad); }
 .pill.accent { background: var(--accent-soft); color: var(--accent); }

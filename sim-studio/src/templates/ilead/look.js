@@ -5,7 +5,7 @@ import { artKindFor } from '../../engine/art-kind.js';
 export function defaultLook(def) {
   const p = def?.context?.profile || {};
   return {
-    brand: '#2f5fd0',
+    brand: '#7c5cff',
     logo: '',
     scene: 'boardroom',
     sceneImage: '',

@@ -24,8 +24,10 @@ export function defaultOnboarding() {
     tour: true,
     chapters: [
       { id: 'welcome', kind: 'welcome', enabled: true, title: 'Welcome', lead: 'A letter from {{ceo}}, your CEO, arrived this morning.' },
+      { id: 'product', kind: 'product', enabled: true, title: 'About {{product}}', lead: 'The product your team sells, and why it matters this year.' },
+      { id: 'targets', kind: 'targets', enabled: true, title: 'Your targets', lead: 'This is what the board expects from you by the end of the quarter.' },
       {
-        id: 'company', kind: 'company', enabled: true, title: 'Welcome to {{company}}',
+        id: 'company', kind: 'company', enabled: false, title: 'Welcome to {{company}}',
         lead: 'Before you meet anyone, here is the business you are joining.',
         body: 'We are {{company}}, based in {{city}}. We compete with {{competitor}} for customers and with {{rival}} for talent, and this year depends on how well we sell {{product}}.',
         facts: [
@@ -34,8 +36,6 @@ export function defaultOnboarding() {
           { label: 'Where you are based', value: '{{city}}' },
         ],
       },
-      { id: 'product', kind: 'product', enabled: true, title: 'About {{product}}', lead: 'The product your team sells, and why it matters this year.' },
-      { id: 'targets', kind: 'targets', enabled: true, title: 'Your targets', lead: 'This is what the board expects from you by the end of the quarter.' },
       { id: 'team', kind: 'team', enabled: true, title: 'Meet your team', lead: 'Turn over each card to learn who they are. Read closely: how you lead each person decides how they perform.' },
       { id: 'model', kind: 'model', enabled: true, title: 'How to lead them', lead: 'There is no single right way to lead. It depends on each person’s skill and morale for the work in front of them, and both change over time.' },
       { id: 'howto', kind: 'howto', enabled: true, title: 'How the simulation works', lead: 'Your quarter runs week by week. Here is the rhythm, and how you will be judged.' },
@@ -60,6 +60,18 @@ export function upgradeOnboarding(ob) {
   add('welcome', []);
   add('product', ['welcome', 'mission', 'company']);
   add('targets', ['product', 'welcome', 'mission', 'company']);
+  return orderOpening(ob);
+}
+
+// Learners always start with the three opening screens of the original iLead, in this order:
+// Welcome (the CEO's letter), About the product, Your targets. Everything else follows in the
+// author's order.
+export const OPENING = ['welcome', 'product', 'targets'];
+export function orderOpening(ob) {
+  if (!ob?.chapters) return ob;
+  const first = (kind) => ob.chapters.find((c) => c.kind === kind) || (kind === 'welcome' ? ob.chapters.find((c) => c.kind === 'mission') : null);
+  const head = OPENING.map(first).filter(Boolean);
+  ob.chapters = [...head, ...ob.chapters.filter((c) => !head.includes(c))];
   return ob;
 }
 

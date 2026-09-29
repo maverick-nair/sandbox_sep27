@@ -3,8 +3,8 @@
 // their own, and sets how much the learner must explore before playing.
 import { newId } from '../../engine/authoring.js';
 import { renderText } from '../../engine/text.js';
-import { CHAPTER_KINDS, defaultOnboarding, newChapter } from '../../templates/ilead/onboarding.js';
-import { Button, Callout, NumberInput, SectionHead, Switch, TextInput, TokenArea } from '../ui.jsx';
+import { CHAPTER_KINDS, defaultOnboarding, newChapter, OPENING, orderOpening } from '../../templates/ilead/onboarding.js';
+import { Button, Callout, NumberInput, Pill, SectionHead, Switch, TextInput, TokenArea } from '../ui.jsx';
 
 const SOURCE = {
   welcome: { text: "The CEO's welcome letter and portrait", section: 'story', label: 'Story and context (letter) and Look and feel (portrait)' },
@@ -24,12 +24,13 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
   const chapters = ob.chapters || [];
   const on = chapters.filter((c) => c.enabled !== false);
   const teamSize = def.actors.filter((a) => a.pool === 'team').length;
-  const move = (i, dir) => set((o) => { const j = i + dir; if (j < 0 || j >= o.chapters.length) return; [o.chapters[i], o.chapters[j]] = [o.chapters[j], o.chapters[i]]; });
+  const move = (i, dir) => set((o) => { const j = i + dir; if (j < 0 || j >= o.chapters.length) return; [o.chapters[i], o.chapters[j]] = [o.chapters[j], o.chapters[i]]; orderOpening(o); });
+  const opening = (c) => OPENING.includes(c.kind) || c.kind === 'mission';
 
   return (
     <div className="stack" style={{ '--gap': '18px' }}>
-      <SectionHead eyebrow="Build" title="Learner onboarding" actions={<Button onClick={() => openPanel('preview')} tip="Opens the learner experience at its cover, as a learner arrives." tipAlign="end">Preview onboarding</Button>}>
-        What learners see before their first decision: the organization, their mission, how work flows, the team, how to lead them and how the simulation works. Nobody is asked to act before they know where they are.
+      <SectionHead eyebrow="Build" title="Learner onboarding" actions={<Button onClick={() => openPanel('preview')} tip="Opens the learner experience on its welcome screen, as a learner arrives." tipAlign="end">Preview onboarding</Button>}>
+        What learners see before their first decision. Like the original iLead, every learner starts on three screens: Welcome (the CEO's letter), About the product and Your targets. Then the team, how to lead them and how the simulation works, and they accept the role. Nobody is asked to act before they know where they are.
       </SectionHead>
 
       <div className="card stack" style={{ '--gap': '10px' }}>
@@ -37,7 +38,7 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
           <h3>Briefing</h3>
           <Switch checked={ob.enabled !== false} onChange={(v) => set((o) => { o.enabled = v; })} label={ob.enabled !== false ? `On, ${on.length} part${on.length === 1 ? '' : 's'}` : 'Off'} />
         </div>
-        {ob.enabled === false && <Callout tone="warn" icon="!">Learners go from the cover straight to accepting the role and their first Monday plan, without any context. Recommended only for a repeat run.</Callout>}
+        {ob.enabled === false && <Callout tone="warn" icon="!">Learners go straight to accepting the role and their first Monday plan, without any context. Recommended only for a repeat run.</Callout>}
         <div className="row" style={{ '--gap': '16px' }}>
           <label className="row nowrap small" style={{ '--gap': '6px' }}>Team cards to turn over before continuing <NumberInput className="xs" value={ob.teamToMeet ?? 3} min={0} max={teamSize} onChange={(v) => set((o) => { o.teamToMeet = v; })} aria-label="Team cards to turn over" /> <span className="muted">of {teamSize}</span></label>
           <Switch checked={ob.practice !== false} onChange={(v) => set((o) => { o.practice = v; })} label="Practice round on the leadership styles (not scored)" />
@@ -53,16 +54,16 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
                 <span className="badge num">{on.indexOf(c) >= 0 ? on.indexOf(c) + 1 : '–'}</span>
                 <div style={{ minWidth: 0 }}>
                   <strong>{renderText(def, c.title) || 'Untitled chapter'}</strong>
-                  <div className="small muted">{CHAPTER_KINDS[c.kind]?.label} · {CHAPTER_KINDS[c.kind]?.note}</div>
+                  <div className="small muted">{opening(c) ? <Pill tone="accent">Opening screen</Pill> : null} {CHAPTER_KINDS[c.kind]?.label} · {CHAPTER_KINDS[c.kind]?.note}{c.kind === 'company' ? ' The facts also show on the welcome screen, even when this chapter is off.' : ''}</div>
                 </div>
               </div>
               <div className="row nowrap">
-                <Button size="sm" variant="ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`}>↑</Button>
-                <Button size="sm" variant="ghost" disabled={i === chapters.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`}>↓</Button>
+                <Button size="sm" variant="ghost" disabled={i === 0 || opening(c) || opening(chapters[i - 1] || {})} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`} title={opening(c) ? 'The three opening screens always come first, in this order.' : undefined}>↑</Button>
+                <Button size="sm" variant="ghost" disabled={i === chapters.length - 1 || opening(c)} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`} title={opening(c) ? 'The three opening screens always come first, in this order.' : undefined}>↓</Button>
                 <Switch checked={c.enabled !== false} onChange={(v) => set((o) => { o.chapters[i].enabled = v; })} label={<span className="sr-only">Show {c.title}</span>} />
               </div>
             </div>
-            {c.enabled !== false && (
+            {(c.enabled !== false || c.kind === 'company') && (
               <div className="stack" style={{ '--gap': '10px' }}>
                 <TextInput label="Title" value={c.title} onChange={(v) => set((o) => { o.chapters[i].title = v; })} hint="Context fields like {{company}} fill in for every tailoring." />
                 <TokenArea def={def} label="Lead line" rows={2} value={c.lead} onChange={(v) => set((o) => { o.chapters[i].lead = v; })} hint="One or two sentences under the title." />

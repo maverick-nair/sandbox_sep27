@@ -68,7 +68,7 @@ export default function Look({ def, update, notify, openPanel }) {
 
       <div className="card stack" style={{ '--gap': '12px' }}>
         <h3>Scene</h3>
-        <p className="small muted">The backdrop behind the cover and the briefing.</p>
+        <p className="small muted">The backdrop behind the briefing when a scene is shown.</p>
         <div className="scene-tiles">
           {Object.entries(SCENES).map(([id, label]) => (
             <button key={id} type="button" className={`scene-tile ${!look.sceneImage && look.scene === id ? 'on' : ''}`} style={{ background: sceneBackground(id) }} aria-pressed={!look.sceneImage && look.scene === id} onClick={() => set({ scene: id, sceneImage: '' })}><span>{label}</span></button>

@@ -185,10 +185,15 @@ export function validate(def) {
     const onCh = (ob.chapters || []).filter((c) => c.enabled !== false);
     if (ob.enabled === false || !onCh.length) add('warning', 'onboarding', 'Learners start without a briefing', 'They go straight to their first decisions without learning about the organization, the team or how the simulation works.', { ref: { field: 'onboarding' }, code: 'ob-off' });
     else {
+      // Organization facts also show on the welcome screen, so they are checked even when the
+      // organization chapter itself is off.
+      for (const c of (ob.chapters || []).filter((x) => x.kind === 'company')) {
+        if ((c.facts || []).some((f) => blank(f.label) || blank(f.value))) add('warning', 'onboarding', 'A fact card is half empty', 'Each fact needs a label and a value. Facts show on the welcome screen and in the organization chapter.', { ref: { chapterId: c.id }, code: 'ob-fact-empty', data: { chapterId: c.id } });
+      }
       for (const c of onCh) {
         if (blank(c.title)) add('error', 'onboarding', 'An onboarding chapter has no title', `The ${c.kind} chapter needs a title learners can see.`, { ref: { chapterId: c.id }, code: 'ob-no-title', data: { chapterId: c.id } });
         if (c.kind === 'custom' && blank(c.body)) add('error', 'onboarding', `"${c.title || 'Your chapter'}" has no text`, 'Learners would see an empty page in their briefing.', { ref: { chapterId: c.id }, code: 'ob-custom-empty', data: { chapterId: c.id } });
-        if (c.kind === 'company' && (c.facts || []).some((f) => blank(f.label) || blank(f.value))) add('warning', 'onboarding', 'A fact card is half empty', 'Each fact card needs a label and something to reveal.', { ref: { chapterId: c.id }, code: 'ob-fact-empty', data: { chapterId: c.id } });
+
       }
       const size = team.length;
       if (onCh.some((c) => c.kind === 'team') && (ob.teamToMeet ?? 3) > size) add('error', 'onboarding', 'Learners must meet more people than the team has', `They must turn over ${ob.teamToMeet} cards, but the team has ${size} people, so they could never continue.`, { ref: { field: 'onboarding' }, code: 'ob-team-too-many', data: { size } });

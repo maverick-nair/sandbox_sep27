@@ -11,9 +11,11 @@ import '../report/report.css';
 
 const BAND = { strong: 'Landed well', mixed: 'Partly landed', weak: 'Did not land' };
 
-export default function Debrief({ def, d, benchmark = [], leaderboard = [], delivery = {}, onReplay, onFinish, finished, mode, you }) {
+export default function Debrief({ def, d, benchmark = [], leaderboard = [], delivery = {}, onReplay, onFinish, finished, mode, you, view: viewProp, onView }) {
   const [practice, setPractice] = useState({});
-  const [view, setView] = useState('quarter');
+  const [viewLocal, setViewLocal] = useState('quarter');
+  const view = viewProp ?? viewLocal;
+  const setView = onView ?? setViewLocal;
   const [saved, setSaved] = useState('');
   const reportRef = useRef(null);
   const today = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
