@@ -140,6 +140,8 @@ const PW = "Design#Hub2026";
   await expectText("That email and password don't match.");
   if (await page.inputValue("#a-pw")) fail("password field kept after a failed sign in");
   await page.getByRole("button", { name: "Forgot password?" }).click();
+  await expectText("Forgot your password?");
+  await page.waitForTimeout(100);
   await page.fill("#a-email", "nobody@knolskape.com");
   await page.click("#reset-submit");
   await expectText("If an account exists for nobody@knolskape.com, a reset link is on its way.");

@@ -254,6 +254,9 @@ const ICONS = {
   layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
+  "user-plus": "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 8v6M23 11h-6",
+  chart: "M3 3v18h18M7 14l4-4 4 4 5-6",
   key: "M21 2l-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4",
 };
 function icon(name) {
@@ -385,15 +388,14 @@ function paintHeader(app) {
   if (list.length && !list.find((t) => t[0] === S.tab[app])) S.tab[app] = list[0][0];
   const cur = list.find((t) => t[0] === S.tab[app]);
   document.getElementById("brand").replaceChildren(h("div", { class: "app-id" },
-    h("span", { class: "mark" }, icon(APP_ICON[app] || "compass")),
-    h("div", null, h("small", null, "Design Task Hub"), h("b", null, app ? APPS[app].name : "Welcome"))));
+    h("b", null, app ? APPS[app].name : "Design Task Hub"), cur ? h("span", { class: "crumb" }, "/ " + cur[1]) : null));
   const tabs = document.getElementById("tabs");
   tabs.replaceChildren();
   let group = null;
   for (const [id, label, count, ic, grp] of list) {
-    if (grp !== group) { group = grp; tabs.appendChild(h("div", { class: "nav-group", role: "presentation" }, grp)); }
-    tabs.appendChild(h("button", { class: "tab", role: "tab", "data-tab": id, "aria-selected": String(S.tab[app] === id), title: label, onclick: () => go(app, id) },
-      icon(ic), h("span", { class: "label" }, label), count ? h("span", { class: "count" }, String(count)) : null));
+    if (grp !== group) { group = grp; tabs.appendChild(h("div", { class: "nav-group", role: "presentation", "aria-label": grp })); }
+    tabs.appendChild(h("button", { class: "tab", role: "tab", "data-tab": id, "aria-selected": String(S.tab[app] === id), title: label, "aria-label": label, onclick: () => go(app, id) },
+      icon(ic), h("span", { class: "label" }, DOCK_LABEL[id] || label), count ? h("span", { class: "count" }, String(count)) : null));
   }
   const dock = document.getElementById("dock");
   dock.replaceChildren(...list.map(([id, label, count, ic]) => h("button", { "data-tab": id, "aria-current": S.tab[app] === id ? "page" : null, "aria-label": label, onclick: () => go(app, id) },
@@ -401,16 +403,13 @@ function paintHeader(app) {
   dock.hidden = !list.length;
   const name = role === "admin" ? (S.me.name || "Owner") : rosterName() || S.me.name || "";
   const roleLabel = role ? ROLE_NAME[role] : S.me.email || "";
-  document.getElementById("who").replaceChildren(h("span", { class: "warmline" }),
-    S.me.id && role ? h("div", { class: "me" }, avatar(S.me.avatarUrl, name, "avatar"), h("div", { style: "min-width:0" }, h("b", null, name || "You"), h("small", null, roleLabel))) : null,
+  document.getElementById("who").replaceChildren(
+    S.me.id && role ? h("div", { class: "me", title: `${name}, ${roleLabel}` }, avatar(S.me.avatarUrl, name, "avatar")) : null,
     S.me.id && role ? h("button", { class: "tab signout", title: "Sign out", onclick: requestSignOut }, icon("logout"), h("span", { class: "label" }, "Sign out")) : null);
-  const top = document.getElementById("top");
   const al = ok ? alerts(app) : { n: 0 };
-  const logo = document.querySelector(".logo.dark"), logoW = document.querySelector(".logo.white");
-  top.replaceChildren(
-    h("div", { class: "crumb" }, logo ? h("img", { class: "mlogo mdark", src: logo.src, alt: "KNOLSKAPE" }) : null, logoW ? h("img", { class: "mlogo mwhite", src: logoW.src, alt: "" }) : null, h("b", null, app ? APPS[app].name : "Design Task Hub"), cur ? h("span", null, "/ " + cur[1]) : null),
-    ok ? h("label", { class: "search" }, icon("search"), h("input", { id: "top-search", type: "search", placeholder: SEARCH_HINT[app], "aria-label": SEARCH_HINT[app], value: S.search || "",
-      oninput: (e) => { S.search = e.target.value; if (app === "owner") { S.filters.q = S.search; S.tab.owner = "tasks"; } if (app === "pm") S.tab.pm = "mine"; if (app === "designer") S.tab.designer = "tasks"; softRender(); } })) : null,
+  document.getElementById("tools").replaceChildren(
+    ok ? h("label", { class: "search" }, h("input", { id: "top-search", type: "search", placeholder: SEARCH_HINT[app], "aria-label": SEARCH_HINT[app], value: S.search || "",
+      oninput: (e) => { S.search = e.target.value; if (app === "owner") { S.filters.q = S.search; S.tab.owner = "tasks"; } if (app === "pm") S.tab.pm = "mine"; if (app === "designer") S.tab.designer = "tasks"; softRender(); } }), icon("search")) : null,
     ok ? h("button", { class: "icon-btn", "aria-label": al.n ? al.label : "Nothing needs you", "data-tip": al.n ? al.label : "Nothing needs you right now", onclick: () => { al.go(); render(); window.scrollTo(0, 0); } },
       icon("bell"), al.n ? h("span", { class: "count" }, String(al.n)) : null) : null,
     S.me.id && role ? h("div", { class: "acct" },
@@ -453,17 +452,27 @@ function gate(title, text, action) {
 function head(eyebrow, title, text, right) {
   return h("div", { class: "head" }, h("div", null, h("div", { class: "eyebrow" }, eyebrow), h("h1", null, title), text ? h("p", null, text) : null), right || null);
 }
-// Landing banner: soft brand gradient, floating brand shapes, headline stats
+// Page head (title, text, actions) followed by a row of summary tiles:
+// stats = [[value, label, tone, icon, note], ...]
 function hero({ kicker, title, text, stats, actions, right }) {
-  return h("section", { class: "hero" },
-    h("div", { class: "shapes", "aria-hidden": "true" }, h("i", { class: "shape torus" }), h("i", { class: "shape sphere" }), h("i", { class: "shape cube" }), h("i", { class: "shape cone" }), h("i", { class: "shape pill-shape" })),
-    h("div", { class: "hero-body" }, kicker ? h("div", { class: "eyebrow" }, kicker) : null, h("h1", null, title), text ? h("p", null, text) : null,
-      stats && stats.length ? h("div", { class: "hero-stats" }, stats.map(([v, l, color]) => h("div", { class: "hero-stat" }, h("div", { class: "v", style: color ? `color:${color}` : null }, v), h("div", { class: "l" }, l)))) : null,
-      actions ? h("div", { class: "hero-actions" }, actions) : null),
-    right ? h("div", { style: "position:relative;z-index:2;margin-top:14px" }, right) : null);
+  const acts = (actions || []).filter(Boolean);
+  return h("div", { class: "stack section-stack" },
+    h("div", { class: "head" }, h("div", null, kicker ? h("div", { class: "eyebrow" }, kicker) : null, h("h1", null, title), text ? h("p", null, text) : null),
+      acts.length || right ? h("div", { class: "row" }, right, acts) : null),
+    stats && stats.length ? h("div", { class: "stats" }, stats.map(([v, l, tone, ic, note]) => h("div", { class: "stat" },
+      h("span", { class: "ic" }, icon(ic || "overview")), h("div", { style: "min-width:0" }, h("div", { class: "l" }, l),
+        h("div", { class: "v" + (tone === "bad" ? " bad" : tone === "good" ? " good" : "") }, v, note ? h("small", null, note) : null))))) : null);
 }
-const LINE_COLOR = { Evaluate: "#0337D8", Educate: "#6E7D00", Experience: "#E86A00", Enable: "#C12400", "GENIE Platform": "#111827" };
-const lineColor = (line) => LINE_COLOR[line] || "#5B6FD8";
+function cardHead(title, sub, onViewAll, viewLabel) {
+  return h("div", { class: "card-title" }, h("div", { class: "section-title" }, h("h2", null, title), sub ? h("span", { class: "muted" }, sub) : null),
+    onViewAll ? h("button", { class: "view-all", onclick: onViewAll }, viewLabel || "View all") : null);
+}
+function quickActions(items) {
+  return h("div", { class: "card pad" }, cardHead("Quick actions"), h("div", { class: "qa", style: "margin-top:6px" }, items.filter(Boolean).map(([ic, label, go, count]) =>
+    h("button", { onclick: go }, h("span", { class: "ic" }, icon(ic)), h("span", { class: "t" }, label), count ? h("span", { class: "count" }, String(count)) : null, h("span", { class: "chev" }, "\u203A")))));
+}
+const LINE_COLOR = { Evaluate: "#6C4BD6", Educate: "#7C8A1C", Experience: "#E8742A", Enable: "#D14343", "GENIE Platform": "#1F1B2E" };
+const lineColor = (line) => LINE_COLOR[line] || "#8A7BD0";
 function initials(name) {
   const caps = String(name || "?").match(/[A-Z0-9]/g) || [];
   const words = String(name || "?").split(/\s+/).filter(Boolean);
@@ -507,7 +516,7 @@ function passwordIssues(pw) {
 }
 const put = (el, ...kids) => el.append(...kids.flat().filter((k) => k !== null && k !== undefined && k !== false));
 function authShell(root, card) {
-  const logoW = document.querySelector(".logo.white");
+  const logoW = document.querySelector(".top-brand img");
   const brand = h("div", { class: "auth-brand" },
     h("div", { class: "shapes", "aria-hidden": "true" }, h("i", { class: "shape torus" }), h("i", { class: "shape sphere" }), h("i", { class: "shape cube" }), h("i", { class: "shape cone" })),
     logoW ? h("img", { class: "auth-logo", src: logoW.src, alt: "KNOLSKAPE" }) : null,
@@ -748,7 +757,7 @@ function viewPmForm(root) {
   const cnt = (st) => String(mineReq.filter((r) => r.status === st).length);
   root.appendChild(hero({ kicker: f.id ? "Edit request" : "New request", title: f.id ? f.masterTitle || "Untitled request" : "Create a design request",
     text: "Pick the 4E line and product, name the project, and describe each subtask with its own timeline. The owner reviews every request and assigns the designers.",
-    stats: [[cnt("pending"), "Awaiting approval"], [cnt("changes"), "Sent back"], [cnt("approved"), "Approved"], [cnt("draft"), "Drafts"]],
+    stats: [[cnt("pending"), "Awaiting approval", null, "inbox"], [cnt("changes"), "Sent back", Number(cnt("changes")) ? "bad" : null, "pen"], [cnt("approved"), "Approved", null, "check"], [cnt("draft"), "Drafts", null, "list"]],
     right: roleOf() === "admin" ? h("div", { style: "max-width:240px" }, field("Requesting as", "as-pm", select("as-pm", pmName(), c.pms, (v) => { f.asPm = v; render(); }))) : null }));
   const back = f.id ? allRequests().find((r) => r.id === f.id) : null;
   if (back && back.status === "changes" && back.ownerNote) root.appendChild(h("div", { class: "note-box" }, h("b", null, "Owner's note: "), back.ownerNote));
@@ -928,7 +937,7 @@ function viewDesignerTasks(root) {
   const itemsLeft = open.reduce((a, t) => a + (t.deliverables ? t.deliverables.length - (t.itemsDone || 0) : 0), 0);
   root.appendChild(hero({ kicker: fmtDate(td, true), title: `${hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening"}${name ? ", " + name : ""}`,
     text: open.length ? "Post one update per task each day: status, progress, hours spent and any blocker." : "No open tasks right now. New work appears here once the owner approves it.",
-    stats: [[`${updated}/${open.length}`, "Updated today"], [fmt1(hoursToday), "Hours today"], [String(dueWeek), "Due this week"], [String(overdue), "Overdue", overdue ? "var(--critical-ink)" : null]].concat(itemsLeft ? [[String(itemsLeft), "Deliverables to go"]] : []),
+    stats: [[`${updated}/${open.length}`, "Updated today", null, "check"], [fmt1(hoursToday), "Hours today", null, "clock"], [String(dueWeek), "Due this week", null, "calendar", overdue ? `${overdue} overdue` : null], [String(itemsLeft), "Deliverables to go", null, "layers"]],
     right: roleOf() === "admin" ? h("div", { style: "max-width:240px" }, field("Viewing as", "acting-des", select("acting-des", name, cfg().designers, (v) => { S.actingDesigner = v; render(); }))) : null }));
   const nudge = leaveNudge(name);
   if (nudge) root.appendChild(nudge);
@@ -1158,47 +1167,53 @@ function viewOverview(root) {
   const itemsDoneP = all.reduce((a, t) => a + (t.deliverables || []).filter((x) => x.status === "Done" && x.doneAt && inP(x.doneAt)).length, 0);
   root.appendChild(hero({ kicker: "Performance and productivity", title: pendingN ? `${pendingN} request${pendingN === 1 ? "" : "s"} waiting for your approval` : "Your design team at a glance",
     text: "Same formulas as your Scorecard. Speed and Quality use tasks completed in the period; Commitment is as of today.",
-    stats: [[String(all.length - doneAll.length), "Open tasks"], [String(overdueN), "Overdue", overdueN ? "var(--critical-ink)" : null], [pct(onTime), "On-time"],
-      [scores.length ? fmt0(scores.reduce((a, b) => a + b, 0) / scores.length) : "-", "Avg task score"], [fmt1(hoursP), `Hours, ${p.label}`], [String(itemsDoneP), `Deliverables, ${p.label}`]],
-    actions: [pendingN ? h("button", { class: "btn accent", onclick: () => go("owner", "funnel") }, "Review requests") : null,
-      h("div", { class: "seg" }, [["month", "This month"], ["last", "Last month"], ["30", "30 days"], ["quarter", "Quarter"], ["custom", "Custom"]].map(([k, l]) => h("button", { "aria-pressed": String(S.period === k), onclick: () => { S.period = k; render(); } }, l))),
+    stats: [[String(all.length - doneAll.length), "Open tasks", overdueN ? "bad" : null, "list", overdueN ? `${overdueN} overdue` : "none overdue"],
+      [pct(onTime), "On-time delivery", onTime !== null && onTime >= .8 ? "good" : null, "check", `${doneAll.length} done`],
+      [scores.length ? fmt0(scores.reduce((a, b) => a + b, 0) / scores.length) : "-", "Avg task score", null, "chart", "out of 100"],
+      [fmt1(hoursP), `Hours logged, ${p.label}`, null, "clock", `${itemsDoneP} deliverables done`]],
+    actions: [h("div", { class: "seg" }, [["month", "This month"], ["last", "Last month"], ["30", "30 days"], ["quarter", "Quarter"], ["custom", "Custom"]].map(([k, l]) => h("button", { "aria-pressed": String(S.period === k), onclick: () => { S.period = k; render(); } }, l))),
       S.period === "custom" ? h("div", { class: "row" }, h("input", { id: "p-from", type: "date", value: S.custom.from, "aria-label": "Period from", onchange: (e) => { S.custom.from = e.target.value; render(); } }),
         h("input", { id: "p-to", type: "date", value: S.custom.to, "aria-label": "Period to", onchange: (e) => { S.custom.to = e.target.value; render(); } })) : null] }));
-  root.appendChild(h("div", { class: "stack", style: "gap:10px" }, h("div", { class: "section-title" }, h("h2", null, "Task funnel"), h("span", { class: "muted" }, "From request to done")), funnelStrip()));
-  root.appendChild(h("div", { class: "card" }, h("div", { class: "pad card-head" }, h("h2", null, `Designer scorecard, ${p.label}`)),
+  const weeks = Array.from({ length: 8 }, (_, i) => M.addDays(M.mondayOf(today()), 7 * i));
+  const heat = h("div", { class: "heat", style: "grid-template-columns: minmax(70px, 110px) repeat(8, minmax(42px, 1fr));min-width:470px" },
+    h("div"), weeks.map((w) => h("div", { class: "hd" }, fmtDate(w))), c.designers.map((d) => [h("div", { class: "nm" }, d), weeks.map((w) => heatCell(all, leave, d, w, ctx))]));
+  const dcounts = Object.keys(DELIVERY).map((k) => ({ label: k, values: [{ v: all.filter((t) => t.delivery === k).length, color: DELIVERY_COLOR[k], name: "Tasks" }] }));
+  const lastWeeks = Array.from({ length: 8 }, (_, i) => M.addDays(M.mondayOf(today()), -7 * (7 - i)));
+  const series = c.designers.slice(0, 5).map((d, i) => ({ name: d, color: SERIES[i], points: lastWeeks.map((w) => ({ x: fmtDate(w),
+    y: all.filter((t) => t.designer === d).reduce((a, t) => a + (t.updates || []).filter((u) => u.d >= w && u.d < M.addDays(w, 7)).reduce((s2, u) => s2 + (Number(u.hours) || 0), 0), 0) })) }));
+  const lineRows = lines().map((l) => { const ts = all.filter((t) => (t.fourE || lineOf(t.master)) === l.name);
+    return { label: l.name, total: ts.length, values: [{ v: ts.reduce((a, t) => a + (Number(t.effort) || 0), 0), color: "var(--s1)", name: "Estimated hrs" }, { v: ts.reduce((a, t) => a + t.hoursLogged, 0), color: "var(--s2)", name: "Logged hrs" }] }; }).filter((r) => r.total);
+  const claimsN = Object.keys(S.claims).length;
+  root.appendChild(h("div", { class: "grid-main" },
+    h("div", { class: "stack section-stack" },
+      h("div", { class: "card pad stack" }, cardHead("Task funnel", "From request to done", () => go("owner", "funnel"), "Open funnel"), funnelStrip()),
+      h("div", { class: "grid-half" },
+        h("div", { class: "card pad stack" }, cardHead("Hours logged per week", null, () => go("owner", "designers")), series.length ? lineChart(series) : h("div", { class: "hint" }, "No designers yet."),
+          series.length > 1 ? h("div", { class: "legend" }, series.map((s) => h("span", null, h("i", { style: `background:${s.color}` }), s.name))) : null),
+        h("div", { class: "card pad stack" }, cardHead("Tasks by delivery status", null, () => go("owner", "tasks")), hbar(dcounts, { unit: "tasks" }))),
+      h("div", { class: "card pad stack" }, cardHead("Workload, next 8 weeks", "Approved work as a share of capacity", () => go("owner", "leave"), "Leave & holidays"),
+        c.designers.length ? h("div", { class: "tbl-wrap" }, heat) : h("div", { class: "hint" }, "No designers yet."),
+        h("div", { class: "legend" }, Object.entries(WL).map(([k, v]) => h("span", null, h("i", { style: `background:var(--${v === "neutral" ? "faint" : v + "-ink"})` }), k))))),
+    h("div", { class: "stack section-stack" },
+      quickActions([["funnel", "Review requests", () => go("owner", "funnel"), pendingN], ["user-plus", "Approve access", () => go("owner", "people"), claimsN],
+        ["list", "View all tasks", () => go("owner", "tasks")], ["sliders", "Edit lists and 4E", () => go("owner", "lists")], ["download", "Export to Excel", () => go("owner", "export")]]),
+      h("div", { class: "card pad stack" }, cardHead("Effort by 4E line"), lineRows.length ? hbar(lineRows, { unit: "hrs" }) : h("div", { class: "hint" }, "Appears once tasks are approved."),
+        lineRows.length ? h("div", { class: "legend" }, h("span", null, h("i", { style: "background:var(--s1)" }), "Estimated hours"), h("span", null, h("i", { style: "background:var(--s2)" }), "Logged hours")) : null))));
+  root.appendChild(h("div", { class: "card" }, h("div", { class: "pad card-head" }, cardHead(`Designer scorecard, ${p.label}`, null, () => go("owner", "designers"))),
     h("div", { class: "tbl-wrap" }, h("table", null,
       h("thead", null, h("tr", null, h("th", null, "Designer"), h("th", { class: "n" }, "Done"), h("th", { class: "n" }, "Avg TAT"), h("th", { class: "n" }, "On-time"), h("th", null, "Speed"), h("th", null, "Quality"), h("th", null, "Commitment"), h("th", { class: "n" }, "Overall"), h("th", null, "Rating"), h("th", null, "Focus area"))),
       h("tbody", null, sc.length ? sc.map((r) => h("tr", null, h("td", { style: "font-weight:600" }, r.designer), h("td", { class: "n" }, r.completed), h("td", { class: "n" }, fmt1(r.avgTat)), h("td", { class: "n" }, pct(r.onTime)),
         scoreCell(r.speed, "var(--s1)"), scoreCell(r.quality, "var(--s2)"), scoreCell(r.commitment, "var(--s3)"), h("td", { class: "n", style: "font-weight:700" }, fmt0(r.overall)),
         h("td", null, r.rating === "-" ? pill("No data", "neutral") : pill(r.rating, { Excellent: "good", Good: "info", "Needs Improvement": "warn", "At Risk": "critical" }[r.rating])),
         h("td", { class: "small muted", style: "min-width:220px" }, r.focus))) : h("tr", null, h("td", { colspan: "10", class: "empty" }, "Add designers under Lists & 4E.")))))));
-  const weeks = Array.from({ length: 8 }, (_, i) => M.addDays(M.mondayOf(today()), 7 * i));
-  const heat = h("div", { class: "heat", style: "grid-template-columns: minmax(70px, 110px) repeat(8, minmax(42px, 1fr));min-width:470px" },
-    h("div"), weeks.map((w) => h("div", { class: "hd" }, fmtDate(w))), c.designers.map((d) => [h("div", { class: "nm" }, d), weeks.map((w) => heatCell(all, leave, d, w, ctx))]));
-  const dcounts = Object.keys(DELIVERY).map((k) => ({ label: k, values: [{ v: all.filter((t) => t.delivery === k).length, color: DELIVERY_COLOR[k], name: "Tasks" }] }));
-  root.appendChild(h("div", { class: "grid-half" },
-    h("div", { class: "card pad stack" }, h("div", null, h("h2", null, "Workload, next 8 weeks"), h("div", { class: "hint" }, "Approved work as a share of capacity. Hover a week for hours.")),
-      c.designers.length ? h("div", { class: "tbl-wrap" }, heat) : h("div", { class: "hint" }, "No designers yet."),
-      h("div", { class: "legend" }, Object.entries(WL).map(([k, v]) => h("span", null, h("i", { style: `background:var(--${v === "neutral" ? "faint" : v + "-ink"})` }), k)))),
-    h("div", { class: "card pad stack" }, h("h2", null, "Tasks by delivery status"), hbar(dcounts, { unit: "tasks" }))));
-  const lastWeeks = Array.from({ length: 8 }, (_, i) => M.addDays(M.mondayOf(today()), -7 * (7 - i)));
-  const series = c.designers.slice(0, 5).map((d, i) => ({ name: d, color: SERIES[i], points: lastWeeks.map((w) => ({ x: fmtDate(w),
-    y: all.filter((t) => t.designer === d).reduce((a, t) => a + (t.updates || []).filter((u) => u.d >= w && u.d < M.addDays(w, 7)).reduce((s2, u) => s2 + (Number(u.hours) || 0), 0), 0) })) }));
-  const lineRows = lines().map((l) => { const ts = all.filter((t) => (t.fourE || lineOf(t.master)) === l.name);
-    return { label: l.name, total: ts.length, values: [{ v: ts.reduce((a, t) => a + (Number(t.effort) || 0), 0), color: "var(--s1)", name: "Estimated hrs" }, { v: ts.reduce((a, t) => a + t.hoursLogged, 0), color: "var(--s2)", name: "Logged hrs" }] }; }).filter((r) => r.total);
-  root.appendChild(h("div", { class: "grid-half" },
-    h("div", { class: "card pad stack" }, h("h2", null, "Hours logged per week"), series.length ? lineChart(series) : h("div", { class: "hint" }, "No designers yet."),
-      series.length > 1 ? h("div", { class: "legend" }, series.map((s) => h("span", null, h("i", { style: `background:${s.color}` }), s.name))) : null),
-    h("div", { class: "card pad stack" }, h("h2", null, "Effort by 4E line"), lineRows.length ? hbar(lineRows, { unit: "hrs" }) : h("div", { class: "hint" }, "Appears once tasks are approved."),
-      lineRows.length ? h("div", { class: "legend" }, h("span", null, h("i", { style: "background:var(--s1)" }), "Estimated hours"), h("span", null, h("i", { style: "background:var(--s2)" }), "Logged hours")) : null)));
   const pmRows = M.pmTable(all.map((t) => ({ ...t, pm: t.assignedBy || t.pm })), c.pms);
   const stale = all.filter((t) => !t.actualEnd && t.start && t.start <= today() && (!t.lastUpdate || workdays(t.lastUpdate, today()) > 2));
   const attention = all.filter((t) => t.delivery === "Overdue" || t.delivery === "Blocked").concat(stale.filter((t) => t.delivery !== "Overdue" && t.delivery !== "Blocked"));
   root.appendChild(h("div", { class: "grid-half" },
-    h("div", { class: "card" }, h("div", { class: "pad card-head" }, h("h2", null, "Tasks by requesting PM")),
+    h("div", { class: "card" }, h("div", { class: "pad card-head" }, cardHead("Tasks by requesting PM")),
       h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, h("th", null, "PM"), ["Approved", "Open", "Blocked", "Overdue", "Avg revisions"].map((x) => h("th", { class: "n" }, x)))),
         h("tbody", null, pmRows.map((r) => h("tr", null, h("td", null, r.pm), h("td", { class: "n" }, r.created), h("td", { class: "n" }, r.open), h("td", { class: "n" }, r.blocked), h("td", { class: "n" }, r.overdue), h("td", { class: "n" }, fmt1(r.avgRevisions)))))))),
-    h("div", { class: "card pad stack" }, h("div", null, h("h2", null, "Needs attention"), h("div", { class: "hint" }, "Overdue, blocked, or no update for more than 2 working days.")),
+    h("div", { class: "card pad stack" }, cardHead("Needs attention", "Overdue, blocked, or quiet for 2+ working days", () => go("owner", "tasks")),
       attention.length ? h("div", { class: "stack", style: "gap:8px" }, attention.slice(0, 12).map((t) => h("div", { class: "row", style: "gap:8px;align-items:flex-start" },
         h("span", { class: "mono muted" }, t.taskId), h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600" }, t.title), h("div", { class: "small muted" }, `${t.designer} · ${t.master} / ${t.sub}` + (t.blockers ? ` · ${t.blockers}` : ""))),
         t.delivery === "Overdue" || t.delivery === "Blocked" ? deliveryPill(t) : pill(t.lastUpdate ? "Quiet since " + fmtDate(t.lastUpdate) : "No updates yet", "warn")))) : h("div", { class: "hint" }, "Nothing needs attention."))));

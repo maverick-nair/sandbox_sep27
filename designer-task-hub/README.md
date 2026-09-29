@@ -71,12 +71,15 @@ hours per deliverable.
 
 ## Design
 
-A frosted-glass app window on a soft gradient in KNOLSKAPE colours (Science
-Blue, Ebony, Gold, Orange and the rainbow top line), set in Plus Jakarta Sans. Wide screens
-get a sidebar and top bar with search and alerts, tablets an icon rail, phones
-a bottom dock. Each interface tints its hero banner and navigation: Task
-Creation blue, Designer Tracker orange, Owner Dashboard gold on ebony. Chart
-colours are brand steps checked for colour-blind separation in light and dark.
+A solid brand top bar (logo, interface name, search, alerts, account) and an
+icon rail on the left with a short label under each icon; on phones the rail
+becomes a bottom dock. Content sits on a soft lavender background as white
+cards with one 16 px gap and one page margin everywhere. Each page opens with
+a title and a row of summary tiles (icon, label, figure), cards carry a
+"View all" link where there is more, and the Owner overview has a Quick
+actions list. Set in Plus Jakarta Sans; chart colours are purple, orange,
+lavender, red and olive, checked for colour-blind separation, with a dark
+theme that follows the system setting.
 
 ## Project names
 
