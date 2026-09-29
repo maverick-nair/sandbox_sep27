@@ -1,6 +1,6 @@
 // The end of the quarter: what happened, why, and what to do next. Scores and badges support the
 // story; they do not replace it.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LineChart, Histogram, BarList, Ring, SERIES } from '../studio/charts.jsx';
 import { Avatar } from './Moment.jsx';
 import { TrophyArt } from './art.jsx';
@@ -8,6 +8,8 @@ import { levelOf } from '../templates/ilead/look.js';
 import LeadershipReport from '../report/LeadershipReport.jsx';
 import { downloadReport, fileSlug } from '../report/download.js';
 import '../report/report.css';
+import { useSample } from '../studio/Tailoring.jsx';
+import { narrativePrompt, readNarrative } from '../engine/development.js';
 
 const BAND = { strong: 'Landed well', mixed: 'Partly landed', weak: 'Did not land' };
 const fmt = (def, v) => `${v < 0 ? '−' : ''}${def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `}${Math.abs(Math.round(v)).toLocaleString('en')}`;
@@ -19,6 +21,20 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
   const setView = onView ?? setViewLocal;
   const [saved, setSaved] = useState('');
   const reportRef = useRef(null);
+  // Genie personalises the report's narrative once, from the results and the standard content.
+  const sample = useSample();
+  const [narrative, setNarrative] = useState(null);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (view !== 'report' || asked.current || !sample || def.report.development?.personalise === false || !d.report?.dev) return;
+    asked.current = true;
+    const started = Date.now();
+    sample.json(narrativePrompt(def, d.report.dev, d.report), { cache: true })
+      .then((r) => { if (mounted.current && Date.now() - started < 30000) setNarrative(readNarrative(d.report.dev, r)); })
+      .catch(() => {});
+  }, [view, sample]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; }, []);
   const today = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
   const saveReport = async () => {
     setSaved('');
@@ -51,7 +67,7 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
       <div className="lx-debrief">
         {tabs}
         {saved && <p className="small muted" role="status">{saved}</p>}
-        <LeadershipReport ref={reportRef} def={def} report={d.report} name={d.identity?.name} date={today} />
+        <LeadershipReport ref={reportRef} def={def} report={d.report} name={d.identity?.name} date={today} narrative={narrative} />
         <div className="lx-debrief-foot">
           <button type="button" className="btn" onClick={() => setView('quarter')}>Back to your quarter</button>
           <button type="button" className="btn" onClick={saveReport}>Download my report</button>

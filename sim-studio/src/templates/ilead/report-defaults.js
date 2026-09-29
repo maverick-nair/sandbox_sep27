@@ -1,16 +1,23 @@
 // Report layout and the group report's words. The group report copy comes from the legacy
 // "Group Report New" sheet (typos fixed, the missing Low use, High accuracy insights drafted).
 import group from './group-report.json' with { type: 'json' };
+import { upgradeDevelopment } from './development.js';
 
 export const USER_SECTIONS = {
-  summary: 'At a glance',
-  competencies: 'Competencies',
-  objective: 'Objectives',
+  summary: 'Executive summary',
+  howToRead: 'How to read this report',
+  profile: 'Competency profile',
+  competencies: 'Competency detail: evidence, next level and focus',
+  objective: 'Business results',
   adaptability: 'Overall leadership adaptability',
   styles: 'Leadership styles summary',
   consistency: 'Consistency in styles',
   actions: 'Summary of actions',
   distribution: 'Distribution of actions across the team',
+  time: 'Where your time went',
+  plan: 'Development priorities and 70-20-10 plan',
+  idp: 'Individual development plan',
+  coaching: 'Coaching conversation guide',
   foodForThought: 'Food for thought',
   takeaways: 'Key takeaways',
 };
@@ -40,6 +47,7 @@ export function defaultGroupReport() {
 // Fills whatever an older definition is missing, keeping everything the author wrote.
 export function upgradeReport(report) {
   report.sections = { ...on(USER_SECTIONS), ...(report.sections || {}) };
+  upgradeDevelopment(report);
   const g = defaultGroupReport();
   if (!report.group) { report.group = g; return report; }
   const r = report.group;

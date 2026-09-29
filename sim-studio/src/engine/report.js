@@ -2,6 +2,7 @@
 // Structure follows the legacy "Report New" sheet; scores are 0 to 10.
 import { progress, teamAverages, styleById, styleDiff, weekOf, desiredStyle } from './engine.js';
 import { renderText } from './text.js';
+import { buildDevelopment } from './development.js';
 
 // The report measures each competency "on a scale of 1-10" (Report New sheet).
 const clamp10 = (v) => Math.max(1, Math.min(10, v));
@@ -12,6 +13,12 @@ function bandFor(comp, score) {
 }
 
 export function computeReport(def, state) {
+  const out = computeCore(def, state);
+  out.dev = buildDevelopment(def, state, out);
+  return out;
+}
+
+function computeCore(def, state) {
   const pr = progress(def, state);
   const start = state.start;
   const end = teamAverages(state);

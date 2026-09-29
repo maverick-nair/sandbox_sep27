@@ -156,7 +156,7 @@ const TRIGGER_RULES = {
 const REPORT_FIXES = [
   [/acheived/g, 'achieved'], [/oportunities/g, 'opportunities'], [/thouroughly/g, 'thoroughly'], [/Continously/g, 'Continuously'],
   [/\bIts important/g, "It's important"], [/the that which/g, 'that which'], [/memebers/g, 'members'], [/Chose the right/g, 'Choose the right'],
-  [/mindframe/g, 'frame of mind'], [/Biases, even if it is unconscious can/g, 'Biases, even unconscious ones, can'],
+  [/mindframe/g, 'frame of mind'], [/leveraging his team members/g, 'leveraging their team members'], [/Biases, even if it is unconscious can/g, 'Biases, even unconscious ones, can'],
   [/which the group actually deployed/g, 'which you actually deployed'], [/which the group intended to deploy/g, 'which you intended to deploy'],
   [/the group intended to deploy and that which they actually deployed/g, 'you intended to deploy and that which you actually deployed'],
 ];

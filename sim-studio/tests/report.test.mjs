@@ -64,3 +64,53 @@ test('bands and mismatch thresholds match the learner report', () => {
   assert.equal(ideal.length, def.timeline.weeks);
   assert.ok(ideal.at(-1) >= def.funnel.target * 0.8);
 });
+
+test('development report: levels, evidence, strengths, priorities and a plan from the authored content', async () => {
+  const { buildDevelopment, levelOf } = await import('../src/engine/development.js');
+  const s = playBot(def, 'random', 3).state;
+  const r = computeReport(def, s);
+  const dev = r.dev;
+  assert.equal(dev.comps.length, def.report.competencies.filter((c) => c.enabled).length);
+  for (const c of dev.comps) {
+    assert.equal(c.levelIndex, levelOf(c.score));
+    assert.ok(c.looksLike && c.keep && c.workOn && c.plan.on70 && c.plan.social20 && c.plan.formal10 && c.reflect, c.id);
+    assert.ok(c.evidence.length >= 1, c.id);
+    if (c.levelIndex < 4) assert.ok(c.nextLevel?.looksLike, `${c.id} shows the next level`);
+  }
+  assert.equal(dev.priorities.length, 2);
+  assert.ok(dev.priorities.every((p) => !dev.strengths.includes(p)));
+  assert.ok(dev.summary.length > 80);
+  // the author's words are what learners see
+  const own = createIleadDefinition();
+  const c0 = dev.priorities[0];
+  own.report.development.competencies[c0.id].levels[['Novice', 'Emerging', 'Competent', 'Proficient', 'Role Model'][c0.levelIndex]].workOn = 'Our own words for {{company}}.';
+  const d2 = buildDevelopment(own, s, computeReport(own, s));
+  assert.equal(d2.priorities.find((p) => p.id === c0.id)?.workOn, 'Our own words for Innov8 Elevators.');
+});
+
+test('Genie narrative is accepted only in the right shape, without em dashes', async () => {
+  const { readNarrative, narrativePrompt } = await import('../src/engine/development.js');
+  const r = computeReport(def, playBot(def, 'expert', 3).state);
+  const dev = r.dev;
+  assert.ok(narrativePrompt(def, dev, r).includes('Return JSON only'));
+  assert.equal(readNarrative(dev, 'not json'), null);
+  assert.equal(readNarrative(dev, { summary: 'short' }), null);
+  const ok = readNarrative(dev, { summary: 'You led a strong quarter — the team grew in skill and morale, and you beat the target by a clear margin.', strengths: [{ id: dev.strengths[0]?.id, text: 'Good.' }, { id: 'made-up', text: 'x' }], priorities: [], observed: { adapt: 'You adapted.', nope: 'x' } });
+  assert.ok(ok && !ok.summary.includes('—'));
+  assert.ok(ok.strengths.every((x) => dev.strengths.some((c) => c.id === x.id)));
+  assert.deepEqual(Object.keys(ok.observed), ['adapt']);
+});
+
+test('development content: complete, editable per level, upgraded without losing author text', async () => {
+  const { defaultDevelopment, upgradeDevelopment, LEVELS } = await import('../src/templates/ilead/development.js');
+  const d = defaultDevelopment();
+  assert.equal(d.scale.length, 5);
+  for (const c of Object.values(d.competencies)) for (const l of LEVELS) for (const k of ['looksLike', 'keep', 'workOn', 'on70', 'social20', 'formal10', 'reflect']) assert.ok(c.levels[l][k], `${l} ${k}`);
+  assert.ok(!/—/.test(JSON.stringify(d)));
+  const report = { development: { purpose: 'Mine', competencies: { upskill: { levels: { Novice: { keep: 'Mine too' } } } } } };
+  upgradeDevelopment(report);
+  assert.equal(report.development.purpose, 'Mine');
+  assert.equal(report.development.competencies.upskill.levels.Novice.keep, 'Mine too');
+  assert.ok(report.development.competencies.upskill.levels.Novice.looksLike);
+  assert.ok(report.development.competencies.motivate);
+});

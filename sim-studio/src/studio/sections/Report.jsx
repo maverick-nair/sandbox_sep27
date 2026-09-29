@@ -3,6 +3,7 @@ import { playBot, BOTS } from '../../engine/bots.js';
 import { computeReport } from '../../engine/report.js';
 import { aggregate, syntheticBenchmark, idealProgression } from '../../engine/group.js';
 import { USER_SECTIONS, GROUP_SECTIONS } from '../../templates/ilead/report-defaults.js';
+import { LEVELS, defaultDevelopment } from '../../templates/ilead/development.js';
 import LeadershipReport from '../../report/LeadershipReport.jsx';
 import GroupReport from '../../report/GroupReport.jsx';
 import { downloadReport, fileSlug } from '../../report/download.js';
@@ -17,6 +18,7 @@ export default function Report({ def, update, advanced, notify }) {
   const missing = Object.values(def.report.styleInsights).reduce((n, g) => n + Object.values(g).filter((v) => !v || MISSING.test(v)).length, 0);
   const drafted = (def.meta.drafted || []).length;
   const tabs = [
+    ['development', 'Development content'],
     ['competencies', 'Competencies'],
     ['outcome', 'Outcome and adaptability'],
     ['styles', `Style insights${missing ? ` (${missing} missing)` : drafted ? ` (${drafted} drafted)` : ''}`],
@@ -30,11 +32,12 @@ export default function Report({ def, update, advanced, notify }) {
   return (
     <div>
       <SectionHead eyebrow="Build" title="Report">
-        Two reports, both modelled on the original iLead reports. Each learner gets a leadership report at the end of the quarter; facilitators get a group report for a cohort, compared with a benchmark. You write the words for each band; the engine picks the band.
+        Each learner gets a leadership development report at the end of the quarter: an executive summary, the competency profile with evidence and the next level, the original iLead analytics, and a development plan (70-20-10, an individual development plan and a coaching guide). Facilitators get a group report for a cohort against a benchmark. You define the standard content for every competency and level; the engine picks the level from the learner's results, and Genie personalises the narrative from it.
       </SectionHead>
       <div className="tabs" role="tablist">
         {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</button>)}
       </div>
+      {tab === 'development' && <DevelopmentContent def={def} update={update} />}
       {tab === 'competencies' && <Competencies def={def} update={update} advanced={advanced} />}
       {tab === 'outcome' && (
         <div className="grid cols-2">
@@ -388,6 +391,102 @@ function SampleGroup({ def, notify }) {
       </div>
       {!ready && <Callout icon="i">Playing synthetic learners through the quarter… {Math.round(((group.progress + bench.progress) / 2) * 100)}%</Callout>}
       {ready && <div className="report-frame"><GroupReport ref={ref} def={def} group={group.data.agg} bench={bench.data.agg} benchLabel="Benchmark" benchNote="30 synthetic learners" title="Group report" subtitle="Sample cohort of synthetic learners" ideal={ideal} date={new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })} /></div>}
+    </div>
+  );
+}
+
+const PRODUCTS = { Evaluate: ['Conversation AI', 'Nano AI', 'PitchPerfect AI'], Educate: ['AI Microlearn', 'Interactive Learn'], Experience: ['Simulations', 'AI RolePlay'], Enable: ['AI Koach'] };
+const DEV_FIELDS = [
+  ['looksLike', 'What this level looks like', 'Behaviour a learner at this level shows. Also shown to learners one level below, as the next level.'],
+  ['keep', 'Keep doing', 'The strength to build on.'],
+  ['workOn', 'Work on', 'The one focus that moves them to the next level.'],
+  ['on70', '70%: on the job', 'An experience or assignment in their real work.'],
+  ['social20', '20%: with others', 'Coaching, feedback, mentoring or learning from peers.'],
+  ['formal10', '10%: formal learning', 'A course, module or practice session.'],
+  ['reflect', 'Reflection question', 'One question for them to think about.'],
+];
+
+// The standard content of the development report, per competency and per level.
+function DevelopmentContent({ def, update }) {
+  const D = def.report.development || defaultDevelopment();
+  const comps = def.report.competencies.filter((c) => c.enabled);
+  const [cid, setCid] = useState(comps[0]?.id);
+  const [lv, setLv] = useState(LEVELS[2]);
+  const set = (fn) => update((d) => { d.report.development ||= defaultDevelopment(); fn(d.report.development); });
+  const cd = D.competencies?.[cid] || {};
+  const level = cd.levels?.[lv] || {};
+  const std = defaultDevelopment().competencies[cid]?.levels?.[lv] || {};
+  const ln = (id) => LEVELS.indexOf(id);
+  return (
+    <div className="stack">
+      <div className="grid cols-2">
+        <div className="card stack">
+          <h3>Personalised narrative</h3>
+          <Switch checked={D.personalise !== false} onChange={(v) => set((x) => { x.personalise = v; })} label="Let Genie write the summary, strengths, priorities and observations from each learner's results" />
+          <TokenArea def={def} label="Guidance for Genie" rows={3} value={D.guidance} onChange={(v) => set((x) => { x.guidance = v; })} hint="Tone and rules. Genie only uses the learner's data and the standard content below." />
+          <p className="small muted">When Genie is not available, or this is off, learners see the standard content below, chosen by their level.</p>
+        </div>
+        <div className="card stack">
+          <h3>Opening words</h3>
+          <TokenArea def={def} label="Purpose of the report" rows={3} value={D.purpose} onChange={(v) => set((x) => { x.purpose = v; })} />
+          <TokenArea def={def} label="How the scores are made" rows={3} value={D.method} onChange={(v) => set((x) => { x.method = v; })} />
+        </div>
+      </div>
+
+      <div className="card stack">
+        <h3>Proficiency scale</h3>
+        <p className="small muted">The five levels every competency is reported on, with what each means.</p>
+        {(D.scale || []).map((l, i) => (
+          <div key={i} className="grid" style={{ gridTemplateColumns: '160px 90px 1fr', gap: 10, alignItems: 'start' }}>
+            <input className="input" aria-label={`Level ${i + 1} name`} value={l.label} onChange={(e) => set((x) => { x.scale[i].label = e.target.value; })} />
+            <span className="small muted num" style={{ paddingTop: 8 }}>{l.min} to {l.max}</span>
+            <textarea className="textarea" rows={2} aria-label={`${l.label} definition`} value={l.definition} onChange={(e) => set((x) => { x.scale[i].definition = e.target.value; })} />
+          </div>
+        ))}
+      </div>
+
+      <div className="card stack">
+        <h3>Content for each competency and level</h3>
+        <Seg label="Competency" value={cid} onChange={setCid} options={comps.map((c) => ({ value: c.id, label: c.name }))} />
+        <div className="grid cols-2">
+          <TokenArea def={def} label="What the competency is" rows={2} value={cd.definition} onChange={(v) => set((x) => { x.competencies[cid].definition = v; })} />
+          <TokenArea def={def} label="Why it matters" rows={2} value={cd.why} onChange={(v) => set((x) => { x.competencies[cid].why = v; })} />
+        </div>
+        <Seg label="Level" value={lv} onChange={setLv} options={LEVELS.map((l, i) => ({ value: l, label: `${D.scale?.[i]?.label || l} (${i * 2} to ${i * 2 + 2})` }))} />
+        <div className="grid cols-2">
+          {DEV_FIELDS.map(([k, label, hint]) => (
+            <TokenArea key={k} def={def} label={label} hint={hint} rows={3} value={level[k]} onChange={(v) => set((x) => { x.competencies[cid].levels[lv][k] = v; })} />
+          ))}
+        </div>
+        <div className="row">
+          <Button size="sm" variant="ghost" onClick={() => set((x) => { x.competencies[cid].levels[lv] = { ...std }; })}>Restore the standard text for this level</Button>
+          {ln(lv) > 0 && <Button size="sm" variant="ghost" onClick={() => set((x) => { x.competencies[cid].levels[lv] = { ...x.competencies[cid].levels[LEVELS[ln(lv) - 1]] }; })}>Copy from {LEVELS[ln(lv) - 1]}</Button>}
+        </div>
+        <h4 style={{ margin: '6px 0 0' }}>Recommended next learning</h4>
+        <p className="small muted">Shown with the development plan when this competency is a priority.</p>
+        {(cd.products || []).map((pp, k) => (
+          <div key={k} className="row nowrap" style={{ alignItems: 'flex-start' }}>
+            <select className="select" style={{ width: 200 }} aria-label="Product" value={`${pp.line}|${pp.product}`} onChange={(e) => { const [line, product] = e.target.value.split('|'); set((x) => { x.competencies[cid].products[k] = { ...x.competencies[cid].products[k], line, product }; }); }}>
+              {Object.entries(PRODUCTS).map(([line, ps]) => <optgroup key={line} label={line}>{ps.map((p) => <option key={p} value={`${line}|${p}`}>{p}</option>)}</optgroup>)}
+            </select>
+            <textarea className="textarea grow" rows={2} aria-label="What it offers" value={pp.text} onChange={(e) => set((x) => { x.competencies[cid].products[k].text = e.target.value; })} />
+            <Button size="sm" variant="ghost" onClick={() => set((x) => { x.competencies[cid].products.splice(k, 1); })}>Remove</Button>
+          </div>
+        ))}
+        <div><Button size="sm" onClick={() => set((x) => { (x.competencies[cid].products ||= []).push({ line: 'Enable', product: 'AI Koach', text: '' }); })}>Add a recommendation</Button></div>
+      </div>
+
+      <div className="grid cols-2">
+        <div className="card stack">
+          <h3>Coaching conversation guide</h3>
+          <ListEditor label="Question" addLabel="Add a question" items={D.coaching} onChange={(items) => set((x) => { x.coaching = items; })} />
+        </div>
+        <div className="card stack">
+          <h3>Individual development plan</h3>
+          <TokenArea def={def} label="Introduction" rows={3} value={D.idp?.intro} onChange={(v) => set((x) => { x.idp = { ...(x.idp || {}), intro: v }; })} />
+          <Field label="Plan horizon" id="idph"><div className="row nowrap"><NumberInput id="idph" className="xs" value={D.idp?.horizon || 90} min={14} max={365} onChange={(v) => set((x) => { x.idp = { ...(x.idp || {}), horizon: v }; })} /><span className="small">days</span></div></Field>
+        </div>
+      </div>
     </div>
   );
 }
