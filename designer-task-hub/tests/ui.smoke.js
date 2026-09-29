@@ -72,7 +72,7 @@ const SEED = {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.route("https://app.test/**", (r) => r.fulfill({ contentType: "text/html", body: page_html }));
   await ctx.route("https://cdnjs.cloudflare.com/**", (r) => r.fulfill({ contentType: "application/javascript", body: jszip }));
-  await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  if (!process.env.FONTS) await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await ctx.addInitScript(MOCK);
   const page = await ctx.newPage();
   global.PAGE = page;

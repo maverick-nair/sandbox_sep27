@@ -54,7 +54,7 @@ hours per deliverable.
 ## Design
 
 A frosted-glass app window on a soft gradient in KNOLSKAPE colours (Science
-Blue, Ebony, Gold, Orange, the rainbow top line, Cambria titles). Wide screens
+Blue, Ebony, Gold, Orange and the rainbow top line), set in Plus Jakarta Sans. Wide screens
 get a sidebar and top bar with search and alerts, tablets an icon rail, phones
 a bottom dock. Each interface tints its hero banner and navigation: Task
 Creation blue, Designer Tracker orange, Owner Dashboard gold on ebony. Chart
