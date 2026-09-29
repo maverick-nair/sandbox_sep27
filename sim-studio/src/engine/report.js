@@ -3,7 +3,8 @@
 import { progress, teamAverages, styleById, styleDiff, weekOf, desiredStyle } from './engine.js';
 import { renderText } from './text.js';
 
-const clamp10 = (v) => Math.max(0, Math.min(10, v));
+// The report measures each competency "on a scale of 1-10" (Report New sheet).
+const clamp10 = (v) => Math.max(1, Math.min(10, v));
 const band3 = (v, lo, hi) => (v < lo ? 'Low' : v < hi ? 'Moderate' : 'High');
 
 function bandFor(comp, score) {
@@ -61,22 +62,37 @@ export function computeReport(def, state) {
     return { id: a.id, name: a.name, count: entries.length, positive, key, text: def.report.actionInsights[a.id]?.bands[key] || '' };
   });
 
-  // Consistency: desired vs intended style, per week, as the average style difference.
-  const avgDiff = intents.length ? intents.reduce((t, i) => t + i.diff, 0) / intents.length : null;
-  const styledActions = state.log.actions.filter((e) => e.style).flatMap((e) =>
-    (e.targets.length ? e.targets : e.results.map((r) => r.actorId)).map((id) => {
-      const intent = intents.filter((i) => i.actorId === id && i.week === e.week).at(-1);
-      return intent ? styleDiff(def, e.style, intent.style) : null;
-    }),
-  ).filter((d) => d !== null);
-  const intentVsActual = styledActions.length ? styledActions.reduce((a, b) => a + b, 0) / styledActions.length : null;
+  // Consistency, as the iLead model document defines it: for each team member, the dominant
+  // intent (the style set with them most often at the start of the week) against the dominant
+  // style (the style most used with them through Meet the team, Meet face to face, Set goals,
+  // Coach member and Give feedback), and the dominant desired style (the one their skill and
+  // morale called for most often). Deviation is the style difference (0 to 2) averaged over the
+  // team members who have both.
+  const dominantOf = (list) => {
+    const counts = {};
+    for (const x of list) if (x) counts[x] = (counts[x] || 0) + 1;
+    const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    return best ? best[0] : null;
+  };
+  const byActor = {};
+  for (const i of intents) {
+    const b = (byActor[i.actorId] ||= { intents: [], desired: [], actual: [] });
+    b.intents.push(i.style);
+    b.desired.push(i.desired);
+  }
+  for (const e of state.log.actions.filter((x) => x.style)) {
+    const ids = e.results.length ? e.results.map((r) => r.actorId) : e.targets;
+    for (const id of new Set(ids)) (byActor[id] ||= { intents: [], desired: [], actual: [] }).actual.push(e.style);
+  }
+  const perPerson = Object.entries(byActor).map(([id, b]) => ({ id, name: state.actors[id]?.name, intent: dominantOf(b.intents), desired: dominantOf(b.desired), actual: dominantOf(b.actual) }));
+  const meanDiff = (a, b) => {
+    const xs = perPerson.filter((p) => p[a] && p[b]).map((p) => styleDiff(def, p[a], p[b]));
+    return xs.length ? xs.reduce((t, x) => t + x, 0) / xs.length : null;
+  };
+  const avgDiff = meanDiff('desired', 'intent');
+  const intentVsActual = meanDiff('intent', 'actual');
+  const desiredVsActual = meanDiff('desired', 'actual');
   const mismatchKey = (v) => (v === null ? 'NoMismatch' : v < 0.5 ? 'LowMismatch' : v < 1 ? 'ModerateMismatch' : 'HighMismatch');
-  // Desired vs actual: the style each styled action used against what the person needed that week.
-  const desiredActual = state.log.actions.filter((e) => e.style).flatMap((e) => e.results.map((r) => {
-    const intent = intents.filter((i) => i.actorId === r.actorId && i.week === e.week).at(-1);
-    return intent?.desired ? styleDiff(def, e.style, intent.desired) : null;
-  })).filter((d) => d !== null);
-  const desiredVsActual = desiredActual.length ? desiredActual.reduce((a, b) => a + b, 0) / desiredActual.length : null;
   const pctOf = (v) => (v === null ? null : Math.round((v / 2) * 1000) / 10); // style distance 0 to 2 as a deviation percentage
 
   // Impact of each action, in the legacy five levels.
@@ -95,14 +111,17 @@ export function computeReport(def, state) {
     return { id: a.id, name: a.name, cells, total, score: total ? pos / total : 0, left: a.status === 'left' };
   }).sort((x, y) => y.score - x.score || y.total - x.total);
 
-  // Management style: where the learner's time went, by who was a top, average or bottom performer that week.
+  // Management style: where the learner's time went, by who was a top, average or bottom performer
+  // that week. The model document says top and bottom 25%; the group report sheet says top and
+  // bottom three. For iLead's team of 10 both give three people.
   const time = { top: 0, average: 0, bottom: 0 };
   for (const e of state.log.actions) {
     const ranked = people.filter((a) => a.weekStart?.[e.week - 1]).sort((x, y) => y.weekStart[e.week - 1].p - x.weekStart[e.week - 1].p).map((a) => a.id);
     for (const r of e.results) {
       const k = ranked.indexOf(r.actorId);
       if (k < 0) continue;
-      time[k < 3 ? 'top' : k >= ranked.length - 3 ? 'bottom' : 'average'] += e.dayCost || 1;
+      const q = Math.max(1, Math.round(ranked.length * 0.25));
+      time[k < q ? 'top' : k >= ranked.length - q ? 'bottom' : 'average'] += e.dayCost || 1;
     }
   }
 
@@ -129,6 +148,7 @@ export function computeReport(def, state) {
     time,
     cumulative,
     completion: Math.min(1, state.day / (def.timeline.weeks * def.timeline.daysPerWeek)),
+    consistencyByPerson: perPerson,
     consistencyPct: { desiredVsActual: pctOf(desiredVsActual), intentVsActual: pctOf(intentVsActual), desiredVsIntent: pctOf(avgDiff) },
     consistency: [
       { id: 'desired-vs-actual', name: 'Desired vs actual', value: desiredVsActual, key: mismatchKey(desiredVsActual), text: def.report.consistency['desired-vs-actual']?.bands[mismatchKey(desiredVsActual)] || '' },
