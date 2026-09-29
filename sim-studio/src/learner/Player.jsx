@@ -1,6 +1,7 @@
 // The learner experience: the learner steps into the role and runs a quarter. It is one
 // workspace (inbox, the conversation or meeting in front of them, their team and the numbers),
 // with a Monday plan and a Friday wrap-up each week, and a debrief at the end.
+import { businessOf, profitTarget, revenueTarget } from '../engine/finance.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRun, setWeeklyStyles, takeAction, proceed, weekOf, daysLeftInWeek, progress, teamAverages, teamIds, stageName, totalDays, desiredStyle } from '../engine/engine.js';
 import { initDecisions, resolveDecision, afterTime, checkAchievements, recallItem, addReflection, pointsOf, say, dueDecisions, ACHIEVEMENTS, textVars } from '../engine/decisions.js';
@@ -538,7 +539,7 @@ function ReadyForm({ def, identity, delivery, preview, onStart }) {
   return (
     <div className="lx-ready">
       <div className="lx-ready-summary">
-        <p>{T(`You are the new {{learner_role}} at {{company}}. You lead ${teamIdsCount(def)} people selling {{product}}, and you have ${def.timeline.weeks} weeks to reach ${def.funnel.target} conversions.`)}</p>
+        <p>{T(`You are the new {{learner_role}} at {{company}}. You lead ${teamIdsCount(def)} people selling {{product}}, and you have ${def.timeline.weeks} weeks to reach ${targetLine(def)}.`)}</p>
         <ul>
           <li>Each Monday you choose how to lead each person.</li>
           <li>During the week you answer what lands in your inbox and decide where your time goes.</li>
@@ -581,4 +582,10 @@ function ReadyForm({ def, identity, delivery, preview, onStart }) {
 }
 
 const teamIdsCount = (def) => def.actors.filter((a) => a.pool === 'team').length;
+const targetLine = (def) => {
+  const b = businessOf(def);
+  const cur = def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `;
+  const f = (v) => `${cur}${Math.round(v).toLocaleString('en')}`;
+  return b.metric === 'profit' ? `${f(profitTarget(def))} in operating profit (on about ${def.funnel.target} conversions)` : `${f(revenueTarget(def))} in revenue (${def.funnel.target} conversions)`;
+};
 export { totalDays, dueDecisions };

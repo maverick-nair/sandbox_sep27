@@ -1,5 +1,6 @@
 import { CURRENCIES } from '../../templates/ilead/world.js';
-import { NumberInput, SectionHead, TokenArea, Button, Callout, Switch, Field } from '../ui.jsx';
+import { NumberInput, SectionHead, TokenArea, Button, Callout, Switch, Field, Seg } from '../ui.jsx';
+import { businessOf, suggestedProfitTarget, profitTarget, revenueTarget, METRICS, defaultBusiness } from '../../engine/finance.js';
 
 // What the team converts if nobody improves: a quick, deterministic read of the starting position.
 export function baselineConversions(def) {
@@ -56,7 +57,8 @@ export default function Funnel({ def, update, advanced, sim, openPanel }) {
 
         <div className="stack">
           <div className="card stack">
-            <h3>Target</h3>
+            <h3>Volume: conversions</h3>
+            <p className="small muted">The sales the team must close. Revenue and profit follow from them.</p>
             <div className="grid cols-2">
               <Field label="Conversions to hit" id="target">
                 <NumberInput id="target" className="num-input" value={def.funnel.target} min={1} max={100000} onChange={(v) => update((d) => { d.funnel.target = v; d.meta.baseTarget = undefined; })} />
@@ -83,6 +85,8 @@ export default function Funnel({ def, update, advanced, sim, openPanel }) {
             )}
             {!suggested && <Button size="sm" onClick={() => openPanel('balance')}>Check the target with the balance check</Button>}
           </div>
+
+          <BusinessTarget def={def} update={update} money={money} />
 
           <div className="card stack">
             <h3>Stage descriptions</h3>
@@ -124,6 +128,65 @@ export default function Funnel({ def, update, advanced, sim, openPanel }) {
           <p className="small muted">{base.leads.toLocaleString()} leads in total. The model document says inflow changes every week with the storyline; the legacy values were not in the workbook.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// The target the board sets, as a business metric: revenue, or operating profit after the cost of
+// sales, the team's cost and what the leader spends on actions.
+function BusinessTarget({ def, update, money }) {
+  const b = businessOf(def);
+  const setB = (patch) => update((d) => { d.business = { ...businessOf(d), ...patch }; });
+  const setCost = (id, v) => update((d) => { const cur = businessOf(d); d.business = { ...cur, actionCosts: { ...cur.actionCosts, [id]: v } }; });
+  const team = def.actors.filter((a) => a.pool === 'team').length;
+  const rev = revenueTarget(def);
+  const gp = rev * b.grossMargin;
+  const teamCost = team * b.weeklyCostPerPerson * def.timeline.weeks;
+  const suggested = suggestedProfitTarget(def);
+  const target = profitTarget(def);
+  return (
+    <div className="card stack">
+      <h3>Business target</h3>
+      <p className="small muted">What the board judges the learner on. Revenue grows with every conversion. Operating profit also counts the cost of sales, the team and every action the learner pays for, so choices like training, rewards and hiring have a price.</p>
+      <Seg label="Target metric" value={b.metric} onChange={(v) => setB({ metric: v })} options={Object.entries(METRICS).map(([value, m]) => ({ value, label: m.label }))} />
+      <div className="grid cols-2">
+        <Field label="Gross margin" hint="Share of revenue left after the cost of what was sold." id="gm">
+          <div className="row nowrap"><NumberInput id="gm" className="num-input" value={Math.round(b.grossMargin * 100)} min={1} max={95} onChange={(v) => setB({ grossMargin: v / 100 })} /><span className="small">%</span></div>
+        </Field>
+        <Field label="Weekly cost per team member" hint="Salary and overheads, for everyone on the team that week." id="wc">
+          <NumberInput id="wc" className="num-input" value={b.weeklyCostPerPerson} min={0} max={1000000} onChange={(v) => setB({ weeklyCostPerPerson: v })} />
+        </Field>
+      </div>
+      {b.metric === 'profit' ? (
+        <Field label="Operating profit target" hint={`Suggested ${money.format(suggested)}: gross profit at the conversions target, less the quarter's team cost and a spending allowance.`} id="pt">
+          <div className="row nowrap">
+            <NumberInput id="pt" className="num-input" value={target} min={0} max={1e12} onChange={(v) => setB({ profitTarget: v })} />
+            {b.profitTarget !== null && b.profitTarget !== suggested && <Button size="sm" variant="ghost" onClick={() => setB({ profitTarget: null })}>Use {money.format(suggested)}</Button>}
+          </div>
+        </Field>
+      ) : (
+        <Switch checked={b.showProfit !== false} onChange={(v) => setB({ showProfit: v })} label="Also show operating profit to learners (not scored)" />
+      )}
+      <div className="fin-table">
+        <div><span>Revenue at target</span><strong className="num">{money.format(rev)}</strong></div>
+        <div><span>Gross profit ({Math.round(b.grossMargin * 100)}%)</span><strong className="num">{money.format(gp)}</strong></div>
+        <div><span>Team cost ({team} people × {def.timeline.weeks} weeks)</span><strong className="num">−{money.format(teamCost)}</strong></div>
+        <div><span>Operating profit before action spend</span><strong className="num">{money.format(gp - teamCost)}</strong></div>
+        {b.metric === 'profit' && <div className="total"><span>Profit target</span><strong className="num">{money.format(target)}</strong></div>}
+      </div>
+      {gp - teamCost <= 0 && <Callout tone="bad" icon="!">Even at the conversions target the team loses money. Raise the margin or the value per conversion, or lower the team cost.</Callout>}
+      <details>
+        <summary className="small" style={{ cursor: 'pointer', fontWeight: 650 }}>What each action costs</summary>
+        <div className="cost-grid">
+          {def.actions.filter((a) => a.enabled).map((a) => (
+            <label key={a.id} className="row nowrap small" style={{ '--gap': '8px' }}>
+              <span className="grow">{a.name}<span className="muted"> {a.scope === 'team' || a.mechanic === 'hire' ? '(each time)' : '(per person)'}</span></span>
+              <NumberInput className="xs" value={b.actionCosts[a.id] || 0} min={0} max={1e9} onChange={(v) => setCost(a.id, v)} aria-label={`Cost of ${a.name}`} />
+            </label>
+          ))}
+        </div>
+        <Button size="sm" variant="ghost" onClick={() => setB({ actionCosts: { ...defaultBusiness().actionCosts } })}>Restore the standard costs</Button>
+      </details>
     </div>
   );
 }

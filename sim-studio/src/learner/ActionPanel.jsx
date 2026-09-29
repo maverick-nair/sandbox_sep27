@@ -1,4 +1,5 @@
 // "Things you can do this week": the template's leadership actions, each costing days.
+import { businessOf } from '../engine/finance.js';
 import { useMemo, useState } from 'react';
 import { actionAvailability, availableIds, stageName, daysLeftInWeek, desiredStyle } from '../engine/engine.js';
 import { renderText } from '../engine/text.js';
@@ -27,6 +28,8 @@ export function ActionGrid({ def, state, onPick }) {
   );
 }
 
+const fmtMoney = (def, v) => `${def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `}${Math.round(v).toLocaleString('en')}`;
+
 export function ActionComposer({ def, state, action, xray, onCancel, onSubmit, initialTargets = [] }) {
   const usable = action.options.filter((o) => actionAvailability(def, state, action, o).ok);
   const [optionId, setOptionId] = useState(usable[0]?.id);
@@ -45,6 +48,7 @@ export function ActionComposer({ def, state, action, xray, onCancel, onSubmit, i
       <button type="button" className="lx-back" onClick={onCancel}><span aria-hidden="true">←</span> Team floor</button>
       <div className="row nowrap" style={{ '--gap': '10px' }}><span className="lx-action-icon"><Icon name={action.id} size={22} /></span><h3>{action.name}</h3></div>
       <p className="small ink2">{renderText(def, action.description)}</p>
+      {businessOf(def).actionCosts[action.id] > 0 && <p className="small lx-cost">Costs {fmtMoney(def, businessOf(def).actionCosts[action.id])}{action.scope === 'team' || action.mechanic === 'hire' ? '' : ' per person'}. It comes out of your operating profit.</p>}
       {action.options.length > 1 && (
         <div className="stack" style={{ '--gap': '6px' }} role="radiogroup" aria-label="How">
           {action.options.map((o) => {

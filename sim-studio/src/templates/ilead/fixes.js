@@ -473,6 +473,12 @@ function suggest(def, issue, draft) {
           x.gamification.levels = l;
         },
       };
+    case 'biz-margin':
+      return { summary: 'Use a 40% gross margin', fields: [], apply: (x) => { x.business = { ...(x.business || {}), grossMargin: 0.4 }; } };
+    case 'biz-profit-high':
+      return { summary: 'Use the suggested profit target', note: 'Gross profit at the conversions target, less the team cost and a spending allowance.', fields: [], apply: (x) => { x.business = { ...(x.business || {}), profitTarget: null }; } };
+    case 'biz-loss':
+      return { summary: 'Use revenue as the target', note: 'Or raise the margin or value per conversion in Funnel and target.', fields: [], apply: (x) => { x.business = { ...(x.business || {}), metric: 'revenue' }; } };
     case 'time-tight': {
       const m = d.weeks <= 6 ? 45 : d.weeks <= 8 ? 60 : 90;
       return {

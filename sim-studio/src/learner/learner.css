@@ -790,3 +790,9 @@ img.gk-portrait { object-fit: cover; background: var(--surface-2); }
 .lx-dtab.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .lx-dtab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lx-report-teaser { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-left: 5px solid var(--accent); }
+
+.lx-fin-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+.lx-fin { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.lx-fin.target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.lx-fin strong { font-size: 17px; }
+.lx-cost { color: var(--warn); }

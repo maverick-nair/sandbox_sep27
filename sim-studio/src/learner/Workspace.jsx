@@ -13,6 +13,7 @@ import { Avatar } from './Moment.jsx';
 import { Shell, TopChip, Profile, StatCard, HeroStage, ProgressStrip, ViewTabs } from './Shell.jsx';
 import { TeamFloor, FunnelBody, daysLabel } from './Floor.jsx';
 import { dayName, moodOf, DAY_NAMES } from './model.js';
+import { businessOf, actionCost } from '../engine/finance.js';
 
 const T = (def, s, v) => renderText(def, s || '', v);
 const cur = (def) => (def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `);
@@ -41,7 +42,7 @@ export default function Workspace({ def, state, identity, preview, xray, setXray
   })();
   const d = (k) => (weekStart ? avg[k] - weekStart[k] : null);
   const pace = state.day / Math.max(1, totalDays(def));
-  const status = pr.achieved >= pace * 1.05 ? ['Ahead of pace', 'good'] : pr.achieved >= pace * 0.85 ? ['On track', 'good'] : pr.achieved >= pace * 0.6 ? ['Behind pace', 'warn'] : ['Well behind', 'bad'];
+  const status = state.day === 0 ? ['Just starting', 'good'] : pr.achieved >= pace * 1.05 ? ['Ahead of pace', 'good'] : pr.achieved >= pace * 0.85 ? ['On track', 'good'] : pr.achieved >= pace * 0.6 ? ['Behind pace', 'warn'] : ['Well behind', 'bad'];
   const mm = timeLeft != null ? `${Math.floor(Math.max(0, timeLeft) / 60)}:${String(Math.floor(Math.max(0, timeLeft) % 60)).padStart(2, '0')}` : null;
   const actions = def.actions.filter((a) => a.enabled);
   const actionId = selected?.startsWith('action:') ? selected.slice(7) : null;
@@ -58,7 +59,8 @@ export default function Workspace({ def, state, identity, preview, xray, setXray
           sub: actions.map((a) => {
             const av = a.options.map((o) => actionAvailability(def, state, a, o));
             const ok = av.some((x) => x.ok);
-            return { id: `action:${a.id}`, label: a.name, meta: ok ? daysLabel(a) : '', disabled: !ok, title: ok ? T(def, a.description) : av[0]?.reason, onClick: () => onAction(a.id) };
+            const cost = actionCost(def, a, [null]);
+            return { id: `action:${a.id}`, label: a.name, meta: ok ? `${daysLabel(a)}${cost ? ` · ${compact(def, cost)}` : ''}` : '', disabled: !ok, title: ok ? T(def, a.description) : av[0]?.reason, onClick: () => onAction(a.id) };
           }),
         },
       ],
@@ -118,9 +120,13 @@ export default function Workspace({ def, state, identity, preview, xray, setXray
       <StatCard icon="skill" label="Team skill" value={skillV} delta={vis === 'numbers' ? d('s') : null} deltaLabel="this week" sub={vis === 'hidden' ? 'Read it from what people say, or Assess' : null} className="nx-stats-team" />
       <StatCard icon="heart" tone="bad" label="Team morale" value={moraleV} delta={vis === 'numbers' ? d('m') : null} deltaLabel="this week" />
       <StatCard icon="chart" tone="cool" label="Team result" value={Math.round(avg.p)} delta={d('p')} deltaLabel="this week" />
-      <StatCard icon="money" tone="good" label="Revenue" value={compact(def, pr.revenue)} sub={`of ${compact(def, pr.target * def.funnel.valuePerConversion)} target`} className="nx-stat-revenue" onClick={() => onPanel('objective')}>
+      <StatCard icon="money" tone="good" label={pr.metric.label} value={compact(def, pr.metric.value)} sub={`of ${compact(def, pr.metric.target)} target`} className="nx-stat-revenue" onClick={() => onPanel('objective')}>
         <span className="nx-bar" style={{ marginTop: 6 }}><span style={{ width: `${Math.min(100, pr.achieved * 100)}%` }} /></span>
       </StatCard>
+      {(pr.metric.id === 'profit' || businessOf(def).showProfit !== false) && (
+        <StatCard icon="chart" tone="soft" label={pr.metric.id === 'profit' ? 'Revenue' : 'Operating profit'} value={compact(def, pr.metric.id === 'profit' ? pr.finance.revenue : pr.finance.operatingProfit)}
+          sub={`Team cost ${compact(def, pr.finance.teamCost)} · spent ${compact(def, pr.finance.actionSpend)}`} onClick={() => onPanel('objective')} />
+      )}
       {(def.decisions?.kpis || []).map((k) => <StatCard key={k.id} icon="objective" tone="soft" label={k.label} value={Math.round(state.dx.kpis[k.id] ?? k.start)} sub={k.note} />)}
     </>
   );
@@ -173,8 +179,8 @@ export default function Workspace({ def, state, identity, preview, xray, setXray
       </div>
       <ProgressStrip className="nx-play-strip"
         progress={pace} progressLabel="Quarter" bar={{ label: `${left} day${left === 1 ? '' : 's'} left this week`, value: today / dpw }}
-        count={{ icon: 'target', value: `${pr.conversions.toFixed(1)} / ${pr.target}` }} countLabel="Conversions"
-        status={status[0]} statusTone={status[1]} statusSub={`${Math.round(pr.achieved * 100)}% of target`}
+        count={{ icon: 'money', value: `${compact(def, pr.metric.value)} / ${compact(def, pr.metric.target)}` }} countLabel={pr.metric.label}
+        status={status[0]} statusTone={status[1]} statusSub={`${Math.round(pr.achieved * 100)}% of target · ${pr.conversions.toFixed(1)} of ${pr.target} conversions`}
         action={(
           <>
             <button type="button" className="nx-btn" onClick={onFastForward} title="Moves to Friday. Anything unanswered this week will pass without you.">Skip to Friday</button>

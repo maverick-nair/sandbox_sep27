@@ -10,6 +10,7 @@ import { downloadReport, fileSlug } from '../report/download.js';
 import '../report/report.css';
 
 const BAND = { strong: 'Landed well', mixed: 'Partly landed', weak: 'Did not land' };
+const fmt = (def, v) => `${v < 0 ? '−' : ''}${def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `}${Math.abs(Math.round(v)).toLocaleString('en')}`;
 
 export default function Debrief({ def, d, benchmark = [], leaderboard = [], delivery = {}, onReplay, onFinish, finished, mode, you, view: viewProp, onView }) {
   const [practice, setPractice] = useState({});
@@ -113,6 +114,14 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
       <section className="lx-card">
         <h2>Business impact</h2>
         <LineChart title="Conversions over the quarter" xLabels={d.cumulative.map((_, i) => `W${i + 1}`)} series={[{ label: 'You', color: SERIES[0], values: d.cumulative }, { label: 'On-track pace', color: SERIES[3], values: pace }]} reference={{ label: 'Target', value: def.funnel.target }} />
+        {d.progress.finance && (
+          <div className="lx-fin-row">
+            {[['Revenue', d.progress.finance.revenue], ['Gross profit', d.progress.finance.grossProfit], ['Team cost', -d.progress.finance.teamCost], ['Spent on actions', -d.progress.finance.actionSpend], ['Operating profit', d.progress.finance.operatingProfit]].map(([l, v]) => (
+              <div key={l} className={`lx-fin ${l === d.progress.metric?.label ? 'target' : ''}`}><span className="small muted">{l}{l === d.progress.metric?.label ? ' (your target)' : ''}</span><strong className="num">{fmt(def, v)}</strong></div>
+            ))}
+            <div className="lx-fin"><span className="small muted">Operating margin</span><strong className="num">{d.progress.finance.margin === null ? 'n/a' : `${Math.round(d.progress.finance.margin * 100)}%`}</strong></div>
+          </div>
+        )}
         <div className="lx-kpi-row">
           {[{ label: 'Team morale', start: d.team.start.m, end: d.team.end.m }, { label: 'Team performance', start: d.team.start.p, end: d.team.end.p }, ...d.kpis].map((k) => (
             <div key={k.label} className="lx-kpi-end">

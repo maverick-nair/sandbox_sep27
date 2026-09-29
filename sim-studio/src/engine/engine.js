@@ -5,6 +5,7 @@
 // an intended leadership style for every team member (the "leadership action"). During the week,
 // general actions cost days. Every elapsed day runs the sales funnel once.
 
+import { targetMetric, businessOf, actionCost } from './finance.js';
 import { createRng } from './rng.js';
 import { renderText } from './text.js';
 
@@ -97,6 +98,7 @@ export function createRun(def, { seed = Date.now() % 2147483647 } = {}) {
     actors,
     weeklyStyles: {},
     desiredAtWeekStart: {},
+    finance: { team: 0, actions: 0, byAction: {} },
     cooldowns: {},
     triggerCounts: {},
     funnel: { conversions: 0, stageTotals: def.stages.map(() => 0), daily: [] },
@@ -224,6 +226,12 @@ export function takeAction(def, state, request) {
   const week = weekOf(def, state.day);
   const entry = { day: state.day, week, actionId: action.id, optionId: option.id, style: option.style || null, targets: [...targets], results: [], teamMessage: '' };
   withRng(state, (rng) => MECHANICS[action.mechanic](def, state, action, option, targets, request, rng, entry));
+  entry.cost = actionCost(def, action, targets);
+  if (entry.cost) {
+    state.finance ||= { team: 0, actions: 0, byAction: {} };
+    state.finance.actions += entry.cost;
+    state.finance.byAction[action.id] = (state.finance.byAction[action.id] || 0) + entry.cost;
+  }
   state.log.actions.push(entry);
   if (option.cooldownDays) state.cooldowns[cooldownKey(action, option)] = state.day + option.cooldownDays;
   for (const r of entry.results) {
@@ -459,8 +467,11 @@ export function proceed(def, state) {
 // ---------- time, funnel, events ----------
 
 function advance(def, state, days) {
+  const perDay = businessOf(def).weeklyCostPerPerson / def.timeline.daysPerWeek;
   for (let i = 0; i < days; i++) {
     runFunnelDay(def, state);
+    state.finance ||= { team: 0, actions: 0, byAction: {} };
+    state.finance.team += teamIds(state).length * perDay;
     for (const id of teamIds(state)) state.actors[id].history[state.day] = state.actors[id].p;
     state.day += 1;
     if (state.day >= totalDays(def)) {
@@ -611,10 +622,16 @@ function applyTrigger(def, state, tr, id, rng) {
 
 export function progress(def, state) {
   const conversions = state.funnel.conversions;
+  const m = targetMetric(def, state);
   return {
     conversions,
     revenue: conversions * def.funnel.valuePerConversion,
     target: def.funnel.target,
-    achieved: def.funnel.target ? conversions / def.funnel.target : 0,
+    // Achievement is measured on the business metric the author chose (revenue or operating
+    // profit). For revenue it equals conversions against the conversions target.
+    achieved: m.achieved,
+    conversionShare: def.funnel.target ? conversions / def.funnel.target : 0,
+    metric: { id: m.id, label: m.label, short: m.short, value: m.value, target: m.target },
+    finance: m.finance,
   };
 }

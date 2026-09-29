@@ -11,6 +11,7 @@ import { defaultOnboarding, upgradeOnboarding } from './onboarding.js';
 import { defaultLook, defaultGame, DEFAULT_GOALS } from './look.js';
 import { DEFAULT_SCORING } from '../../engine/decisions.js';
 import { upgradeReport } from './report-defaults.js';
+import { defaultBusiness } from '../../engine/finance.js';
 
 export const STYLES = [
   { id: 'directing', name: 'Directing', legacy: 'Executor', skill: 'low', morale: 'low', color: 'var(--style-directing)' },
@@ -375,6 +376,7 @@ function buildDefinition() {
       walkthrough: legacy.walkthrough.map((w) => ({ title: w.title, text: w.text })),
     },
     timeline: { weeks: 12, daysPerWeek: 5, timeLimit: 90 },
+    business: defaultBusiness(),
     leadership: {
       styles: STYLES.map((s) => ({ ...s, definition: STYLE_DEFINITIONS[s.id] })),
       highThreshold: 70,
@@ -501,5 +503,6 @@ export function migrateDefinition(def) {
   if (d.timeline.timeLimit === undefined) d.timeline.timeLimit = d.timeline.weeks <= 6 ? 45 : d.timeline.weeks <= 8 ? 60 : 90;
   d.team.visibility ||= 'numbers';
   upgradeReport(d.report);
+  d.business = { ...defaultBusiness(), ...(d.business || {}), actionCosts: { ...defaultBusiness().actionCosts, ...(d.business?.actionCosts || {}) } };
   return d;
 }

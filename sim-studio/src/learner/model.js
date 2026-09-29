@@ -189,10 +189,11 @@ export function buildDebrief(def, state, identity = {}) {
   const team = { start: state.start, end: teamAverages(state) };
   const left = Object.values(state.actors).filter((a) => a.status === 'left').map((a) => a.name);
 
+  const what = pr.metric?.id === 'profit' ? 'your profit target' : 'your revenue target';
   const headline = pr.achieved >= 1
-    ? `You hit ${Math.round(pr.achieved * 100)}% of target${team.end.m >= team.start.m ? ', and the team is stronger than you found it.' : ', but the team paid for it.'}`
-    : pr.achieved >= 0.75 ? `You reached ${Math.round(pr.achieved * 100)}% of target. Close: a few moments decided the gap.`
-      : `You reached ${Math.round(pr.achieved * 100)}% of target. The quarter got away from you, and the debrief shows where.`;
+    ? `You hit ${Math.round(pr.achieved * 100)}% of ${what}${team.end.m >= team.start.m ? ', and the team is stronger than you found it.' : ', but the team paid for it.'}`
+    : pr.achieved >= 0.75 ? `You reached ${Math.round(pr.achieved * 100)}% of ${what}. Close: a few moments decided the gap.`
+      : `You reached ${Math.round(pr.achieved * 100)}% of ${what}. The quarter got away from you, and the debrief shows where.`;
 
   return {
     identity, headline, overall, progress: pr, report, competencies: comps, styles: report.styles, keyDecisions, story, criteria, best: best ? { title: say(def, state, best.p, best.p.title), text: best.a.answer?.text, score: best.a.score } : null,

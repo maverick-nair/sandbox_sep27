@@ -10,6 +10,7 @@ import { Face } from './look.jsx';
 import { Shell, TopChip, Profile, StatCard, HeroStage, ProgressStrip } from './Shell.jsx';
 import { minutesFor, LANG_NAMES, CompanyChapter, MissionChapter, FlowChapter, TeamChapter, ModelChapter, HowtoChapter, CustomChapter } from './Prologue.jsx';
 import { OPENING, briefingSteps } from '../templates/ilead/onboarding.js';
+import { businessOf, profitTarget, revenueTarget } from '../engine/finance.js';
 
 const t = (def, s, vars) => renderText(def, s || '', vars);
 const team = (def) => def.actors.filter((a) => a.pool === 'team');
@@ -64,7 +65,7 @@ export default function Briefing({ def, preview, saved, savedWeek, langs = ['en'
     <>
       <span className="nx-card-icon"><Icon name="flag" size={20} /></span>
       <strong>Your quarter</strong>
-      <p>{def.timeline.weeks} weeks · {team(def).length} people · {compact(def, value)} target. About {def.timeline.timeLimit || minutesFor(def)} minutes, saved as you go.</p>
+      <p>{def.timeline.weeks} weeks · {team(def).length} people · {compact(def, businessOf(def).metric === 'profit' ? profitTarget(def) : value)} {businessOf(def).metric === 'profit' ? 'operating profit' : 'revenue'} target. About {def.timeline.timeLimit || minutesFor(def)} minutes, saved as you go.</p>
     </>
   );
   const topBar = (
@@ -194,25 +195,30 @@ function ProductScreen({ def, ch }) {
 
 function TargetsScreen({ def, ch }) {
   const v = def.funnel.valuePerConversion;
-  const revenue = def.funnel.target * v;
+  const revenue = revenueTarget(def);
+  const b = businessOf(def);
+  const profit = profitTarget(def);
+  const profitRow = { h: `Operating profit: ${money(def, profit)}`, s: `${Math.round(b.grossMargin * 100)}% gross margin, less your team's cost and what you spend on actions` };
+  const revenueRow = { h: `Sales revenue: ${money(def, revenue)}` };
   const rows = [
-    { h: `Sales revenue: ${money(def, revenue)}` },
+    ...(b.metric === 'profit' ? [profitRow, revenueRow] : [revenueRow, ...(b.showProfit !== false ? [profitRow] : [])]),
     { h: `${def.funnel.target} sales conversions`, s: `1 conversion = ${money(def, v)}` },
     ...(def.story.goals || []).map((g) => ({ h: t(def, g) })),
   ];
+  const head = b.metric === 'profit' ? profit : revenue;
   return (
     <Hero def={def} kicker={KICKER.targets} title={<>Your targets<br />for the quarter.</>} lead={t(def, def.story.target || ch.lead)}
       stage={(
-        <HeroStage word={compact(def, revenue)} sub="Revenue target" plate={<><strong>{money(def, revenue)}</strong><span>by the end of week {def.timeline.weeks}</span></>} className="target">
+        <HeroStage word={compact(def, head)} sub={b.metric === 'profit' ? 'Operating profit target' : 'Revenue target'} plate={<><strong>{money(def, head)}</strong><span>{b.metric === 'profit' ? 'operating profit' : 'revenue'} by the end of week {def.timeline.weeks}</span></>} className="target">
           <TargetArt size={340} />
         </HeroStage>
       )}
       stats={(
         <>
-          <StatCard icon="money" label="Revenue target" value={compact(def, revenue)} sub={money(def, revenue)} />
+          <StatCard icon="money" label={b.metric === 'profit' ? 'Operating profit target' : 'Revenue target'} value={compact(def, head)} sub={b.metric === 'profit' ? `on ${compact(def, revenue)} revenue` : money(def, revenue)} />
+          {(b.metric === 'profit' || b.showProfit !== false) && <StatCard icon="chart" tone="good" label={b.metric === 'profit' ? 'Revenue to get there' : 'Operating profit'} value={compact(def, b.metric === 'profit' ? revenue : profit)} sub={`${Math.round(b.grossMargin * 100)}% gross margin`} />}
           <StatCard icon="target" tone="warm" label="Conversions" value={def.funnel.target} sub={`1 = ${money(def, v)}`} />
-          <StatCard icon="calendar" tone="cool" label="Duration" value={def.timeline.weeks} unit="weeks" />
-          {def.timeline.timeLimit ? <StatCard icon="clock" tone="bad" label="Simulation time" value={def.timeline.timeLimit} unit="minutes" /> : null}
+          <StatCard icon="calendar" tone="cool" label="Duration" value={def.timeline.weeks} unit="weeks" sub={def.timeline.timeLimit ? `${def.timeline.timeLimit} minutes to play` : null} />
         </>
       )}>
       <ol className="nx-targets">

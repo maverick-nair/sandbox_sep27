@@ -11,6 +11,7 @@ import { Icon, StatRing, Logo, TrophyArt, TargetArt, ProductArt } from './art.js
 import { Face } from './look.jsx';
 import { moodOf, trendOf, signalsFor, dayName, DAY_NAMES } from './model.js';
 import { Leaderboard } from './Debrief.jsx';
+import { profitTarget } from '../engine/finance.js';
 
 const T = (def, s, v) => renderText(def, s || '', v);
 const money = (def, v) => `${def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `}${Math.round(v).toLocaleString('en')}`;
@@ -313,9 +314,12 @@ export function ObjectivePanel({ def, state, onClose }) {
     <Side title="Your objective" onClose={onClose}>
       <div className="row nowrap" style={{ '--gap': '16px' }}><TargetArt size={110} /><ProductArt kind={def.look?.productArt} image={def.look?.productImage} size={90} /></div>
       <ol className="lx-targets">
-        <li><span className="lx-target-n">1</span><span>Sales revenue: <strong>{money(def, def.funnel.target * def.funnel.valuePerConversion)}</strong><small>{money(def, pr.revenue)} so far</small></span></li>
-        <li><span className="lx-target-n">2</span><span><strong>{def.funnel.target} conversions</strong> <small>(1 conversion = {money(def, def.funnel.valuePerConversion)}), {pr.conversions.toFixed(1)} so far</small></span></li>
-        {(def.story.goals || []).map((g, i) => <li key={i}><span className="lx-target-n">{i + 3}</span><span>{T(def, g)}</span></li>)}
+        {[
+          { h: <>{pr.metric.label}: <strong>{money(def, pr.metric.target)}</strong></>, s: `${money(def, pr.metric.value)} so far · your target` },
+          pr.metric.id === 'profit' ? { h: <>Sales revenue: <strong>{money(def, def.funnel.target * def.funnel.valuePerConversion)}</strong></>, s: `${money(def, pr.finance.revenue)} so far` } : { h: <>Operating profit: <strong>{money(def, profitTarget(def))}</strong></>, s: `${money(def, pr.finance.operatingProfit)} so far (team cost ${money(def, pr.finance.teamCost)}, spent ${money(def, pr.finance.actionSpend)})` },
+          { h: <strong>{def.funnel.target} conversions</strong>, s: `1 conversion = ${money(def, def.funnel.valuePerConversion)} · ${pr.conversions.toFixed(1)} so far` },
+          ...(def.story.goals || []).map((g) => ({ h: T(def, g) })),
+        ].map((r, i) => <li key={i}><span className="lx-target-n">{i + 1}</span><span>{r.h}{r.s && <small>{r.s}</small>}</span></li>)}
       </ol>
       <p className="small muted">Duration: {def.timeline.weeks} weeks{def.timeline.timeLimit ? ` · simulation time ${def.timeline.timeLimit} minutes` : ''}.</p>
     </Side>

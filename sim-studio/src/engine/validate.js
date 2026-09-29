@@ -1,5 +1,6 @@
 // Health check. Turns the rules an iLead developer used to know by heart into plain messages
 // with a place to go and, where it is safe, a one-click fix.
+import { businessOf, revenueTarget, profitTarget, suggestedProfitTarget } from './finance.js';
 import { collectTexts, unknownTokens, contextBoundItems } from './text.js';
 import { desiredStyle } from './engine.js';
 
@@ -203,6 +204,14 @@ export function validate(def) {
   // Game elements
   const lv = def.gamification?.levels || [];
   if (def.gamification?.xp !== false && lv.length && (lv[0].xp !== 0 || lv.some((l, i) => i && l.xp <= lv[i - 1].xp) || lv.some((l) => blank(l.name)))) add('error', 'game', 'Levels are out of order', 'Each level needs a name and more XP than the one before, and the first level starts at 0 XP.', { ref: { field: 'levels' }, code: 'game-levels' });
+  {
+    const b = businessOf(def);
+    const gp = revenueTarget(def) * b.grossMargin;
+    const teamCost = def.actors.filter((a) => a.pool === 'team').length * b.weeklyCostPerPerson * def.timeline.weeks;
+    if (!(b.grossMargin > 0 && b.grossMargin < 1)) add('error', 'funnel', 'Gross margin must be between 1% and 95%', 'Profit cannot be worked out without a margin.', { ref: { field: 'grossMargin' }, code: 'biz-margin' });
+    else if (b.metric === 'profit' && profitTarget(def) > (gp * 1.5 - teamCost)) add('warning', 'funnel', 'The profit target is out of reach', `Even at 150% of the conversions target, operating profit would be about ${Math.round(gp * 1.5 - teamCost).toLocaleString('en')}. Learners cannot hit it.`, { ref: { field: 'profitTarget' }, code: 'biz-profit-high' });
+    else if (b.metric === 'profit' && gp - teamCost <= 0) add('warning', 'funnel', 'The team loses money even at target', 'Operating profit is negative at the conversions target, so a profit target makes no sense.', { ref: { field: 'grossMargin' }, code: 'biz-loss' });
+  }
   const limit = def.timeline.timeLimit || 0;
   if (limit > 0 && limit < weeks * 4) add('warning', 'game', `A ${limit}-minute limit is tight for ${weeks} weeks`, 'Learners would run out of time before the quarter ends. Allow about 7 minutes a week.', { ref: { field: 'timeLimit' }, code: 'time-tight', data: { weeks } });
   if (def.team?.visibility === 'hidden' && !def.actions.some((a) => a.enabled && a.mechanic === 'assess')) add('warning', 'game', 'Skill and morale are hidden, and Assess member is off', 'Learners have no way to check anyone\'s skill and morale.', { ref: { field: 'visibility' }, code: 'hidden-no-assess' });
