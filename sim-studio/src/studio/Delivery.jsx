@@ -6,6 +6,7 @@ import { refKey } from '../templates/ilead/contextualize.js';
 import { ltiToolConfig, validatePlatform, PLATFORM_PRESETS, testLaunchContext } from '../delivery/lti.js';
 import { buildScormPackage, readZip } from '../delivery/scorm.js';
 import { downloadText } from './store.js';
+import { inlineImages } from './images.js';
 import { newId } from '../engine/authoring.js';
 import { Button, Callout, Field, NumberInput, Pill, Seg, Switch, TextInput, copyText } from './ui.jsx';
 import { useSample } from './Tailoring.jsx';
@@ -199,7 +200,7 @@ export function ScormCard({ sim, def, update, notify, live }) {
     if (!live) return;
     setBusy(true);
     try {
-      const bytes = await buildScormPackage(live.def, { simId: sim.id, version: live.version, title: live.def.meta.name });
+      const bytes = await buildScormPackage(await inlineImages(live.def), { simId: sim.id, version: live.version, title: live.def.meta.name });
       const check = readZip(bytes);
       const ok = ['imsmanifest.xml', 'index.html', 'simulation.json'].every((n) => check[n]?.ok);
       if (!ok) throw new Error('The package failed its own check.');

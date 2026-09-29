@@ -288,7 +288,7 @@ export function backupText(sims) {
 }
 // Resolves 'saved', 'declined' or 'unavailable'. Inside the claude.ai viewer, files go through its
 // downloads capability (the viewer confirms); elsewhere, a normal browser download.
-export async function downloadText(name, text) {
+export async function downloadText(name, text, type = 'application/json') {
   const c = typeof window !== 'undefined' ? window.claude : undefined;
   if (c?.use) {
     const downloads = await c.use('downloads').catch(() => null);
@@ -301,7 +301,7 @@ export async function downloadText(name, text) {
     }
   }
   try {
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const url = URL.createObjectURL(new Blob([text], { type }));
     const a = document.createElement('a');
     a.href = url;
     a.download = name;

@@ -20,10 +20,11 @@ npm run build:artifact   # single self-contained HTML in dist/sim-studio.html
 - **Create**: the author describes what they need; a three-step flow (describe it, check the basics, review the draft) infers the rest, asks only what it cannot tell, sets the interaction mix and lets the author change how each decision is answered. Built-in rules read the description everywhere; Genie reads it in the hosted version.
 - **Decision moments**: emails, chats, meetings, calls and business updates with five interaction types (single choice, multiple select, ranking, scenario, open response), a 70:30 structured to open mix by default, criteria-based evaluation of open answers (Genie or built-in), consequences, branching, variants, later consequences, spaced recall and reflections.
 - **Learner experience**: a cover and a six-part briefing (the organization, the mission, how work flows, the team on cards to turn over, the leadership model with a practice round, how the simulation works) before any decision, a planning deck, a guided first look at the workspace, then a workspace with an inbox, conversations and meetings, the team and live KPIs, a Monday plan and Friday wrap-up each week, rethinks, achievements and a full debrief with benchmarks and a leaderboard.
+- **Reports**: the learner's leadership report (competencies, objectives, adaptability, styles, consistency, actions, distribution of actions across the team, food for thought, takeaways) and the facilitator's group report against a benchmark, both modelled on the original iLead reports, switchable section by section and downloadable as HTML.
 - **Delivery**: individual and group play, cohorts with codes, LTI 1.3 configuration and test launches, SCORM 1.2 packages built in the browser, languages with Genie translation and review, and a Learners and results section with the group report and CSV export.
 - **Any country or a fictitious one**, with the 2 to 7 largest cities as choices or any city typed in.
 - **Hyper-contextualization**: describe the organization (industry, product or service, businesses or consumers, country and city); the Studio proposes tailored names, money, sales stages, story, events and people, each with its reason, at Light, Standard or Deep depth. Hand edits are protected on re-runs. Genie (hosted AI) rewrites anything the packs do not cover.
-- **Studio**: Overview, Story and context, Learner onboarding, Funnel and target, Team, Leadership model, Actions, Events, Decision moments, Report, Settings and delivery, Learners and results.
+- **Studio**: Overview, Story and context, Learner onboarding, Funnel and target, Team, Leadership model, Look and feel, Actions, Events, Decision moments, Game elements, Report, Settings and delivery, Learners and results.
 - **Show engine settings**: one toggle reveals every number the plain view hides.
 - **Health check**: runs on every change, with a suggested fix for every issue.
 - **Balance check**: four bot leaders and a synthetic learner cohort play seeded runs; charts show trajectories, every run, the score spread and how hard each decision is.
@@ -40,5 +41,6 @@ Simulations are kept in the browser's local storage. Learner results use the pag
 - `src/engine/decisions.js` and `nlp.js`: decision moments, consequences, branching, recall, achievements, scoring, and open-response evaluation.
 - `src/learner/`: the learner experience (player, moments, week plan and wrap-up, debrief, SCORM player).
 - `src/delivery/`: SCORM 1.2 packaging and runtime, LTI 1.3 configuration and score messages.
+- `src/report/`: the learner and group reports (SVG and CSS only, so a report saves as one HTML file). `src/engine/group.js` aggregates results and plays the synthetic benchmark.
 - `src/studio/`: React UI for authoring, delivery and results.
 - `tests/`: `node --test` suite.

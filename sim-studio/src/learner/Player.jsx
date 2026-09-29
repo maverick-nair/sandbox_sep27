@@ -15,6 +15,9 @@ import { ActionGrid, ActionComposer } from './ActionPanel.jsx';
 import Debrief from './Debrief.jsx';
 import Prologue, { Cover, chaptersOf, minutesFor, LANG_NAMES } from './Prologue.jsx';
 import Tour from './Tour.jsx';
+import { Hud, TeamFloor, ActionsDock, ProfileModal, FunnelPanel, ObjectivePanel, LeaderPanel, BadgesPanel, Confetti } from './Floor.jsx';
+import { LookProvider } from './look.jsx';
+import { levelOf } from '../templates/ilead/look.js';
 import { inboxOf, dayName, moodOf, trendOf, translateDef, buildDebrief, resultRecord, signalsFor, DAY_NAMES } from './model.js';
 
 const GENIE_EVAL_MS = 15000;
@@ -55,6 +58,11 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
   const [resultId, setResultId] = useState(null);
   const [tour, setTour] = useState(null); // step index of the first-time workspace tour
   const [toured, setToured] = useState(false);
+  const [preset, setPreset] = useState(null); // targets chosen from a profile
+  const [party, setParty] = useState(0); // confetti trigger
+  const [timeUp, setTimeUp] = useState(false);
+  const clock = useRef({ base: 0, since: Date.now() });
+  const [, tick] = useState(0);
   const inflight = useRef(false);
   const live = useRef(null); // the latest run, so async work never writes over newer state
   live.current = state;
@@ -62,7 +70,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
   // Autosave: a learner can close the tab and pick up where they left off.
   useEffect(() => {
     if (preview || stage === 'welcome' || stage === 'prologue' || !state) return undefined;
-    const t = setTimeout(() => writeSave(saveKey, { identity, stage, state, wrap, notes, finished, toured }), 400);
+    const t = setTimeout(() => writeSave(saveKey, { identity, stage, state, wrap, notes, finished, toured, elapsed: elapsedNow() }), 400);
     return () => clearTimeout(t);
   }, [preview, saveKey, identity, stage, state, wrap, notes, finished, toured]);
 
@@ -73,7 +81,24 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     for (const t of list) setTimeout(() => setToasts((x) => x.filter((y) => y.id !== t.id)), 4200);
   }, []);
 
+  // The session clock: runs only while playing, survives a reload.
+  const elapsedNow = () => clock.current.base + (clock.current.since ? (Date.now() - clock.current.since) / 1000 : 0);
+  useEffect(() => {
+    if (stage !== 'play') { clock.current = { base: elapsedNow(), since: null }; return undefined; }
+    if (!clock.current.since) clock.current = { base: clock.current.base, since: Date.now() };
+    if (!(def.timeline.timeLimit > 0)) return undefined;
+    const t = setInterval(() => {
+      tick((n) => n + 1);
+      if (!timeUp && def.timeline.timeLimit * 60 - elapsedNow() <= 0) setTimeUp(true);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [stage, def.timeline.timeLimit, timeUp]); // eslint-disable-line react-hooks/exhaustive-deps
+  const timeLeft = def.timeline.timeLimit > 0 ? def.timeline.timeLimit * 60 - elapsedNow() : null;
+  const endNow = () => { setTimeUp(false); setSelected(null); act((x) => { x.phase = 'ended'; return { ok: true }; }); };
+
   const start = (who) => {
+    clock.current = { base: 0, since: Date.now() };
+    setTimeUp(false);
     const seed = Math.floor(Math.random() * 1e9);
     const s = createRun(def, { seed });
     initDecisions(def, s);
@@ -93,6 +118,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     setNotes(saved.notes || '');
     setFinished(!!saved.finished);
     setToured(saved.toured ?? true);
+    clock.current = { base: saved.elapsed || 0, since: Date.now() };
     setStage(saved.stage === 'welcome' || saved.stage === 'prologue' ? 'play' : saved.stage);
   };
 
@@ -107,7 +133,20 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     setError('');
     const t = afterTime(def, next);
     const earned = checkAchievements(def, next);
+    const game = def.gamification || {};
+    const lvBefore = levelOf(game, live.current.dx.xp).index;
+    const lvAfter = levelOf(game, next.dx.xp);
+    const pBefore = progress(def, live.current).achieved;
+    const pAfter = progress(def, next).achieved;
+    next.dx.milestones ||= [];
+    const crossed = game.celebrations === false ? [] : [0.25, 0.5, 0.75, 1].filter((m) => pBefore < m && pAfter >= m && !next.dx.milestones.includes(m));
+    next.dx.milestones.push(...crossed);
+    const streakUp = game.streaks !== false && next.dx.streak >= 3 && next.dx.streak > (live.current.dx.streak || 0);
+    if ((lvAfter.index > lvBefore && game.xp !== false) || crossed.length || earned.length) setParty((n) => n + 1);
     toast([
+      ...(lvAfter.index > lvBefore && game.xp !== false ? [{ kind: 'achievement', title: `Level up: ${lvAfter.level.name}`, text: `Level ${lvAfter.index + 1} of ${lvAfter.count}. Keep reading your people well.` }] : []),
+      ...crossed.map((m) => ({ kind: 'milestone', title: m >= 1 ? 'Target reached!' : `${Math.round(m * 100)}% of your target`, text: m >= 1 ? 'You have hit the number the board set. Now see how far past it you can go.' : `${progress(def, next).conversions.toFixed(1)} of ${def.funnel.target} conversions so far.` })),
+      ...(streakUp ? [{ kind: 'streak', title: `${next.dx.streak} strong decisions in a row`, text: 'Streak bonus XP. Keep it going.' }] : []),
       ...t.landed.map((l) => ({ kind: 'consequence', title: l.title, text: l.text, effects: l.effects })),
       ...t.expired.map((e) => ({ kind: 'missed', title: 'A moment passed without you', text: e.reaction })),
       ...earned.map((id) => ({ kind: 'achievement', title: `Achievement: ${ACHIEVEMENTS.find((a) => a.id === id)?.label}`, text: ACHIEVEMENTS.find((a) => a.id === id)?.note })),
@@ -202,132 +241,149 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     const s = createRun(d, { seed: Math.floor(Math.random() * 1e9) });
     initDecisions(d, s);
     setIdentity((x) => ({ ...x, level }));
+    clock.current = { base: 0, since: Date.now() }; setTimeUp(false);
     setState(s); setWrap(null); setSelected(null); setFinished(false); setResultId(null); setRewind(null); setStage('play');
   };
 
   if (stage === 'welcome' || stage === 'prologue' || !state) {
     const langs = delivery.languages || ['en'];
     const ready = <ReadyForm def={def} identity={identity} delivery={delivery} preview={preview} onStart={start} />;
-    if (stage === 'prologue') return <Prologue def={def} preview={preview} onExit={onExit} onBack={() => setStage('welcome')} ready={ready} />;
+    if (stage === 'prologue') return <LookProvider def={def}><Prologue def={def} preview={preview} onExit={onExit} onBack={() => setStage('welcome')} ready={ready} /></LookProvider>;
     return (
-      <Cover def={def} saved={saved} savedWeek={saved ? Math.min(weekOf(authored, saved.state.day), authored.timeline.weeks) : 0} langs={langs} language={identity.language}
-        setLanguage={(l) => setIdentity((x) => ({ ...x, language: l }))} preview={preview} onExit={onExit} onResume={resume}
-        onBegin={() => setStage('prologue')} onSkip={() => start({ ...identity, name: identity.name || 'Author preview' })} />
+      <LookProvider def={def}>
+        <Cover def={def} saved={saved} savedWeek={saved ? Math.min(weekOf(authored, saved.state.day), authored.timeline.weeks) : 0} langs={langs} language={identity.language}
+          setLanguage={(l) => setIdentity((x) => ({ ...x, language: l }))} preview={preview} onExit={onExit} onResume={resume}
+          onBegin={() => setStage('prologue')} onSkip={() => start({ ...identity, name: identity.name || 'Author preview' })} />
+      </LookProvider>
     );
   }
 
   const rows = leaderboard.filter((r) => !identity.cohortId || r.cohortId === identity.cohortId);
+  const hudProps = { def, state, identity, preview, xray, setXray, onExit, timeLeft, onPanel: setPanel };
   if (stage === 'debrief' && debrief) {
     const you = resultId || 'you';
     const withYou = finished ? rows : [...rows, { id: 'you', name: identity.name, nickname: identity.nickname || identity.name || 'You', score: debrief.overall.score, parts: debrief.overall.parts, conversions: debrief.progress.conversions, xp: debrief.xp, group: identity.group?.name }];
     return (
-      <div className="lx-root">
-        <LxHeader def={def} state={state} identity={identity} preview={preview} xray={xray} setXray={setXray} onExit={onExit} ended />
-        <main className="lx-scroll"><Debrief def={def} d={debrief} benchmark={benchmark} leaderboard={withYou} delivery={delivery} onReplay={replay} onFinish={finish} finished={finished} mode={mode} you={you} /></main>
-      </div>
+      <LookProvider def={def}>
+        <div className="lx-root">
+          <Hud {...hudProps} onPanel={() => {}} ended timeLeft={null} />
+          <main className="lx-scroll"><Debrief def={def} d={debrief} benchmark={benchmark} leaderboard={withYou} delivery={delivery} onReplay={replay} onFinish={finish} finished={finished} mode={mode} you={you} /></main>
+        </div>
+        <Confetti run={party} />
+      </LookProvider>
     );
   }
 
   const inbox = inboxOf(def, state);
   const item = selected && inbox.find((i) => i.key === selected);
   const actionId = selected?.startsWith('action:') ? selected.slice(7) : null;
-  const person = panel?.startsWith('person:') ? state.actors[panel.slice(7)] : null;
+  const personId = panel?.startsWith('person:') ? panel.slice(7) : null;
   const pending = inbox.filter((i) => i.pending);
   const rewindsLeft = (def.learning?.rewinds ?? 2) - (state.dx.rewindsUsed || 0);
+  const liveYou = (() => {
+    const d = buildLiveScore(def, state);
+    return { id: 'you', name: identity.name, nickname: `${identity.nickname || identity.name || 'You'} (now)`, score: d.score, parts: d.parts, conversions: progress(def, state).conversions, xp: state.dx.xp };
+  })();
+  const sorted = [...rows, liveYou].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const rank = def.gamification?.liveRank !== false && rows.length ? { rank: sorted.findIndex((r) => r.id === 'you') + 1, of: sorted.length } : null;
+  const openAction = (aid, target) => { setPreset(target ? [target] : null); setPanel(null); setSelected(`action:${aid}`); setPane('now'); };
 
   return (
-    <div className="lx-root">
-      <LxHeader def={def} state={state} identity={identity} preview={preview} xray={xray} setXray={setXray} onExit={onExit} onNotebook={() => setPanel('notebook')} onGuide={() => setPanel('guide')} review={wrap?.week} />
-      <div className={`lx-work pane-${pane}`}>
-        <aside className="lx-inbox" aria-label="Inbox">
-          <div className="lx-pane-head"><strong>Inbox</strong>{pending.length > 0 && <span className="lx-count-pill">{pending.length} need you</span>}</div>
-          <ul>
-            {inbox.map((i) => (
-              <li key={i.key}>
-                <button type="button" className={`lx-inbox-item ${selected === i.key ? 'on' : ''} ${i.pending ? 'pending' : ''} tone-${i.tone || i.band || ''}`} onClick={() => { setSelected(i.key); setPane('now'); }}>
-                  <Avatar name={i.sender.name} size={32} />
-                  <span className="lx-inbox-text">
-                    <span className="row spread nowrap"><strong>{i.sender.name}</strong><span className="small muted">W{weekOf(def, i.day)} {dayName(def, i.day).slice(0, 3)}</span></span>
-                    <span className="lx-inbox-title">{i.title}</span>
-                    <span className="lx-inbox-preview">{i.preview}</span>
-                  </span>
-                  {i.pending && <span className="lx-dot" aria-label="Needs your reply" />}
-                  {i.band && <span className={`lx-band-dot ${i.band}`} aria-hidden="true" />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
+    <LookProvider def={def}>
+      <div className="lx-root" style={def.look?.brand ? { '--brand': def.look.brand } : undefined}>
+        <Hud {...hudProps} review={wrap?.week} rank={rank} />
+        <div className={`lx-work pane-${pane}`}>
+          <aside className="lx-inbox" aria-label="Inbox">
+            <div className="lx-pane-head"><strong>Inbox</strong>{pending.length > 0 && <span className="lx-count-pill">{pending.length} need you</span>}</div>
+            <ul>
+              {inbox.map((i) => (
+                <li key={i.key}>
+                  <button type="button" className={`lx-inbox-item ${selected === i.key ? 'on' : ''} ${i.pending ? 'pending' : ''} tone-${i.tone || i.band || ''}`} onClick={() => { setSelected(i.key); setPane('now'); }}>
+                    <Avatar name={i.sender.name} size={34} />
+                    <span className="lx-inbox-text">
+                      <span className="row spread nowrap"><strong>{i.sender.name}</strong><span className="small muted">W{weekOf(def, i.day)} {dayName(def, i.day).slice(0, 3)}</span></span>
+                      <span className="lx-inbox-title">{i.title}</span>
+                      <span className="lx-inbox-preview">{i.preview}</span>
+                    </span>
+                    {i.pending && <span className="lx-dot" aria-label="Needs your reply" />}
+                    {i.band && <span className={`lx-band-dot ${i.band}`} aria-hidden="true" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
 
-        <main className="lx-stage" aria-label="Now">
-          {error && <div className="lx-error" role="alert">{error}</div>}
-          {item?.kind === 'moment' ? (
-            <Moment key={`${item.dp.id}:${state.dx.answered[item.dp.id]?.attempts || 0}:${state.dx.rewindsUsed}`} def={def} state={state} dp={item.dp} answered={state.dx.answered[item.dp.id]} onSubmit={submitMoment} evaluating={evaluating} xray={xray} group={identity.group} hintsOn={def.learning?.hints !== false}
-              canRewind={!!rewind?.snap && rewind.dpId === item.dp.id && state.dx.answered[item.dp.id]?.band !== 'strong' && rewindsLeft > 0 && !state.dx.answered[item.dp.id]?.expired} rewindsLeft={rewindsLeft} onRewind={doRewind}
-              onBack={() => setSelected(null)} next={pending.find((p) => p.key !== item.key)} onNext={() => setSelected(pending.find((p) => p.key !== item.key)?.key || null)} />
-          ) : item ? (
-            <article className="lx-moment">
-              <header className="lx-moment-head"><div className="row nowrap" style={{ '--gap': '12px' }}><Avatar name={item.sender.name} size={42} /><div><div className="lx-from"><strong>{item.sender.name}</strong>{item.sender.role && <span className="muted"> · {item.sender.role}</span>}</div><div className="lx-subject">{item.title}</div></div></div></header>
-              <div className="lx-thread"><div className={`lx-bubble them ${item.kind === 'story' ? 'mail' : ''}`}><p>{item.text}</p></div></div>
-              <div className="row"><button type="button" className="btn ghost" onClick={() => setSelected(null)}>Back to today</button></div>
-            </article>
-          ) : actionId ? (
-            <ActionComposer def={def} state={state} action={def.actions.find((a) => a.id === actionId)} xray={xray} onCancel={() => setSelected(null)} onSubmit={doAction} />
-          ) : (
-            <Today def={def} state={state} pending={pending} onOpen={setSelected} onAction={(id) => setSelected(`action:${id}`)} onEndDay={endDay} onFastForward={fastForward} />
-          )}
-        </main>
+          <main className="lx-stage" aria-label="Now">
+            {error && <div className="lx-error" role="alert">{error}</div>}
+            {item?.kind === 'moment' ? (
+              <Moment key={`${item.dp.id}:${state.dx.answered[item.dp.id]?.attempts || 0}:${state.dx.rewindsUsed}`} def={def} state={state} dp={item.dp} answered={state.dx.answered[item.dp.id]} onSubmit={submitMoment} evaluating={evaluating} xray={xray} group={identity.group} hintsOn={def.learning?.hints !== false}
+                canRewind={!!rewind?.snap && rewind.dpId === item.dp.id && state.dx.answered[item.dp.id]?.band !== 'strong' && rewindsLeft > 0 && !state.dx.answered[item.dp.id]?.expired} rewindsLeft={rewindsLeft} onRewind={doRewind}
+                onBack={() => setSelected(null)} next={pending.find((p) => p.key !== item.key)} onNext={() => setSelected(pending.find((p) => p.key !== item.key)?.key || null)} />
+            ) : item ? (
+              <article className="lx-moment">
+                <button type="button" className="lx-back" onClick={() => setSelected(null)}><span aria-hidden="true">←</span> Team floor</button>
+                <header className="lx-moment-head"><div className="row nowrap" style={{ '--gap': '12px' }}><Avatar name={item.sender.name} size={46} /><div><div className="lx-from"><strong>{item.sender.name}</strong>{item.sender.role && <span className="muted"> · {item.sender.role}</span>}</div><div className="lx-subject">{item.title}</div></div></div></header>
+                <div className="lx-thread"><div className={`lx-bubble them ${item.kind === 'story' ? 'mail' : ''}`}><p>{item.text}</p></div></div>
+              </article>
+            ) : actionId ? (
+              <ActionComposer key={`${actionId}:${(preset || []).join()}`} def={def} state={state} action={def.actions.find((a) => a.id === actionId)} xray={xray} initialTargets={preset || []} onCancel={() => { setSelected(null); setPreset(null); }} onSubmit={(r) => { setPreset(null); doAction(r); }} />
+            ) : (
+              <TeamFloor def={def} state={state} identity={identity} xray={xray} pending={pending} onOpen={setSelected} onPerson={(id) => setPanel(`person:${id}`)} onEndDay={endDay} onFastForward={fastForward} />
+            )}
+          </main>
 
-        <aside className="lx-team" aria-label="Your team">
-          <div className="lx-pane-head"><strong>Your team</strong><span className="small muted">{teamIds(state).length} people</span></div>
-          <ul>
-            {def.stages.map((st) => (
-              <li key={st.id} className="lx-team-stage">
-                <span className="lx-team-stage-name">{st.name}</span>
-                {teamIds(state).filter((id) => state.actors[id].stage === st.id).map((id) => {
-                  const a = state.actors[id];
-                  const mood = moodOf(a.m);
-                  const tr = trendOf(def, state, id);
-                  return (
-                    <button key={id} type="button" className="lx-team-person" onClick={() => setPanel(`person:${id}`)}>
-                      <Avatar name={a.name} size={28} />
-                      <span className="grow" style={{ minWidth: 0 }}>
-                        <span className="lx-team-name">{a.name}</span>
-                        <span className="lx-team-meta"><span className="lx-perf"><span style={{ width: `${a.p}%` }} /></span> <span className="num">{Math.round(a.p)}</span> {tr === 'up' ? '▲' : tr === 'down' ? '▼' : ''} <span className={`lx-mood ${mood.tone}`}>{mood.label}</span></span>
-                      </span>
-                      {xray && <span className="lx-xray-tag">{def.leadership.styles.find((s) => s.id === desiredStyle(def, a.s, a.m))?.name?.slice(0, 3)}</span>}
-                    </button>
-                  );
-                })}
-              </li>
-            ))}
-          </ul>
-        </aside>
-      </div>
+          <ActionsDock def={def} state={state} onPick={(aid) => openAction(aid)} onFunnel={() => setPanel('funnel')} />
+        </div>
 
-      <nav className="lx-tabs" aria-label="Views">
-        {[['inbox', `Inbox${pending.length ? ` (${pending.length})` : ''}`], ['now', 'Now'], ['team', 'Team']].map(([id, l]) => <button key={id} type="button" className={pane === id ? 'on' : ''} onClick={() => setPane(id)}>{l}</button>)}
-      </nav>
+        <nav className="lx-tabs" aria-label="Views">
+          {[['inbox', `Inbox${pending.length ? ` (${pending.length})` : ''}`], ['now', 'Team floor'], ['team', 'Actions']].map(([id, l]) => <button key={id} type="button" className={pane === id ? 'on' : ''} onClick={() => setPane(id)}>{l}</button>)}
+        </nav>
 
-      {state.phase === 'weekStart' && !wrap && <WeekPlan def={def} state={state} onStart={startWeek} xray={xray} group={identity.group} />}
-      {tour !== null && state.phase === 'day' && !wrap && <Tour step={tour} onStep={setTour} onDone={endTour} />}
-      {wrap && <WrapUp key={wrap.week} def={def} state={state} wrap={wrap} onContinue={continueWrap} onUpdate={updateRun} />}
-      {person && <PersonPanel def={def} state={state} a={person} xray={xray} onClose={() => setPanel(null)} />}
-      {panel === 'notebook' && <Notebook def={def} state={state} notes={notes} setNotes={setNotes} onClose={() => setPanel(null)} />}
-      {panel === 'guide' && <Guide def={def} onClose={() => setPanel(null)} />}
-
-      <div className="lx-toasts" role="status" aria-live="polite">
-        {toasts.map((t) => (
-          <div key={t.id} className={`lx-toast ${t.kind}`}>
-            <button type="button" className="lx-toast-x" aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>×</button>
-            <strong>{t.title}</strong>
-            {t.text && <p>{t.text}</p>}
-            {t.effects && <EffectChips effects={t.effects} />}
+        {state.phase === 'weekStart' && !wrap && <WeekPlan def={def} state={state} onStart={startWeek} xray={xray} group={identity.group} />}
+        {tour !== null && state.phase === 'day' && !wrap && <Tour step={tour} onStep={setTour} onDone={endTour} />}
+        {wrap && <WrapUp key={wrap.week} def={def} state={state} wrap={wrap} onContinue={continueWrap} onUpdate={updateRun} />}
+        {personId && state.actors[personId] && <ProfileModal def={def} state={state} id={personId} xray={xray} onClose={() => setPanel(null)} onAction={openAction} />}
+        {panel === 'notebook' && <Notebook def={def} state={state} notes={notes} setNotes={setNotes} onClose={() => setPanel(null)} />}
+        {panel === 'guide' && <Guide def={def} onClose={() => setPanel(null)} />}
+        {panel === 'funnel' && <FunnelPanel def={def} state={state} onClose={() => setPanel(null)} />}
+        {panel === 'objective' && <ObjectivePanel def={def} state={state} onClose={() => setPanel(null)} />}
+        {panel === 'leaderboard' && <LeaderPanel def={def} rows={rows} you={liveYou} delivery={delivery} benchmark={benchmark} onClose={() => setPanel(null)} />}
+        {panel === 'badges' && <BadgesPanel def={def} state={state} onClose={() => setPanel(null)} />}
+        {timeUp && !wrap && state.phase !== 'ended' && (
+          <div className="lx-overlay" role="dialog" aria-modal="true" aria-label="Time is up">
+            <div className="lx-sheet lx-timeup">
+              <div className="lx-kicker">Simulation time</div>
+              <h2>Time is up</h2>
+              <p className="muted">The {def.timeline.timeLimit} minutes for this session have run out. Your quarter ends here and your debrief shows how far you got.</p>
+              <div className="lx-sheet-foot"><button type="button" className="btn primary lg" onClick={endNow}>See how the quarter went</button></div>
+            </div>
           </div>
-        ))}
+        )}
+
+        <div className="lx-toasts" role="status" aria-live="polite">
+          {toasts.map((t) => (
+            <div key={t.id} className={`lx-toast ${t.kind}`}>
+              <button type="button" className="lx-toast-x" aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>×</button>
+              <strong>{t.title}</strong>
+              {t.text && <p>{t.text}</p>}
+              {t.effects && <EffectChips effects={t.effects} />}
+            </div>
+          ))}
+        </div>
+        <Confetti run={party} />
       </div>
-    </div>
+    </LookProvider>
   );
+}
+
+// The score so far, as the debrief would compute it now: used for the live leaderboard.
+const liveCache = new WeakMap();
+function buildLiveScore(def, state) {
+  if (liveCache.has(state)) return liveCache.get(state);
+  let v;
+  try { v = buildDebrief(def, state, {}).overall; } catch { v = { score: 0, parts: {} }; }
+  liveCache.set(state, v);
+  return v;
 }
 
 function LxHeader({ def, state, identity, preview, xray, setXray, onExit, onNotebook, onGuide, ended, review }) {

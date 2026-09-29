@@ -757,13 +757,7 @@ function ScoringTab({ def, update }) {
         ))}
       </div>
 
-      <div className="card stack" style={{ '--gap': '8px' }}>
-        <h3>Game elements</h3>
-        <p className="small muted">They reward the behaviours the simulation teaches, never speed or guessing.</p>
-        <Switch checked={g.xp !== false} onChange={(v) => update((d) => { d.gamification = { ...g, xp: v }; })} label="Experience points for every decision, weighted by difficulty" />
-        <Switch checked={g.achievements !== false} onChange={(v) => update((d) => { d.gamification = { ...g, achievements: v }; })} label="Achievements for good leadership habits (reading the room, recovering from a mistake, recall)" />
-        <Switch checked={g.benchmarks !== false} onChange={(v) => update((d) => { d.gamification = { ...g, benchmarks: v }; })} label="Show the learner how they compare with others in the debrief" />
-      </div>
+      <Callout icon="i">XP, levels, badges, streaks, celebrations, the leaderboard during play and the session clock are set in Game elements.</Callout>
     </div>
   );
 }

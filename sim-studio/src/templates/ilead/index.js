@@ -7,8 +7,10 @@
 import legacy from './legacy-content.json' with { type: 'json' };
 import { fillMissingInsights, draftBio } from './insights.js';
 import { defaultDecisions, DEFAULT_LEARNING } from './decisions.js';
-import { defaultOnboarding } from './onboarding.js';
+import { defaultOnboarding, upgradeOnboarding } from './onboarding.js';
+import { defaultLook, defaultGame, DEFAULT_GOALS } from './look.js';
 import { DEFAULT_SCORING } from '../../engine/decisions.js';
+import { upgradeReport } from './report-defaults.js';
 
 export const STYLES = [
   { id: 'directing', name: 'Directing', legacy: 'Executor', skill: 'low', morale: 'low', color: 'var(--style-directing)' },
@@ -148,8 +150,19 @@ const TRIGGER_RULES = {
   'Team member complains': { kind: 'perfDeclining', weeks: 3, minDrop: 5, maxOccurrences: 2, effect: {} },
 };
 
+// Typos in the legacy report sheet, fixed as the template is built. The learner report speaks to
+// "you"; a few legacy strings were copied from the group report and still say "the group".
+const REPORT_FIXES = [
+  [/acheived/g, 'achieved'], [/oportunities/g, 'opportunities'], [/thouroughly/g, 'thoroughly'], [/Continously/g, 'Continuously'],
+  [/\bIts important/g, "It's important"], [/the that which/g, 'that which'], [/memebers/g, 'members'], [/Chose the right/g, 'Choose the right'],
+  [/mindframe/g, 'frame of mind'], [/Biases, even if it is unconscious can/g, 'Biases, even unconscious ones, can'],
+  [/which the group actually deployed/g, 'which you actually deployed'], [/which the group intended to deploy/g, 'which you intended to deploy'],
+  [/the group intended to deploy and that which they actually deployed/g, 'you intended to deploy and that which you actually deployed'],
+];
+const tidy = (t) => REPORT_FIXES.reduce((x, [a, b]) => x.replace(a, b), String(t ?? ''));
+
 function reportSection(page, section) {
-  return legacy.report.filter((r) => r.page === page && (section === undefined || r.section.trim() === section));
+  return legacy.report.filter((r) => r.page === page && (section === undefined || r.section.trim() === section)).map((r) => ({ ...r, text: tidy(r.text) }));
 }
 
 function buildReport() {
@@ -218,7 +231,7 @@ function buildReport() {
     if (r.kind === 'Section Answer' && questions.length) questions[questions.length - 1].a = r.text;
   });
   const takeaways = reportSection('Key Takeaways').filter((r) => r.kind !== 'Section Insight').map((r) => r.text);
-  return {
+  return upgradeReport({
     about: reportSection('About iLead', 'About iLead')[0]?.text || '',
     scoreScale: 3,
     competencies,
@@ -231,7 +244,7 @@ function buildReport() {
     foodForThought: questions,
     takeaways,
     sections: { competencies: true, objective: true, adaptability: true, styles: true, consistency: true, actions: true, foodForThought: true, takeaways: true },
-  };
+  });
 }
 
 function buildActors() {
@@ -293,7 +306,7 @@ export function createIleadDefinition() {
       def.meta.drafted.push(`bio:${a.id}`);
     }
   }
-  return def;
+  return withLook(def);
 }
 
 function buildDefinition() {
@@ -356,7 +369,7 @@ function buildDefinition() {
       briefing: legacy.briefing.slice(1),
       walkthrough: legacy.walkthrough.map((w) => ({ title: w.title, text: w.text })),
     },
-    timeline: { weeks: 12, daysPerWeek: 5 },
+    timeline: { weeks: 12, daysPerWeek: 5, timeLimit: 90 },
     leadership: {
       styles: STYLES.map((s) => ({ ...s, definition: STYLE_DEFINITIONS[s.id] })),
       highThreshold: 70,
@@ -377,7 +390,7 @@ function buildDefinition() {
       currency: 'USD',
       target: 45,
     },
-    team: { maxSize: 12 },
+    team: { maxSize: 12, visibility: 'numbers' },
     actors: buildActors(),
     actions: buildActions(),
     events: buildEvents(),
@@ -399,10 +412,16 @@ function buildDefinition() {
     decisions: defaultDecisions(),
     learning: JSON.parse(JSON.stringify(DEFAULT_LEARNING)),
     scoring: { ...DEFAULT_SCORING },
-    gamification: { xp: true, achievements: true, benchmarks: true },
+    gamification: defaultGame(),
     translations: {},
     onboarding: defaultOnboarding(),
   };
+}
+
+function withLook(def) {
+  def.look = defaultLook(def);
+  def.story.goals ||= [...DEFAULT_GOALS];
+  return def;
 }
 
 export const ILEAD_TEMPLATE = {
@@ -467,8 +486,15 @@ export function migrateDefinition(def) {
   }
   d.learning ||= JSON.parse(JSON.stringify(DEFAULT_LEARNING));
   d.scoring ||= { ...DEFAULT_SCORING };
-  d.gamification ||= { xp: true, achievements: true, benchmarks: true };
+  d.gamification = { ...defaultGame(), ...(d.gamification || {}) };
+  if (!d.gamification.levels?.length) d.gamification.levels = defaultGame().levels;
   d.translations ||= {};
   d.onboarding ||= defaultOnboarding();
+  upgradeOnboarding(d.onboarding);
+  d.look = { ...defaultLook(d), ...(d.look || {}) };
+  d.story.goals ||= [...DEFAULT_GOALS];
+  if (d.timeline.timeLimit === undefined) d.timeline.timeLimit = d.timeline.weeks <= 6 ? 45 : d.timeline.weeks <= 8 ? 60 : 90;
+  d.team.visibility ||= 'numbers';
+  upgradeReport(d.report);
   return d;
 }

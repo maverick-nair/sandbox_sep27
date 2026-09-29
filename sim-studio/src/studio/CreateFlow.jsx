@@ -19,6 +19,9 @@ import { writeFlowDraft } from './store.js';
 import { clone } from '../engine/clone.js';
 import { INTERACTION_TYPES, CHANNELS, mixOf, textVars } from '../engine/decisions.js';
 import { MixMeter } from './sections/Decisions.jsx';
+import { artKindFor } from '../engine/art-kind.js';
+import { Portrait, ProductArt, PRODUCT_ART, SCENES, sceneBackground, Logo } from '../learner/art.jsx';
+import { addImage } from './images.js';
 
 const STEPS = [
   { id: 'describe', label: 'Describe it', short: 'Describe' },
@@ -31,7 +34,7 @@ const OLD_STEP = [0, 1, 2, 2, 2, 2];
 const LENGTH_OF = Object.fromEntries(SESSION_LENGTHS.map((l) => [l.id, l]));
 const GENIE_TIMEOUT_MS = 20000;
 const EMPTY_BRIEF = { instructions: '', outcomes: [], outcomeText: '', constraints: '', chips: [] };
-const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null, openMix: 30, dpTypes: {}, obOff: [] };
+const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null, openMix: 30, dpTypes: {}, obOff: [], scene: 'boardroom', productArt: null, logo: '', productImage: '', lookVariant: 0 };
 const DRIVERS = ['orgName', 'industry', 'customIndustry', 'offeringType', 'customerType', 'country', 'customCountry', 'city'];
 const briefText = (b) => [b.instructions, b.outcomeText, b.constraints, ...(b.outcomes || []), ...(b.chips || [])].join('|');
 
@@ -124,6 +127,13 @@ export default function CreateFlow({ templateId, resume, onCancel, onCreate }) {
     if (settings.currency) def.funnel.currency = settings.currency;
     if (settings.target) def.funnel.target = settings.target;
     for (const c of def.onboarding?.chapters || []) if ((settings.obOff || []).includes(c.id)) c.enabled = false;
+    if (def.look) {
+      def.look.productArt = settings.productArt || artKindFor([profile.offeringCategory, profile.offeringName, profile.customIndustry, profile.industry].join(' '));
+      def.look.scene = settings.scene || 'boardroom';
+      if (settings.logo) def.look.logo = settings.logo;
+      if (settings.productImage) def.look.productImage = settings.productImage;
+      if (settings.lookVariant) def.look.portraitVariant = Object.fromEntries([...def.actors.map((a) => a.id), 'ceo'].map((id) => [id, settings.lookVariant]));
+    }
     const dec = TEMPLATES[templateId]?.decisions;
     if (def.decisions && dec) {
       const mix = settings.openMix ?? 30;
@@ -660,6 +670,7 @@ const TABS = [
   { id: 'story', label: 'Story' },
   { id: 'team', label: 'Team' },
   { id: 'events', label: 'Events' },
+  { id: 'look', label: 'Look' },
   { id: 'decisions', label: 'Decisions' },
   { id: 'fairness', label: 'Target' },
 ];
@@ -767,6 +778,41 @@ function ReviewStep({ draft, profile, settings, setS, overrides, found, calibrat
           </div>
           {events.map((e) => <EventRow key={e.id} draft={draft} ev={e} edited={overrides[`ref:${refKey({ eventId: e.id })}`]?.by === 'you'} onSave={(v) => editText({ eventId: e.id }, v)} />)}
           <p className="small muted">Plus {draft.triggers.filter((t) => t.enabled).length} consequences that follow from the learner's own decisions, such as a resignation after poor leadership.</p>
+        </div>
+      )}
+
+      {tab === 'look' && draft.look && (
+        <div className="card stack">
+          <div>
+            <h3>How it looks to learners</h3>
+            <p className="small muted">Every person gets an illustrated portrait, and the product and scene are chosen from what the team sells. Add your client's logo and product image now, or later in the Studio under Look and feel.</p>
+          </div>
+          <div className="look-preview" style={{ background: sceneBackground(draft.look.scene), '--brand': draft.look.brand }}>
+            <div className="look-preview-card">
+              <div className="row nowrap" style={{ '--gap': '10px' }}><Logo def={draft} look={draft.look} size={40} /><span className="look-kicker">{renderText(draft, '{{company}} · {{city}}')}</span></div>
+              <strong className="look-title">{renderText(draft, 'Lead the {{product}} team at {{company}}')}</strong>
+            </div>
+            <div className="look-preview-faces"><ProductArt kind={draft.look.productArt} image={draft.look.productImage} size={90} /></div>
+          </div>
+          <div className="grid cols-2">
+            <Field label="Scene">
+              <select className="select" value={settings.scene || 'boardroom'} onChange={(e) => setS({ scene: e.target.value })}>{Object.entries(SCENES).map(([id, l]) => <option key={id} value={id}>{l}</option>)}</select>
+            </Field>
+            <Field label="Product picture">
+              <select className="select" value={draft.look.productArt} onChange={(e) => setS({ productArt: e.target.value })}>{Object.entries(PRODUCT_ART).map(([id, l]) => <option key={id} value={id}>{l}</option>)}</select>
+            </Field>
+          </div>
+          <div className="row">
+            <label className="btn sm">{settings.logo ? 'Replace logo' : 'Add a logo'}<input type="file" accept="image/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { const r = await addImage(f, 'logo'); setS({ logo: r.url }); } catch { /* not an image */ } }} /></label>
+            <label className="btn sm">{settings.productImage ? 'Replace product image' : 'Add a product image'}<input type="file" accept="image/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { const r = await addImage(f, 'product'); setS({ productImage: r.url }); } catch { /* not an image */ } }} /></label>
+            <Button size="sm" variant="ghost" onClick={() => setS({ lookVariant: (settings.lookVariant || 0) + 1 })}>Different portraits</Button>
+          </div>
+          <div className="portrait-strip">
+            {[renderText(draft, '{{ceo}}'), ...draft.actors.filter((a) => a.pool === 'team').map((a) => a.name)].map((n, k) => {
+              const a = draft.actors.find((x) => x.name === n);
+              return <span key={n} className="portrait-chip"><Portrait name={n} pronoun={a?.pronoun || 'he'} variant={settings.lookVariant || 0} size={56} shape="square" /><span className="small">{k === 0 ? 'CEO' : n.split(' ')[0]}</span></span>;
+            })}
+          </div>
         </div>
       )}
 

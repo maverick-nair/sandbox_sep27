@@ -88,6 +88,7 @@ export function newId(prefix) {
 // Writes a string back to the place collectTexts() found it (used by the rewrite list).
 export function setTextAt(def, ref, value) {
   if (ref.field === 'briefing') def.story.briefing[ref.index] = value;
+  else if (ref.field === 'goals') def.story.goals[ref.index] = value;
   else if (ref.field === 'walkthrough') def.story.walkthrough[ref.index].text = value;
   else if (ref.chapterId) {
     const c = def.onboarding.chapters.find((x) => x.id === ref.chapterId);

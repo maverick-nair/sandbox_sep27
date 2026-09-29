@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Portrait } from '../../learner/art.jsx';
 import { desiredStyle } from '../../engine/engine.js';
 import { styleMix, newId } from '../../engine/authoring.js';
 import { Button, Callout, Drawer, Field, NumberInput, SectionHead, SMP, StylePill, TextInput, TokenArea, Seg } from '../ui.jsx';
 
-export default function Team({ def, update, focus }) {
+export default function Team({ def, update, focus, go }) {
   const [editing, setEditing] = useState(focus?.actorId || null);
   const [showPool, setShowPool] = useState(false);
   const team = def.actors.filter((a) => a.pool === 'team');
@@ -77,7 +78,7 @@ export default function Team({ def, update, focus }) {
         </div>
       </section>
 
-      {actor && <ActorEditor def={def} actor={actor} update={update} onClose={() => setEditing(null)} />}
+      {actor && <ActorEditor def={def} actor={actor} update={update} go={go} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -140,7 +141,7 @@ function DiagnosisMap({ def, people, onPick }) {
   );
 }
 
-function ActorEditor({ def, actor, update, onClose }) {
+function ActorEditor({ def, actor, update, onClose, go }) {
   const [confirm, setConfirm] = useState(false);
   const set = (fn) => update((d) => fn(d.actors.find((a) => a.id === actor.id)));
   return (
@@ -169,7 +170,14 @@ function ActorEditor({ def, actor, update, onClose }) {
           <TextInput label="Joined" value={actor.joined} onChange={(v) => set((a) => { a.joined = v; })} placeholder="e.g. 2 years ago" />
           <TextInput label="Experience" value={actor.experience} onChange={(v) => set((a) => { a.experience = v; })} />
         </div>
-        <TextInput label="Domain skills" value={actor.domain} onChange={(v) => set((a) => { a.domain = v; })} />
+        <div className="grid cols-2">
+          <TextInput label="Domain skills" value={actor.domain} onChange={(v) => set((a) => { a.domain = v; })} />
+          <TextInput label="Previous company" value={actor.previousCompany || ''} onChange={(v) => set((a) => { a.previousCompany = v; })} placeholder="e.g. {{rival}}, or leave empty" />
+        </div>
+        <div className="row nowrap" style={{ '--gap': '12px' }}>
+          <Portrait name={actor.name} pronoun={actor.pronoun} photo={def.look?.photos?.[actor.id]} variant={def.look?.portraitVariant?.[actor.id] || 0} size={56} shape="square" />
+          <span className="small muted">Portrait shown to learners. Change it, or upload a photo, in <button type="button" className="link-btn" onClick={() => go?.('look')}>Look and feel</button>.</span>
+        </div>
         <TokenArea def={def} label="Background" rows={3} value={actor.bio} onChange={(v) => set((a) => { a.bio = v; })} hint="Learners read this when they click the person. Hint at their skill and morale without giving numbers." />
         <div className="stack" style={{ '--gap': '8px' }}>
           <h3>Values by stage</h3>

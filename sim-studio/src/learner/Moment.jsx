@@ -5,8 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { CHANNELS, situationText, say, senderOf, conditionMet, textVars } from '../engine/decisions.js';
 import { stageName, desiredStyle } from '../engine/engine.js';
 import { shuffled, rankStart, avatarColor, initials, dayName } from './model.js';
+import { useLook, Face } from './look.jsx';
 
-export function Avatar({ name, size = 36, color }) {
+export function Avatar({ name, size = 36, color, mood }) {
+  const ctx = useLook();
+  if (ctx && (ctx.people.has(name) || !color)) return <Face name={name} size={size} mood={mood} />;
   return <span className="lx-avatar" style={{ width: size, height: size, fontSize: size * 0.38, background: color || avatarColor(name) }} aria-hidden="true">{initials(name)}</span>;
 }
 
@@ -36,7 +39,7 @@ export default function Moment({ def, state, dp, answered, onSubmit, evaluating,
 
   return (
     <article className={`lx-moment ch-${dp.channel}`} aria-label={title}>
-      {onBack && <button type="button" className="lx-back" onClick={onBack} disabled={evaluating}><span aria-hidden="true">←</span> Today</button>}
+      {onBack && <button type="button" className="lx-back" onClick={onBack} disabled={evaluating}><span aria-hidden="true">←</span> Team floor</button>}
       <header className="lx-moment-head">
         {dp.channel === 'meeting' || dp.channel === 'call' ? (
           <div className="lx-room">
@@ -236,10 +239,10 @@ function Answered({ def, state, dp, a, sender, onRewind, canRewind, rewindsLeft,
         <div className="lx-next">
           {next ? (
             <>
-              {onBack && <button type="button" className="btn ghost" onClick={onBack}>Back to today</button>}
+              {onBack && <button type="button" className="btn ghost" onClick={onBack}>Back to the team floor</button>}
               <button type="button" className="btn primary" onClick={onNext}>Next: {next.title} <span aria-hidden="true">→</span></button>
             </>
-          ) : <button type="button" className="btn primary" onClick={onBack}>Back to today <span aria-hidden="true">→</span></button>}
+          ) : <button type="button" className="btn primary" onClick={onBack}>Back to the team floor <span aria-hidden="true">→</span></button>}
         </div>
       )}
     </div>

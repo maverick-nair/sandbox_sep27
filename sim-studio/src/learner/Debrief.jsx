@@ -1,13 +1,28 @@
 // The end of the quarter: what happened, why, and what to do next. Scores and badges support the
 // story; they do not replace it.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { LineChart, Histogram, BarList, Ring, SERIES } from '../studio/charts.jsx';
 import { Avatar } from './Moment.jsx';
+import { TrophyArt } from './art.jsx';
+import { levelOf } from '../templates/ilead/look.js';
+import LeadershipReport from '../report/LeadershipReport.jsx';
+import { downloadReport, fileSlug } from '../report/download.js';
+import '../report/report.css';
 
 const BAND = { strong: 'Landed well', mixed: 'Partly landed', weak: 'Did not land' };
 
 export default function Debrief({ def, d, benchmark = [], leaderboard = [], delivery = {}, onReplay, onFinish, finished, mode, you }) {
   const [practice, setPractice] = useState({});
+  const [view, setView] = useState('quarter');
+  const [saved, setSaved] = useState('');
+  const reportRef = useRef(null);
+  const today = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  const saveReport = async () => {
+    setSaved('');
+    const title = `${def.meta?.name || 'iLead'} leadership report${d.identity?.name ? `, ${d.identity.name}` : ''}`;
+    const r = await downloadReport(reportRef.current, title, `${fileSlug(def.meta?.name || 'ilead')}-report${d.identity?.name ? `-${fileSlug(d.identity.name)}` : ''}`);
+    setSaved(r === 'saved' ? 'Report saved. Open it in any browser; print it to keep a PDF.' : r === 'declined' ? 'Download cancelled.' : 'Downloads are not available here.');
+  };
   const weeks = def.timeline.weeks;
   const pace = Array.from({ length: weeks }, (_, i) => Math.round((def.funnel.target * (i + 1) / weeks) * 10) / 10);
   const bins = useMemo(() => {
@@ -20,16 +35,42 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
   const tier = d.overall.tier;
   const recallQs = d.reinforce.map((c) => c.id);
 
+  const tabs = (
+    <div className="lx-debrief-tabs" role="tablist" aria-label="Debrief views">
+      {[['quarter', 'Your quarter'], ['report', 'Leadership report']].map(([id, l]) => <button key={id} type="button" role="tab" aria-selected={view === id} className={`lx-dtab ${view === id ? 'on' : ''}`} onClick={() => setView(id)}>{l}</button>)}
+      <span className="grow" />
+      {view === 'report' && <button type="button" className="btn" onClick={saveReport}>Download my report</button>}
+    </div>
+  );
+
+  if (view === 'report') {
+    return (
+      <div className="lx-debrief">
+        {tabs}
+        {saved && <p className="small muted" role="status">{saved}</p>}
+        <LeadershipReport ref={reportRef} def={def} report={d.report} name={d.identity?.name} date={today} />
+        <div className="lx-debrief-foot">
+          <button type="button" className="btn" onClick={() => setView('quarter')}>Back to your quarter</button>
+          <button type="button" className="btn" onClick={saveReport}>Download my report</button>
+          {!finished && <button type="button" className="btn primary lg" onClick={onFinish}>{mode === 'preview' ? 'Close preview' : 'Finish and save my result'}</button>}
+          {finished && <span className="lx-chip up">Result saved</span>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="lx-debrief">
+      {tabs}
       <section className="lx-hero-debrief">
+        <div className="lx-hero-trophy"><TrophyArt size={110} tier={tier.id} /></div>
         <div className="grow">
           <div className="lx-kicker">End of the quarter{d.identity?.name ? ` · ${d.identity.name}` : ''}</div>
           <h1>{d.headline}</h1>
           <p className="ink2">{d.progress.conversions.toFixed(1)} of {d.progress.target} conversions · team morale {Math.round(d.team.start.m)} → {Math.round(d.team.end.m)}{d.left.length ? ` · ${d.left.join(', ')} left the team` : ' · nobody left the team'}</p>
           <div className="row" style={{ marginTop: 10 }}>
             <span className={`lx-tier ${tier.id}`}>{tier.label}</span>
-            {def.gamification?.xp !== false && <span className="lx-chip">{d.xp} XP</span>}
+            {def.gamification?.xp !== false && <span className="lx-chip">Level {levelOf(def.gamification, d.xp).index + 1}: {levelOf(def.gamification, d.xp).level.name} · {d.xp} XP</span>}
             {percentile !== null && <span className="lx-chip">Better than {percentile}% of practice runs</span>}
           </div>
         </div>
@@ -44,6 +85,14 @@ export default function Debrief({ def, d, benchmark = [], leaderboard = [], deli
           { label: 'Quality of your decisions', value: d.overall.parts.decisions, note: `Weight ${d.overall.weights.decisions}%` },
           { label: 'Recall of key ideas', value: d.overall.parts.recall, note: `Weight ${d.overall.weights.recall}%` },
         ]} />
+      </section>
+
+      <section className="lx-card lx-report-teaser">
+        <div className="grow">
+          <h2>Your leadership report</h2>
+          <p className="small ink2">Your five competencies, how adaptable you were, your style profile, how consistent you were and where your time went, person by person. Download it to keep.</p>
+        </div>
+        <button type="button" className="btn primary" onClick={() => { setView('report'); if (typeof window !== 'undefined') window.scrollTo?.({ top: 0 }); }}>Open my report</button>
       </section>
 
       <section className="lx-card">

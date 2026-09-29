@@ -461,6 +461,33 @@ function suggest(def, issue, draft) {
         apply: (x, v) => { x.funnel.valuePerConversion = Math.max(1, Number(v.value)); },
       };
     }
+    case 'game-levels':
+      return {
+        summary: 'Put the levels in order, starting at 0 XP',
+        note: 'Levels are sorted by XP; duplicates are spaced out and unnamed levels get a name.',
+        fields: [],
+        apply: (x) => {
+          const l = [...(x.gamification.levels || [])].sort((a, b) => a.xp - b.xp).map((y, i) => ({ name: String(y.name || '').trim() || `Level ${i + 1}`, xp: Number(y.xp) || 0 }));
+          l[0].xp = 0;
+          for (let i = 1; i < l.length; i++) if (l[i].xp <= l[i - 1].xp) l[i].xp = l[i - 1].xp + 40;
+          x.gamification.levels = l;
+        },
+      };
+    case 'time-tight': {
+      const m = d.weeks <= 6 ? 45 : d.weeks <= 8 ? 60 : 90;
+      return {
+        summary: `Allow ${m} minutes`,
+        fields: [{ key: 'm', label: 'Time limit (minutes)', type: 'number', value: m, min: 10, max: 600 }, { key: 'off', label: 'No time limit instead', type: 'toggle', value: false }],
+        apply: (x, v) => { x.timeline.timeLimit = v.off ? 0 : Math.max(10, Math.round(Number(v.m))); },
+      };
+    }
+    case 'hidden-no-assess':
+      return {
+        summary: 'Switch on Assess member',
+        note: 'Or show skill and morale as low, medium or high instead.',
+        fields: [{ key: 'bands', label: 'Show low, medium, high instead', type: 'toggle', value: false }],
+        apply: (x, v) => { if (v.bands) x.team.visibility = 'bands'; else { const a = x.actions.find((y) => y.mechanic === 'assess'); if (a) a.enabled = true; } },
+      };
     case 'ob-off':
       return {
         summary: 'Switch the standard briefing on',

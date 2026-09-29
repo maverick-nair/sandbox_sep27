@@ -88,6 +88,7 @@ export function collectTexts(def) {
   add('story', 'Target message', def.story.target, { field: 'target' });
   def.story.briefing.forEach((p, i) => add('story', `Briefing paragraph ${i + 1}`, p, { field: 'briefing', index: i }));
   def.story.walkthrough.forEach((w, i) => add('story', `Tour step: ${w.title}`, w.text, { field: 'walkthrough', index: i }));
+  (def.story.goals || []).forEach((g, i) => add('onboarding', `Target goal ${i + 1}`, g, { field: 'goals', index: i }));
   def.stages.forEach((s) => add('funnel', `Stage: ${s.name}`, s.description, { stageId: s.id }));
   def.actors.forEach((a) => add('team', `Profile: ${a.name}`, a.bio, { actorId: a.id }));
   def.actions.forEach((a) => {

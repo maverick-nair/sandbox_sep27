@@ -306,6 +306,11 @@ export function resolveDecision(def, state, dp, answer, opts = {}) {
   state.dx.answered[dp.id] = entry;
   const lvl = dp.level || 1;
   state.dx.xp += opts.expired ? 0 : Math.round((res.score / 10) * lvl);
+  // Streaks: consecutive strong decisions earn a small bonus; anything else resets the run.
+  state.dx.streak = res.band === 'strong' && !opts.expired ? (state.dx.streak || 0) + 1 : 0;
+  state.dx.bestStreak = Math.max(state.dx.bestStreak || 0, state.dx.streak);
+  if (state.dx.streak >= 3 && def.gamification?.streaks !== false) state.dx.xp += Math.min(15, 5 * (state.dx.streak - 2));
+  entry.streak = state.dx.streak;
   const sender = senderOf(def, state, dp);
   if (entry.reaction) pushFeed(state, { kind: 'reply', title: opts.expired ? `${dp.title}: no reply from you` : `${sender.name} replied`, text: entry.reaction, dpId: dp.id, tone: res.band === 'strong' ? 'good' : res.band === 'weak' ? 'bad' : 'mixed', actorId: sender.actorId });
   return entry;
@@ -418,6 +423,7 @@ export function addReflection(def, state, prompt, text) {
 
 export const ACHIEVEMENTS = [
   { id: 'first-call', label: 'First call', note: 'Answered your first moment.' },
+  { id: 'on-a-roll', label: 'On a roll', note: 'Three strong decisions in a row.' },
   { id: 'read-the-room', label: 'Read the room', note: 'Chose the right style for at least 8 people in one week.' },
   { id: 'straight-talker', label: 'Straight talker', note: 'A strong written response in a difficult conversation.' },
   { id: 'comeback', label: 'Comeback', note: 'Rethought a decision and got a strong result.' },
@@ -435,6 +441,7 @@ export function checkAchievements(def, state) {
   const give = (id) => { if (!has.has(id)) { has.add(id); dx.achievements.push(id); dx.xp += 15; earned.push(id); } };
   const answered = Object.values(dx.answered).filter((a) => !a.expired);
   if (answered.length) give('first-call');
+  if ((dx.bestStreak || 0) >= 3) give('on-a-roll');
   const byWeek = {};
   for (const i of state.log.intents) (byWeek[i.week] ||= []).push(i);
   if (Object.values(byWeek).some((list) => list.filter((i) => i.diff === 0).length >= 8)) give('read-the-room');

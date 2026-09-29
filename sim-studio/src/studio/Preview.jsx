@@ -6,7 +6,8 @@ import {
 import { computeReport } from '../engine/report.js';
 import { renderText } from '../engine/text.js';
 import { Button, Callout, Pill, StylePill, Switch, Tip } from './ui.jsx';
-import { ReportView } from './sections/Report.jsx';
+import LeadershipReport from '../report/LeadershipReport.jsx';
+import '../report/report.css';
 import { clone } from '../engine/clone.js';
 
 const rag = (def, v) => (v < def.leadership.rag.red ? 'var(--bad)' : v < def.leadership.rag.green ? 'var(--warn)' : 'var(--good)');
@@ -84,8 +85,7 @@ export default function Preview({ def, onClose }) {
           {state.phase === 'day' && <Day def={def} state={state} xray={xray} act={act} />}
           {state.phase === 'ended' && (
             <div className="stack">
-              <h1>Your report</h1>
-              <ReportView def={def} report={computeReport(def, state)} />
+              <LeadershipReport def={def} report={computeReport(def, state)} />
               <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
                 <Button variant="primary" onClick={restart}>Play again</Button>
                 <Button onClick={onClose}>Back to Studio</Button>

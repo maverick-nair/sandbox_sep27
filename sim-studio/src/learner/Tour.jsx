@@ -3,13 +3,14 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 
 export const TOUR_STEPS = [
-  { sel: '.lx-kpis', title: 'Your numbers', text: 'Conversions against the target, team morale, and the business numbers your decisions move. Keep an eye on them all quarter.' },
-  { sel: '.lx-timeline', title: 'Your quarter', text: 'One block per week. Dots show how each decision landed: green went well, amber partly, red did not.' },
+  { sel: '.lx-clock', title: 'Your time', text: 'The day, the week and, when there is a time limit, the minutes left in this session. Each week has a Monday plan and a Friday review.' },
+  { sel: '.lx-hud-team', title: 'Your team at a glance', text: 'Average skill, morale and result across the team. Lead each person well and all three rise.' },
+  { sel: '.lx-hud-target', title: 'Your target', text: 'Revenue against the target the board set, with the conversions behind it and the business numbers your decisions move.' },
+  { sel: '.lx-hud-level', title: 'Your level', text: 'Strong decisions earn XP, with a bonus for streaks. Level up and collect badges for good leadership habits.' },
   { sel: '.lx-inbox', title: 'Your inbox', text: 'Emails, chats, meeting invites and business updates land here. A blue dot means it needs your reply by Friday.' },
-  { sel: '.lx-waiting', title: 'What needs you today', text: 'Open a message to reply inside the conversation. People react and the numbers move straight away.' },
-  { sel: '.lx-actions, .lx-action-grid', title: 'Where your time goes', text: 'One-to-ones, training, role changes and more. Each action takes days out of your week, so choose.' },
-  { sel: '.lx-team', title: 'Your team', text: 'Everyone by stage, with performance and mood. Tap a person to read their profile and what they have said.' },
-  { sel: '.lx-today-foot', title: 'Moving time on', text: 'When you have done what you want today, end the day. Work flows through the stages and people respond. On Friday you see the week.' },
+  { sel: '.lx-org', title: 'Your team floor', text: 'Everyone by stage, with skill, morale, result and the style you chose. Open anyone to see their profile, your history with them and what you can do.' },
+  { sel: '.lx-dock', title: 'Your actions', text: 'One-to-ones, training, role changes and more. Each takes days out of your week, so choose. The sales funnel shows where work gets stuck.' },
+  { sel: '.lx-today-end', title: 'Moving time on', text: 'When you have done what you want today, end the day. Work flows through the stages and people respond.' },
 ];
 
 const visible = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 ? r : null; };

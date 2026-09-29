@@ -195,6 +195,13 @@ export function validate(def) {
     }
   }
 
+  // Game elements
+  const lv = def.gamification?.levels || [];
+  if (def.gamification?.xp !== false && lv.length && (lv[0].xp !== 0 || lv.some((l, i) => i && l.xp <= lv[i - 1].xp) || lv.some((l) => blank(l.name)))) add('error', 'game', 'Levels are out of order', 'Each level needs a name and more XP than the one before, and the first level starts at 0 XP.', { ref: { field: 'levels' }, code: 'game-levels' });
+  const limit = def.timeline.timeLimit || 0;
+  if (limit > 0 && limit < weeks * 4) add('warning', 'game', `A ${limit}-minute limit is tight for ${weeks} weeks`, 'Learners would run out of time before the quarter ends. Allow about 7 minutes a week.', { ref: { field: 'timeLimit' }, code: 'time-tight', data: { weeks } });
+  if (def.team?.visibility === 'hidden' && !def.actions.some((a) => a.enabled && a.mechanic === 'assess')) add('warning', 'game', 'Skill and morale are hidden, and Assess member is off', 'Learners have no way to check anyone\'s skill and morale.', { ref: { field: 'visibility' }, code: 'hidden-no-assess' });
+
   // Numbers that are allowed but almost certainly a slip.
   if (def.funnel.target > 0 && def.meta.baseTarget > 0) {
     const ratio = def.funnel.target / def.meta.baseTarget;

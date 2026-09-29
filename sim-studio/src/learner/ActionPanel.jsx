@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { actionAvailability, availableIds, stageName, daysLeftInWeek, desiredStyle } from '../engine/engine.js';
 import { renderText } from '../engine/text.js';
 import { Avatar } from './Moment.jsx';
+import { Icon } from './art.jsx';
 
 const daysLabel = (a) => {
   const days = [...new Set(a.options.map((o) => o.dayCost))];
@@ -26,10 +27,10 @@ export function ActionGrid({ def, state, onPick }) {
   );
 }
 
-export function ActionComposer({ def, state, action, xray, onCancel, onSubmit }) {
+export function ActionComposer({ def, state, action, xray, onCancel, onSubmit, initialTargets = [] }) {
   const usable = action.options.filter((o) => actionAvailability(def, state, action, o).ok);
   const [optionId, setOptionId] = useState(usable[0]?.id);
-  const [targets, setTargets] = useState([]);
+  const [targets, setTargets] = useState(initialTargets);
   const [stage, setStage] = useState('');
   const [candidate, setCandidate] = useState('');
   const option = action.options.find((o) => o.id === optionId);
@@ -41,7 +42,8 @@ export function ActionComposer({ def, state, action, xray, onCancel, onSubmit })
   const left = daysLeftInWeek(def, state);
   return (
     <div className="lx-composer">
-      <div className="row spread"><h3>{action.name}</h3><button type="button" className="btn ghost sm" onClick={onCancel}>Back</button></div>
+      <button type="button" className="lx-back" onClick={onCancel}><span aria-hidden="true">←</span> Team floor</button>
+      <div className="row nowrap" style={{ '--gap': '10px' }}><span className="lx-action-icon"><Icon name={action.id} size={22} /></span><h3>{action.name}</h3></div>
       <p className="small ink2">{renderText(def, action.description)}</p>
       {action.options.length > 1 && (
         <div className="stack" style={{ '--gap': '6px' }} role="radiogroup" aria-label="How">

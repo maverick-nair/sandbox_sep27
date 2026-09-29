@@ -7,6 +7,9 @@ import { CHAPTER_KINDS, defaultOnboarding, newChapter } from '../../templates/il
 import { Button, Callout, NumberInput, SectionHead, Switch, TextInput, TokenArea } from '../ui.jsx';
 
 const SOURCE = {
+  welcome: { text: "The CEO's welcome letter and portrait", section: 'story', label: 'Story and context (letter) and Look and feel (portrait)' },
+  product: { text: 'The product brief and the product image', section: 'look', label: 'Look and feel' },
+  targets: { text: 'The conversion target and value per conversion, and the duration and time limit', section: 'funnel', label: 'Funnel and target' },
   company: { text: 'The product brief', section: 'story', label: 'Story and context' },
   mission: { text: "The CEO's welcome letter and the target message", section: 'story', label: 'Story and context' },
   flow: { text: 'Stage names and descriptions', section: 'funnel', label: 'Funnel and target' },
@@ -83,6 +86,23 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
                 {SOURCE[c.kind] && (
                   <p className="small muted">Content: {SOURCE[c.kind].text.charAt(0).toLowerCase() + SOURCE[c.kind].text.slice(1)}, edited in <button type="button" className="link-btn" onClick={() => go(SOURCE[c.kind].section)}>{SOURCE[c.kind].label}</button>, so this chapter stays in step with the rest of the simulation.</p>
                 )}
+                {c.kind === 'targets' && (
+                  <div className="stack" style={{ '--gap': '6px' }}>
+                    <span className="small"><strong>Targets learners see</strong> <span className="muted">Revenue and conversions come from the funnel; add the goals beyond the numbers.</span></span>
+                    <ol className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
+                      <li>Sales revenue: {def.funnel.currency} {(def.funnel.target * def.funnel.valuePerConversion).toLocaleString('en')}</li>
+                      <li>{def.funnel.target} conversions (1 = {def.funnel.currency} {Number(def.funnel.valuePerConversion).toLocaleString('en')})</li>
+                    </ol>
+                    {(def.story.goals || []).map((g, k) => (
+                      <div key={k} className="row nowrap">
+                        <span className="badge num">{k + 3}</span>
+                        <input className="input grow" value={g} onChange={(e) => update((d) => { d.story.goals[k] = e.target.value; })} aria-label={`Goal ${k + 3}`} />
+                        <Button size="sm" variant="ghost" onClick={() => update((d) => { d.story.goals.splice(k, 1); })}>Remove</Button>
+                      </div>
+                    ))}
+                    <div><Button size="sm" onClick={() => update((d) => { d.story.goals = [...(d.story.goals || []), 'Keep everyone on the team.']; })}>Add goal</Button></div>
+                  </div>
+                )}
                 {c.kind === 'team' && (ob.teamToMeet ?? 3) > teamSize && <Callout tone="bad" icon="!">Learners must turn over {ob.teamToMeet} cards but the team has {teamSize} people.</Callout>}
                 {c.kind === 'custom' && <div><Button size="sm" variant="ghost" className="danger" onClick={() => { set((o) => { o.chapters.splice(i, 1); }); notify('Chapter removed. Undo is at the top.'); }}>Remove chapter</Button></div>}
               </div>
@@ -91,6 +111,7 @@ export default function Onboarding({ def, update, go, openPanel, notify }) {
         ))}
         <div className="row">
           <Button onClick={() => set((o) => { o.chapters.push(newChapter(newId('chapter'))); })}>Add your own chapter</Button>
+          {!chapters.some((c) => c.kind === 'flow') && <Button variant="ghost" onClick={() => set((o) => { const at = o.chapters.findIndex((c) => c.kind === 'team'); o.chapters.splice(at >= 0 ? at : o.chapters.length, 0, { id: 'flow', kind: 'flow', enabled: true, title: 'How the work flows', lead: 'Every sale passes through your team, stage by stage. Conversions come out of the last stage, so a stage that gets stuck starves every stage after it.' }); })}>Add "How the work flows"</Button>}
           {chapters.length < defaultOnboarding().chapters.length && <Button variant="ghost" onClick={() => set((o) => { const have = new Set(o.chapters.map((c) => c.kind)); for (const c of defaultOnboarding().chapters) if (!have.has(c.kind)) o.chapters.push(c); })}>Restore standard chapters</Button>}
         </div>
       </div>

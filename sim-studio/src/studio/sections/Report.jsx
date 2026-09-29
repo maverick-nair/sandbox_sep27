@@ -1,12 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { playBot, BOTS } from '../../engine/bots.js';
 import { computeReport } from '../../engine/report.js';
-import { Button, Field, NumberInput, Pill, SectionHead, Switch, TokenArea, Seg, StylePill } from '../ui.jsx';
+import { aggregate, syntheticBenchmark, idealProgression } from '../../engine/group.js';
+import { USER_SECTIONS, GROUP_SECTIONS } from '../../templates/ilead/report-defaults.js';
+import LeadershipReport from '../../report/LeadershipReport.jsx';
+import GroupReport from '../../report/GroupReport.jsx';
+import { downloadReport, fileSlug } from '../../report/download.js';
+import '../../report/report.css';
+import { Button, Callout, Field, NumberInput, Pill, SectionHead, Switch, TokenArea, Seg, StylePill } from '../ui.jsx';
 
 const MISSING = /NO STRING AVAILABLE/i;
 const USE = ['Low', 'Moderate', 'High'];
 
-export default function Report({ def, update, advanced }) {
+export default function Report({ def, update, advanced, notify }) {
   const [tab, setTab] = useState('competencies');
   const missing = Object.values(def.report.styleInsights).reduce((n, g) => n + Object.values(g).filter((v) => !v || MISSING.test(v)).length, 0);
   const drafted = (def.meta.drafted || []).length;
@@ -16,12 +22,15 @@ export default function Report({ def, update, advanced }) {
     ['styles', `Style insights${missing ? ` (${missing} missing)` : drafted ? ` (${drafted} drafted)` : ''}`],
     ['actions', 'Action insights'],
     ['reflect', 'Reflection'],
+    ['layout', 'Layout'],
+    ['group', 'Group report'],
     ['sample', 'Sample report'],
+    ['sampleGroup', 'Sample group report'],
   ];
   return (
     <div>
       <SectionHead eyebrow="Build" title="Report">
-        The learner's report scores five competencies from 0 to 10 and explains each score in words. You write the words for each band; the engine picks the band.
+        Two reports, both modelled on the original iLead reports. Each learner gets a leadership report at the end of the quarter; facilitators get a group report for a cohort, compared with a benchmark. You write the words for each band; the engine picks the band.
       </SectionHead>
       <div className="tabs" role="tablist">
         {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</button>)}
@@ -40,7 +49,17 @@ export default function Report({ def, update, advanced }) {
             {[['low', 'Right style less than 40% of the time'], ['moderate', '40% to 69%'], ['high', '70% or more']].map(([k, label]) => (
               <TokenArea key={k} def={def} label={label} rows={3} tokens="report" value={def.report.adaptability[k]} onChange={(v) => update((d) => { d.report.adaptability[k] = v; })} />
             ))}
+            <p className="small muted">Start a line with a dash to show it as a separate point.</p>
           </div>
+          {Object.entries(def.report.consistency).map(([id, c]) => (
+            <div key={id} className="card stack">
+              <h3>Consistency: {c.name}</h3>
+              <TokenArea def={def} label="What this measures" rows={2} value={c.description} onChange={(v) => update((d) => { d.report.consistency[id].description = v; })} />
+              {Object.keys(c.bands).map((b) => (
+                <TokenArea key={b} def={def} label={MISMATCH[b] || b} rows={2} value={c.bands[b]} onChange={(v) => update((d) => { d.report.consistency[id].bands[b] = v; })} />
+              ))}
+            </div>
+          ))}
         </div>
       )}
       {tab === 'styles' && <StyleInsights def={def} update={update} />}
@@ -82,7 +101,10 @@ export default function Report({ def, update, advanced }) {
           </div>
         </div>
       )}
-      {tab === 'sample' && <SampleReport def={def} />}
+      {tab === 'layout' && <Layout def={def} update={update} />}
+      {tab === 'group' && <GroupCopy def={def} update={update} />}
+      {tab === 'sample' && <SampleReport def={def} notify={notify} />}
+      {tab === 'sampleGroup' && <SampleGroup def={def} notify={notify} />}
     </div>
   );
 }
@@ -162,82 +184,210 @@ function StyleInsights({ def, update }) {
   );
 }
 
-function SampleReport({ def }) {
+const MISMATCH = { LowMismatch: 'Low deviation (under 25%)', ModerateMismatch: 'Moderate deviation (25% to 49%)', HighMismatch: 'High deviation (50% or more)', NoMismatch: 'No measurable action' };
+const BENCH = [
+  { value: 'auto', label: 'Automatic' },
+  { value: 'everyone', label: 'Everyone who played' },
+  { value: 'synthetic', label: 'Synthetic learners' },
+];
+
+function Layout({ def, update }) {
+  const us = def.report.sections || {};
+  const gs = def.report.group?.sections || {};
+  return (
+    <div className="grid cols-2">
+      <div className="card stack">
+        <h3>Learner report</h3>
+        <p className="small muted">What each learner sees in the Leadership report tab of their debrief, and in the copy they download.</p>
+        {Object.entries(USER_SECTIONS).map(([k, label]) => <Switch key={k} checked={us[k] !== false} onChange={(v) => update((d) => { d.report.sections = { ...(d.report.sections || {}), [k]: v }; })} label={label} />)}
+        <TokenArea def={def} label="About this simulation (opens the report)" rows={4} value={def.report.about} onChange={(v) => update((d) => { d.report.about = v; })} />
+      </div>
+      <div className="card stack">
+        <h3>Group report</h3>
+        <p className="small muted">What facilitators see in Learners and results, and in the copy they download for the client.</p>
+        {Object.entries(GROUP_SECTIONS).map(([k, label]) => <Switch key={k} checked={gs[k] !== false} onChange={(v) => update((d) => { d.report.group.sections = { ...(d.report.group.sections || {}), [k]: v }; })} label={label} />)}
+        <Field label="Benchmark" hint="Automatic compares a cohort with everyone who has played once at least 20 people have, and uses 30 synthetic learners of mixed ability until then, or when the report already covers everyone.">
+          <Seg label="Benchmark" value={def.report.group?.benchmark || 'auto'} onChange={(v) => update((d) => { d.report.group.benchmark = v; })} options={BENCH} />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+function ListEditor({ items, onChange, label, rows = 2, addLabel = 'Add a point' }) {
+  const list = items || [];
+  return (
+    <div className="stack" style={{ '--gap': '6px' }}>
+      {list.map((t, i) => (
+        <div key={i} className="row nowrap" style={{ alignItems: 'flex-start' }}>
+          <textarea className="textarea grow" rows={rows} aria-label={`${label} ${i + 1}`} value={t} onChange={(e) => onChange(list.map((x, k) => (k === i ? e.target.value : x)))} />
+          <Button size="sm" variant="ghost" onClick={() => onChange(list.filter((_, k) => k !== i))} aria-label={`Remove ${label.toLowerCase()} ${i + 1}`}>Remove</Button>
+        </div>
+      ))}
+      <div><Button size="sm" onClick={() => onChange([...list, ''])}>{addLabel}</Button></div>
+    </div>
+  );
+}
+
+const INTRO_FIELDS = [
+  ['competencies', 'Competency proficiency'], ['group', 'What "Group" means'], ['benchmark', 'What "Benchmark" means'], ['distribution', 'Percentage distribution'], ['completion', 'Completion rate'],
+  ['business', 'Business achievement'], ['conversions', 'Conversions'], ['revenue', 'Revenue'], ['maxRevenue', 'Maximum revenue'], ['averages', 'Average conversions and revenue'], ['overAchievers', 'Over-achievers'], ['smp', 'Skill, morale and performance'],
+  ['styles', 'Leadership style'], ['adaptability', 'Style adaptability'], ['preferences', 'Style preferences'], ['quadrant', 'Styles distribution'], ['proportion', 'Proportion'], ['accuracy', 'Accuracy'],
+  ['consistency', 'Consistency'], ['desired', 'Desired style'], ['intended', 'Intended style'], ['actual', 'Actual style'],
+  ['funnel', 'Sales funnel'], ['ideal', 'Ideal progression'], ['progression', 'Actual progression'], ['actions', 'Actions'], ['time', 'Management style'], ['top', 'Top performers'], ['average', 'Average performers'], ['bottom', 'Bottom performers'], ['takeaways', 'Key takeaways'],
+];
+const NOTE_FIELDS = [['distribution', 'Percentage distribution'], ['completion', 'Completion rate'], ['smp', 'Skill, morale and performance'], ['adaptability', 'Style adaptability'], ['funnel', 'Sales funnel'], ['actions', 'Actions'], ['time', 'Management style']];
+const LEVEL_NAMES = ['Novice', 'Emerging', 'Competent', 'Proficient', 'Role Model'];
+
+function GroupCopy({ def, update }) {
+  const [part, setPart] = useState('questions');
+  const [styleId, setStyleId] = useState(def.leadership.styles[0].id);
+  const G = def.report.group;
+  const set = (fn) => update((d) => fn(d.report.group));
+  return (
+    <div className="stack">
+      <p className="small ink2">The group report's words, from the original iLead group report. Insights are written about "the group"; the engine picks the band from the group's average. Discussion notes and key takeaway questions are what facilitators use to run the debrief conversation.</p>
+      <Seg label="Part" value={part} onChange={setPart} options={[{ value: 'questions', label: 'Key takeaway questions' }, { value: 'notes', label: 'Discussion notes' }, { value: 'intro', label: 'Section introductions' }, { value: 'comps', label: 'Competency insights' }, { value: 'styles', label: 'Style insights' }, { value: 'cons', label: 'Consistency' }]} />
+      {part === 'questions' && (
+        <div className="grid cols-2">
+          {G.questions.map((q, i) => (
+            <div key={i} className="card stack">
+              <div className="row nowrap"><input className="input grow" aria-label={`Theme ${i + 1}`} value={q.title} onChange={(e) => set((g) => { g.questions[i].title = e.target.value; })} /><Button size="sm" variant="ghost" onClick={() => set((g) => { g.questions.splice(i, 1); })}>Remove theme</Button></div>
+              <ListEditor label="Question" addLabel="Add a question" items={q.items} onChange={(items) => set((g) => { g.questions[i].items = items; })} />
+            </div>
+          ))}
+          <div><Button onClick={() => set((g) => { g.questions.push({ title: 'New theme', items: [''] }); })}>Add a theme</Button></div>
+        </div>
+      )}
+      {part === 'notes' && (
+        <div className="grid cols-2">
+          {NOTE_FIELDS.map(([k, label]) => (
+            <div key={k} className="card stack">
+              <h3>{label}</h3>
+              <ListEditor label={`${label} note`} items={G.notes[k]} onChange={(items) => set((g) => { g.notes[k] = items; })} />
+            </div>
+          ))}
+        </div>
+      )}
+      {part === 'intro' && (
+        <div className="card stack">
+          <TokenArea def={def} label="Cover line (the number of learners goes where {{n}} is)" rows={2} value={G.cover} onChange={(v) => set((g) => { g.cover = v; })} />
+          <Field label="About this report"><ListEditor label="About point" items={G.aboutReport} onChange={(items) => set((g) => { g.aboutReport = items; })} /></Field>
+          <div className="grid cols-2">
+            {INTRO_FIELDS.map(([k, label]) => <TokenArea key={k} def={def} label={label} rows={3} value={G.intro[k]} onChange={(v) => set((g) => { g.intro[k] = v; })} />)}
+          </div>
+        </div>
+      )}
+      {part === 'comps' && def.report.competencies.map((c) => (
+        <details key={c.id} className="card">
+          <summary style={{ cursor: 'pointer', fontWeight: 650 }}>{c.name}</summary>
+          <div className="stack" style={{ marginTop: 12 }}>
+            <TokenArea def={def} label="What it means" rows={2} value={G.competencies[c.id]?.description} onChange={(v) => set((g) => { g.competencies[c.id] ||= { description: '', bands: {} }; g.competencies[c.id].description = v; })} />
+            {LEVEL_NAMES.map((b, i) => <TokenArea key={b} def={def} label={`${b} (${i * 2} to ${i * 2 + 2})`} rows={3} value={G.competencies[c.id]?.bands?.[b]} onChange={(v) => set((g) => { g.competencies[c.id] ||= { description: '', bands: {} }; g.competencies[c.id].bands[b] = v; })} />)}
+          </div>
+        </details>
+      ))}
+      {part === 'styles' && (
+        <div className="stack">
+          <Seg value={styleId} onChange={setStyleId} options={def.leadership.styles.map((st) => ({ value: st.id, label: st.name }))} label="Style" />
+          <div className="grid cols-2">
+            <TokenArea def={def} label="What the style is" rows={3} value={G.styleDescriptions[styleId]} onChange={(v) => set((g) => { g.styleDescriptions[styleId] = v; })} />
+            <TokenArea def={def} label="When it is the group's most used style" rows={3} value={G.preference[styleId]} onChange={(v) => set((g) => { g.preference[styleId] = v; })} />
+          </div>
+          <div className="scroll-x">
+            <table className="table" style={{ minWidth: 720 }}>
+              <thead><tr><th>Use vs accuracy</th>{USE.map((a) => <th key={a}>{a} accuracy</th>)}</tr></thead>
+              <tbody>
+                {USE.map((u) => (
+                  <tr key={u}>
+                    <td><strong>{u} use</strong></td>
+                    {USE.map((a) => {
+                      const key = `${u}Use${a}Accuracy`;
+                      return <td key={a} style={{ verticalAlign: 'top' }}><textarea className="textarea" rows={5} aria-label={`Group, ${u} use, ${a} accuracy`} value={G.styleInsights[styleId]?.[key] || ''} onChange={(e) => set((g) => { g.styleInsights[styleId] ||= {}; g.styleInsights[styleId][key] = e.target.value; })} style={{ fontSize: 12.5 }} /></td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="small muted">The Low use, High accuracy texts were missing in the original and have been drafted. Use the style field in the text to insert the style's name.</p>
+        </div>
+      )}
+      {part === 'cons' && (
+        <div className="grid cols-2">
+          {Object.entries(G.consistency).map(([id, c]) => (
+            <div key={id} className="card stack">
+              <h3>{def.report.consistency[id]?.name || id}</h3>
+              <TokenArea def={def} label="What this measures" rows={2} value={c.description} onChange={(v) => set((g) => { g.consistency[id].description = v; })} />
+              {Object.keys(c.bands).map((b) => <TokenArea key={b} def={def} label={MISMATCH[b] || b} rows={2} value={c.bands[b]} onChange={(v) => set((g) => { g.consistency[id].bands[b] = v; })} />)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SampleReport({ def, notify }) {
   const [bot, setBot] = useState('expert');
   const [seed, setSeed] = useState(7);
+  const ref = useRef(null);
   const report = useMemo(() => computeReport(def, playBot(def, bot, seed).state), [def, bot, seed]);
   return (
     <div className="stack">
       <div className="row">
         <Seg value={bot} onChange={setBot} options={Object.entries(BOTS).map(([id, b]) => ({ value: id, label: b.name }))} label="Played by" />
         <Button size="sm" onClick={() => setSeed((s) => s + 1)}>Play again</Button>
+        <span className="grow" />
+        <Button size="sm" onClick={async () => { const r = await downloadReport(ref.current, `${def.meta?.name || 'iLead'} sample leadership report`, `${fileSlug(def.meta?.name)}-sample-report`); notify?.(r === 'saved' ? 'Sample report downloaded' : r === 'declined' ? 'Download cancelled' : 'Downloads are not available here'); }}>Download as HTML</Button>
       </div>
-      <p className="small muted">A report as a learner would see it, from one run played by a bot. {BOTS[bot].description}</p>
-      <ReportView def={def} report={report} />
+      <p className="small muted">The report exactly as a learner sees it, from one quarter played by a bot. {BOTS[bot].description}</p>
+      <div className="report-frame"><LeadershipReport ref={ref} def={def} report={report} name={`${BOTS[bot].name} (sample)`} date={new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })} /></div>
     </div>
   );
 }
 
-export function ReportView({ def, report }) {
-  const money = new Intl.NumberFormat('en', { style: 'currency', currency: def.funnel.currency, notation: 'compact' });
+// Synthetic learners for the sample group report and as a benchmark. Cached per definition.
+const cache = new Map();
+export function useSynthetic(def, n, seed, enabled = true) {
+  const key = useMemo(() => `${n}:${seed}:${JSON.stringify([def.actors, def.actions, def.funnel, def.timeline, def.leadership.styles, def.report.competencies.map((c) => c.enabled), def.decisions?.points?.length])}`, [def, n, seed]);
+  const [state, setState] = useState(() => cache.get(key) || null);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    if (cache.has(key)) { setState(cache.get(key)); return undefined; }
+    let live = true;
+    setState(null);
+    syntheticBenchmark(def, n, { seed, onProgress: (p) => live && setProgress(p) }).then((rps) => {
+      if (!live) return;
+      const v = { rps, agg: aggregate(def, rps) };
+      if (cache.size > 12) cache.clear();
+      cache.set(key, v);
+      setState(v);
+    });
+    return () => { live = false; };
+  }, [key, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { data: state, progress };
+}
+
+export function useIdeal(def) {
+  return useMemo(() => idealProgression(def), [def.actors, def.actions, def.funnel, def.timeline]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function SampleGroup({ def, notify }) {
+  const group = useSynthetic(def, 24, 1100);
+  const bench = useSynthetic(def, 30, 4242);
+  const ideal = useIdeal(def);
+  const ref = useRef(null);
+  const ready = group.data && bench.data;
   return (
-    <div className="stack" style={{ '--gap': '16px' }}>
-      <div className="grid cols-4">
-        <div className="card"><span className="eyebrow">Conversions</span><div className="num" style={{ fontSize: 24, fontFamily: 'var(--font-display)', fontWeight: 650 }}>{report.progress.conversions.toFixed(1)} <span className="small muted">of {report.progress.target}</span></div></div>
-        <div className="card"><span className="eyebrow">Revenue</span><div className="num" style={{ fontSize: 24, fontFamily: 'var(--font-display)', fontWeight: 650 }}>{money.format(report.progress.revenue)}</div></div>
-        <div className="card"><span className="eyebrow">Right style</span><div className="num" style={{ fontSize: 24, fontFamily: 'var(--font-display)', fontWeight: 650 }}>{Math.round(report.accuracy * 100)}%</div></div>
-        <div className="card"><span className="eyebrow">Dominant style</span><div style={{ fontSize: 20, fontFamily: 'var(--font-display)', fontWeight: 650 }}>{report.dominant || 'None'}</div></div>
+    <div className="stack">
+      <div className="row">
+        <p className="small muted grow">A group report for 24 synthetic learners of mixed ability, compared with a benchmark of 30 more. Real cohorts show in Learners and results.</p>
+        <Button size="sm" disabled={!ready} onClick={async () => { const r = await downloadReport(ref.current, `${def.meta?.name || 'iLead'} sample group report`, `${fileSlug(def.meta?.name)}-sample-group-report`); notify?.(r === 'saved' ? 'Sample group report downloaded' : r === 'declined' ? 'Download cancelled' : 'Downloads are not available here'); }}>Download as HTML</Button>
       </div>
-      <div className="card stack">
-        <h3>Result</h3>
-        <p>{report.objective.text}</p>
-        <p className="small ink2" style={{ whiteSpace: 'pre-wrap' }}>{report.adaptability.text}</p>
-      </div>
-      <div className="card stack">
-        <h3>Competencies</h3>
-        {report.competencies.map((c) => (
-          <div key={c.id} className="grid" style={{ gridTemplateColumns: 'minmax(150px, 200px) 1fr', gap: 12, alignItems: 'start', paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-            <div className="stack" style={{ '--gap': '4px' }}>
-              <strong>{c.name}</strong>
-              <div className="row nowrap"><div className="bar grow"><span style={{ width: `${c.score * 10}%` }} /></div><span className="num small">{c.score.toFixed(1)}</span></div>
-              <span className="small muted">{c.band}</span>
-            </div>
-            <p className="small ink2">{c.text}</p>
-          </div>
-        ))}
-      </div>
-      <div className="card stack">
-        <h3>Leadership styles</h3>
-        <div className="scroll-x">
-          <table className="table">
-            <thead><tr><th>Style</th><th>Share of choices</th><th>Needed</th><th>Right when needed</th><th>Insight</th></tr></thead>
-            <tbody>
-              {report.styles.map((s) => (
-                <tr key={s.id}>
-                  <td><StylePill def={def} styleId={s.id} /></td>
-                  <td className="num">{Math.round(s.proportion * 100)}%</td>
-                  <td className="num">{s.needed}</td>
-                  <td className="num">{Math.round(s.adaptability * 100)}%</td>
-                  <td className="small ink2" style={{ minWidth: 260 }}>{/NO STRING/i.test(s.text) ? <Pill tone="bad">Missing copy</Pill> : s.text}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="card stack">
-        <h3>Actions</h3>
-        <div className="scroll-x">
-          <table className="table">
-            <thead><tr><th>Action</th><th>Times</th><th>Positive</th><th>Insight</th></tr></thead>
-            <tbody>
-              {report.actions.filter((a) => def.report.actionInsights[a.id]).map((a) => (
-                <tr key={a.id}><td>{a.name}</td><td className="num">{a.count}</td><td className="num">{a.count ? `${Math.round(a.positive * 100)}%` : '-'}</td><td className="small ink2" style={{ minWidth: 260 }}>{a.text}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {!ready && <Callout icon="i">Playing synthetic learners through the quarter… {Math.round(((group.progress + bench.progress) / 2) * 100)}%</Callout>}
+      {ready && <div className="report-frame"><GroupReport ref={ref} def={def} group={group.data.agg} bench={bench.data.agg} benchLabel="Benchmark" benchNote="30 synthetic learners" title="Group report" subtitle="Sample cohort of synthetic learners" ideal={ideal} date={new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })} /></div>}
     </div>
   );
 }

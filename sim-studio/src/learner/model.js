@@ -3,6 +3,7 @@
 import { weekOf, dayOfWeek, teamIds, teamAverages, progress, desiredStyle, stageName, totalDays } from '../engine/engine.js';
 import { dueDecisions, pointsOf, senderOf, situationText, say, overallScore, ACHIEVEMENTS, kpiLabel, conditionMet } from '../engine/decisions.js';
 import { computeReport } from '../engine/report.js';
+import { compactReport } from '../engine/group.js';
 import { collectTexts, renderText } from '../engine/text.js';
 import { setTextAt } from '../engine/authoring.js';
 import { clone } from '../engine/clone.js';
@@ -221,6 +222,7 @@ export function resultRecord(def, state, debrief, meta = {}) {
     concepts: Object.fromEntries(debrief.conceptScores.map((c) => [c.id, c.score])),
     kpis: { ...state.dx.kpis },
     completed: state.phase === 'ended',
+    rp: compactReport(def, state, debrief.report),
   };
 }
 

@@ -1,0 +1,263 @@
+{
+  "cover": "This report is generated based on the data of {{n}} people from your organization who have completed the simulation.",
+  "aboutReport": [
+    "This report shows information represented in tables and graphs about the performance of the group of participants from this organization. This information pertains to different parameters which the simulation is built around.",
+    "Wherever it is relevant, the report shows comparisons between the group from the organization and the benchmark. The benchmark represents the industry average of all the people who have played this simulation so far.",
+    "To gain most from this report, consistently look for insights. Ruminating on the possible causes for the group's performance will help.",
+    "The last page provides key takeaways, which is based on what the group has done in each of the parameters. Analyses and discussions around these takeaways with different stakeholders will benefit the organization."
+  ],
+  "intro": {
+    "competencies": "In this section, we can see how proficient the group is, in each of the competencies. The scale shows two scores: the 'Group' is on the top and the 'Benchmark' is on the bottom.",
+    "group": "This represents the average of all the people in your organization who have played the simulation.",
+    "benchmark": "This represents the average of all the people who have played this simulation so far.",
+    "distribution": "In this section, we can see what percentage of the group are at each proficiency levels for each competency.",
+    "completion": "In this section, we can see information about the people in the group who completed the simulation in its entirety and those who completed it partially.",
+    "business": "In this section, we can see the information about the business achievement of the group, which are represented in conversions and revenues.",
+    "conversions": "This parameter gives information about the leads that have been turned into business.",
+    "revenue": "This parameter gives information about the value of the converted business, against a target revenue number.",
+    "maxRevenue": "In the scale below the target revenue as well as the maximum revenue achieved are represented.",
+    "averages": "The first part of the graph shows the average conversions both in the group and the benchmark. The second part of the graph shows the average revenue achieved by the group as well as the benchmark.",
+    "overAchievers": "This shows the number of people in the group who achieved more revenue than the target.",
+    "smp": "In this graph, the skill, morale and performance levels of the group and benchmark are represented.",
+    "styles": "In this section, we will see which of the leadership style was preferred by the group.",
+    "adaptability": "This is a representation of how adaptive the group and the benchmark were while deploying leadership styles.",
+    "preferences": "This graph shows how many group members deployed each of the different leadership styles.",
+    "quadrant": "In this section, we will see the different leadership styles represented on a skill-morale grid and how the group chose to deploy each of these styles.",
+    "proportion": "This represents how much of the time a particular leadership style was used by the group as a percentage of 100%.",
+    "accuracy": "This shows how accurately the chosen leadership style was deployed, and is represented as a percentage of 100%",
+    "consistency": "In this section, we will see how consistent was the identification, intention and actual deployment of the most appropriate leadership style. The actions: Meet the Team, Meet Face to Face, Set Goals, Coach member and Give feedback are considered for the measures in this section.",
+    "desired": "Predominant leadership approach desired by each team member basis her/his skill and morale level.",
+    "intended": "Predominant leadership approach the group intended to take for each team / member.",
+    "actual": "Predominant leadership approach the group actually adopted for each team member. This is the leadership style that was most often used through the different actions.",
+    "funnel": "In this section, we will see the actual progression of the sales effort by the group, as compared to a maximum that is possible.",
+    "ideal": "This is the maximum possible values that can be achieved week on week.",
+    "progression": "This is the week on week progression of the sales effort of the group",
+    "actions": "In this section, we will see the different actions taken by the group to achieve targets and their impact on the skill, morale and performance and hence result achievement.",
+    "time": "In this section, we will see the time that the group spent with top, average and bottom performers.",
+    "top": "A top performer is a team member who has been in the top three in terms of performance.",
+    "bottom": "A bottom performer is a team member who has been in the bottom three in terms of performance.",
+    "average": "An average performer is a team member who is someone who is neither a top nor a bottom performer.",
+    "takeaways": "In this section, we will consider some key takeaways for you to reflect and analyze. Initiatives to be implemented in your organization can flow from this analyses. Reflect upon these section-wise questions to gain more insights about underlying phenomena that could affect goal and result achievement in your organization."
+  },
+  "notes": {
+    "distribution": [
+      "Take a note of the percentage distribution in each competency. Is there a particular proficiency level across competencies which has the highest or the lowest percentage? Is there a competency where there's a concentration in the lower or higher proficiency levels? Is there more than one competency? Does this in any way reflect the organizational culture? Or is there any other reason for this?"
+    ],
+    "completion": [
+      "The graph above shows the distribution of number of the group members across the different rates of completion."
+    ],
+    "smp": [
+      "Compare the conversions and revenue achievements as well as the skill, morale and performance (SMP) levels of group and the benchmark. Check if there's a correlation between the SMP levels and the conversions, revenue achievements of the group and the benchmark."
+    ],
+    "adaptability": [
+      "The ability to read the needs of the team members and getting to know how the team members desired to be managed has the most impact on the accuracy of leadership. Reflect upon the abilities of the team members and see what initiatives need to be taken to improve."
+    ],
+    "funnel": [
+      "It will give an idea of how the group has progressed week on week in the sales effort. Comparing the two lines will give you an idea of what could have been done to improve the progression.",
+      "Analyze the progress to understand how the group has learnt from doing various actions to drive results.",
+      "Analyze the gap between the 2 lines to study how the group has utilized opportunities to achieve the goal as against what could be possible.",
+      "The ability to learn and apply what has been learnt can be seen in the upward trend of the line as the weeks progressed.",
+      "You should also note at what point of time and how close to the end the most number of conversions were happening. This will give an indication of how the team are learning from their actions and successfully achieving goals."
+    ],
+    "actions": [
+      "Observe in the graph, how frequently each action was taken and what kind of impact it had. Reflect on why some actions were taken often and some others not so.",
+      "You could bucket the actions into the different groups and add them up. This will give you insight on whether the group has a preferred way of driving results: upskilling, improving morale or providing leadership.",
+      "Reflect on how the actions taken have impacted Skill, Morale & Performance levels."
+    ],
+    "time": [
+      "Take note of how the group spent their time: with top, average or bottom performers.",
+      "Think about whether this is a reflection of the organizational or team culture.",
+      "Link this with the results achieved and reflect how time spent with team members impacts conversions and business achievement."
+    ]
+  },
+  "competencies": {
+    "results": {
+      "description": "Ensuring goal achievement by managing team members effectively.",
+      "bands": {
+        "Novice": "The group seems to be aware of the end goal. However, the group needs to take more efforts to leverage team members to achieve the end goal.",
+        "Emerging": "The group seems to be aware of the end goal. However, more consistent effort need to be taken to leverage team members competencies, to achieve the goal.",
+        "Competent": "The group is focused on the end goal. Some of the efforts taken to leverage team members competencies were effective. Sufficient number of actions to keep the team enthused were taken, of which only some worked. The group will need to analyze those actions that worked and replicate them for more success.",
+        "Proficient": "The group demonstrated an unrelenting focus on the goal. Actions taken to leverage team members were extremely effective. The team enthusiastically progressed towards goal achievement. Keep the focus on the goal and align actions to what would bring results for sustained success.",
+        "Role Model": "The group demonstrated a strong goal-orientation. Setting others up for success seems to be the team culture. Appropriate response to emerging situations and timely leadership guidance ensured goal-achievement. Propagate the success formula for making this an organizational culture"
+      }
+    },
+    "upskill": {
+      "description": "Identifying and honing team members' skills to accomplish goals.",
+      "bands": {
+        "Novice": "The group's lack of knowledge of team members' abilities hampered the effectiveness of actions chosen to hone their skills. More efforts to identify team members' abilities has to be taken.",
+        "Emerging": "The group's efforts to identify abilities of team members were only partially successful and hence only few actions yielded desired results.",
+        "Competent": "The group's efforts to identify the abilities of the team members were somewhat successful. The group will need to deepen knowledge of team members' abilities to ensure that all the actions taken to hone skills yield the desired results.",
+        "Proficient": "The group put to good use the knowledge of team members' abilities to drive results. All the actions that were taken to hone their skills yielded the desired results. Continuous assessment of skills will enable sustained success.",
+        "Role Model": "The group's deep knowledge of team members' abilities and a timely utilization of the right combination of their skills, resulted in high result achievement. This also ensured that all the actions taken resulted in an efficient and well-honed team. Analyze what went well to derive success factors."
+      }
+    },
+    "motivate": {
+      "description": "Inspiring, energising and empowering team members to maximise performance.",
+      "bands": {
+        "Novice": "The group seems to lack an understanding of the team members' needs. More efforts to understand team members' needs is necessary. Investing more time in considering what actions will maximize team members' enthusiasm, energy and performance, is essential.",
+        "Emerging": "The group demonstrated a partial understanding of the team members' needs. Based on this understanding some actions were taken to increase enthusiasm, energy and performance. However, they were not effective. Deepening the understanding of the team members' needs is required.",
+        "Competent": "The group demonstrated a reasonable understanding of team members' needs. Actions taken to maximize enthusiasm, energy and performance were effective most of the time. Analyses and replication of effective actions will contribute towards success.",
+        "Proficient": "The group demonstrated a good understanding of team members' needs. Actions taken to maximize enthusiasm and performance were very effective. Being updated on changing needs and suitably adjusting actions will give sustained business results.",
+        "Role Model": "The group was able to intuit team members' needs and choose the most appropriate approach to inspire performance. This resulted in an extremely enthusiastic and high performing team. Analyze successes to institutionalize learnings from the analyses"
+      }
+    },
+    "enable": {
+      "description": "Knowing the right environment that produces superlative performance and creating it.",
+      "bands": {
+        "Novice": "The group was unable to identify what kind of environment would stimulate performance. It needs to make more efforts to identify and create an environment conducive to enhanced performance.",
+        "Emerging": "The group showed limited understanding of what team members required for high performance. Hence, efforts to create an environment conducive to enhanced performance were not effective. The group will need to deepen their understanding of what kind of an environment the team members require for enhanced performance.",
+        "Competent": "The group showed adequate understanding of what team members required in order to perform at a high level. Efforts to create an environment conducive to enhanced performance were somewhat effective. The group will need to deepen their understanding of team members' requirements and analyze successful and failed efforts in order to learn from it.",
+        "Proficient": "The group demonstrated good understanding of what team members required in order to perform at a high level. Efforts to create an environment conducive to enhanced performance were effective. Analysis of successful efforts will give the group an ability to replicate these in the future.",
+        "Role Model": "The group demonstrated a deep understanding of what team members required for high performance. Efforts in creating an environment of high performance were successful"
+      }
+    },
+    "adapt": {
+      "description": "Dynamically adapting leadership approach to maximise morale, skill & performance.",
+      "bands": {
+        "Novice": "The group was not effective in motivating the team or improving skills/performance dynamically. More efforts are needed to identify how each team member's needs to be managed at a particular point of time.",
+        "Emerging": "The group showed limited ability to identify how team members need to be managed at a given point of time. They were somewhat effective in dynamically improving morale, skills and performance levels of the team members. They need to observe and listen closely to what the team members say about how they want to be managed.",
+        "Competent": "The group could adequately identify how team members need to be managed at a given point of time and were effective in improving morale, skills and performance dynamically. They can increase their ability to identify team members' preferences through different conversations and feedback mechanisms.",
+        "Proficient": "The group demonstrated good ability to identify how team members needed to be managed at a given point of time and were quite successful in improving morale, skills and performance dynamically. They can sustain their success by analyzing what went well and replicating successful actions.",
+        "Role Model": "The group were consistently accurate in identifying how team members need to be managed at a given point and they maximized morale, skills and performance dynamically. Being aware of how changes in leadership styles impacted results"
+      }
+    }
+  },
+  "styleDescriptions": {
+    "directing": "{{style}} Style is when the leader gives detailed instructions on what his team members are expected to do and how to perform the expected tasks.",
+    "guiding": "{{style}} Style is when the leader uses two-way communication and provides support to generate buy-in to the process.",
+    "partnering": "{{style}} Style is when the team members play an important role in the decision-making process. The decision-making power rests with the leader. Best deployed when skill is high but morale is low.",
+    "entrusting": "{{style}} Style is when the process and responsibility passes on to the team member. The leader stays involved to monitor progress."
+  },
+  "styleInsights": {
+    "directing": {
+      "LowUseLowAccuracy": "The group did not give directions and instructions to the team as many times as they needed it. Also, the directions given were not effective. They will need to align to the needs of the team members better, and adopt the '{{style}} approach when desired.",
+      "LowUseModerateAccuracy": "The group did not give directions and instructions to the team members as much as they needed it. However, the deployment of the '{{style}} style of leadership was effective. They will need to align to the needs of the team members better, and adopt the '{{style}} approach when desired.",
+      "LowUseHighAccuracy": "The group gave directions and instructions less often than the team needed them, but when it did, the '{{style}}' style was the right call almost every time. Read the team's needs more often and use it whenever someone needs it.",
+      "ModerateUseLowAccuracy": "While the group did give directions and instructions to the team, it was not as much as the team needed. The group was also not effective in deploying the '{{style}} style of leadership. The group will need to align to the needs of the team members better, and adopt the '{{style}} approach when desired as well as more effectively.",
+      "ModerateUseModerateAccuracy": "While the group did give directions and instructions to the team, it was not as often as they needed it. However, the group was quite effective in deploying the '{{style}} style of leadership. If they could deploy it more often, they can increase the impact.",
+      "ModerateUseHighAccuracy": "While the group did give directions and instructions to the team, it was not as much as the team needed. However, the group was highly effective in deploying the '{{style}} style of leadership. Increasing the frequency of deployment will maximize impact",
+      "HighUseLowAccuracy": "The group provided directions and instructions to the team members as much as, or more than the team needed it. However, the deployment of the directing leadership style was effective. The group will need to align to the needs of their team members better, and adopt the '{{style}} approach when desired.",
+      "HighUseModerateAccuracy": "The group provided directions and instructions to the team members as much as, or more than the team needed it. However, the group was quite effective in deploying that style. The group will need to read the team members' needs better, deploy the '{{style}} style of leadership more often and be more effective in order to maximize morale and skill.",
+      "HighUseHighAccuracy": "The group provided directions and instructions to your team members as much as, or more than they needed it. The group was very effective in deploying this style of leadership. Stay aligned to what the team members need, and keep up the effectiveness."
+    },
+    "guiding": {
+      "LowUseLowAccuracy": "The group did not use the '{{style}} style of leadership sufficiently. Additionally, whenever the group deployed this style it was not effective. Review the needs of the team members better, and reflect on what stops the group from having active discussions and showing support when needed.",
+      "LowUseModerateAccuracy": "The group did not use the '{{style}} style of leadership sufficiently. However, the group deployed this style effectively. For better results align the approach to the needs of the team members better.",
+      "LowUseHighAccuracy": "The group used the '{{style}}' style less often than the team needed it, but when it did, it was almost always the right call. Spot the moments the team needs explanation and encouragement more often.",
+      "ModerateUseLowAccuracy": "While the group had open discussions and expressed support to the team members, it was not as often as the team needed it. Additionally, the group did not deploy the '{{style}} style of leadership effectively. The group will need to learn to read the needs of the team members more accurately and deploy this style of leadership more often and more effectively.",
+      "ModerateUseModerateAccuracy": "While the group had open discussions and expressed support to your team members, it was not as often as they needed it. However, the group deployed the '{{style}} style of leadership quite effectively. If the group deployed the '{{style}} style of leadership more often, there will be a bigger impact.",
+      "ModerateUseHighAccuracy": "While the group had open discussions and expressed support to the team members, it was not as often as the team needed it. However, the group was very effective when they deployed this style of leadership. If the group increases the frequency in deploying this style of leadership, the team will benefit very much.",
+      "HighUseLowAccuracy": "The group used the '{{style}} style of leadership as much as, or more often than the team members needed it. However, the group did not deploy this style effectively. For better results the group should align their approach to the needs of the team members better and use this style more effectively.",
+      "HighUseModerateAccuracy": "The group used the '{{style}} style of leadership as much as, or more often than the team members needed it. However, the group deployed the '{{style}} style of leadership quite effectively. The group should deploy the '{{style}} style of leadership more often, for better impact.",
+      "HighUseHighAccuracy": "The group used the '{{style}} style of leadership as much as, or more often than the team members needed it. The group was also very effective in deploying this style of leadership. The group is encouraged to continue to align to the needs of the team members and use this style for for good impact"
+    },
+    "partnering": {
+      "LowUseLowAccuracy": "The group was not able to involve the team members in the decision-making process as often as the team would have liked. It was also, not deployed effectively. The group will need to deploy the '{{style}} style of leadership more often and more effectively.",
+      "LowUseModerateAccuracy": "The group was not able to involve the team members in the decision-making process as often as the team would have liked. However, the group did so quite effectively. The group should increase the number of times that they deploy the '{{style}} style of leadership so that they can increase the impact on the team.",
+      "LowUseHighAccuracy": "The group involved the team in decisions less often than the team would have liked, but when it did, the '{{style}}' style was almost always the right call. Look for more of those moments.",
+      "ModerateUseLowAccuracy": "The group involved the team members in the decision-making process to a moderate extent. However, the group did not deploy the '{{style}} style of leadership effectively. To increase impact, the group should increase the frequency and the effectiveness of this style of leadership.",
+      "ModerateUseModerateAccuracy": "The group involved the team members in the decision-making process to a moderate extent. The group deployed the '{{style}} style of leadership quite effectively. This had a somewhat positive impact. For a higher impact the group could get to know the team better and increase the frequency and effectiveness of the times that they deploy the style.",
+      "ModerateUseHighAccuracy": "The group involved the team members in the decision-making process to a moderate extent. The group deployed the '{{style}} style of leadership quite effectively. Reflect on how the group could use this style more often so that it has a positive impact on team morale.",
+      "HighUseLowAccuracy": "The group involved the team in the decision-making process as often as or more than, the team would have liked to have been. However, the group did not deploy the '{{style}} style of leadership effectively. The group should get to know the team better and see what it can do to be more effective and maximize impact.",
+      "HighUseModerateAccuracy": "The group involved the team members in the decision-making process as often as or more than, they would have liked to have been. The group deployed the '{{style}} style of leadership quite effectively. The group should get to know the team better and see what they can do to be more effective and maximize impact.",
+      "HighUseHighAccuracy": "The group involved the team in the decision-making process as often as or more than, the team would have liked to. The group was also very effective in deploying this approach. The group will need to consistently do the same to maximize the positive impact on team morale."
+    },
+    "entrusting": {
+      "LowUseLowAccuracy": "The group did not take enough steps to handover the responsibility to the team. Additionally, the group did not deploy the '{{style}} style of leadership very effectively. The group is urged to review the needs of the team members better, and reflect on what stops the group from letting go when needed.",
+      "LowUseModerateAccuracy": "The group did not take enough steps to handover the responsibility to the team. The group did not deploy the '{{style}} style of leadership as often as the team needed it. However, they deployed it quite effectively. Also the group needs to align with the needs of the team and deploy this style mindfully and more often.",
+      "LowUseHighAccuracy": "The group handed over responsibility less often than the team was ready for, but when it did, the '{{style}}' style was almost always the right call. Trust capable people with more.",
+      "ModerateUseLowAccuracy": "The group could have leveraged more of the opportunities to hand over the responsibilities to the team. However, they did not deploy the '{{style}} style of leadership effectively. The group will need to take more actions to hand over responsibilities to impact morale and skill.",
+      "ModerateUseModerateAccuracy": "The group could have leveraged more of the opportunities to hand over the responsibilities to the team, thereby deploying the '{{style}} style of leadership more often. However, the group deployed the '{{style}} style of leadership quite effectively. The group is encouraged to grab more opportunities to hand over responsibilities and take steps to improve effectiveness of actions.",
+      "ModerateUseHighAccuracy": "The group could have leveraged more of the opportunities to hand over the responsibilities to the team, thereby deploying the '{{style}} style of leadership more often. However, the group used the '{{style}} approach very effectively. The group could align with the needs of the team and increase the frequency of deploying this style for more impact.",
+      "HighUseLowAccuracy": "The group has seized the opportunities to hand over more responsibilities to the team, thereby deploying the '{{style}} style of leadership well. However, when the group did deploy the '{{style}} style of leadership they were not very effective. The group memebers needs to align themselves with the needs of team members to maximize morale and skill in the team.",
+      "HighUseModerateAccuracy": "The group has seized the opportunities to hand over more responsibilities to the team, thereby deploying the '{{style}} style of leadership well. The group was also quite effective when they deployed the '{{style}} style of leadership. Deploying this style of leadership more effectively will have a higher impact.",
+      "HighUseHighAccuracy": "The group has seized the opportunities to hand over more responsibilities to the team, thereby deploying the '{{style}} style of leadership well. The group was also very effective in deploying this style of leadership. Continue this approach to maximize morale and skill in the team."
+    }
+  },
+  "preference": {
+    "directing": "The '{{style}}' style was the one the group used most. This could mean that they believe that being a leader means giving detailed instructions to team members is the way to manage their team.",
+    "guiding": "The '{{style}}' style was the one the group used most. This could mean that they believe that being a leader means using two-way communication and providing support to generate buy-in to the process.",
+    "partnering": "The '{{style}}' style was the one the group used most. This could mean that they believe that the team members play an important role in decision-making process while the decision-making power rests with the leader.",
+    "entrusting": "The '{{style}}' style was the one the group used most. This could mean that they believe that the process and responsibility passes on to the team member. The role of the leader is to stay involved enough to monitor progress."
+  },
+  "consistency": {
+    "desired-vs-actual": {
+      "description": "This shows the deviation between the leadership style that the team members wanted to be deployed and that which the group actually deployed.",
+      "bands": {
+        "LowMismatch": "The deviation was quite low between the desired and the actual approaches. The group has understood the needs of the team members and has most often deployed the leadership style that the team desired.",
+        "ModerateMismatch": "The deviation was not so high between the desired and the actual approaches. This means that the group has somewhat understood the needs of the team members.",
+        "HighMismatch": "The deviation was quite high between the desired and the actual approaches. This means that group needs to further deeply understand the needs of the team members before deploying the leadership style.",
+        "NoMismatch": "No measurable action taken."
+      }
+    },
+    "intent-vs-actual": {
+      "description": "This shows the deviation between the leadership style that the group intended to deploy and that which they actually deployed.",
+      "bands": {
+        "LowMismatch": "The deviation was quite low between the intended and the actual approaches.The group were able to deploy the intended style of leadership more often. The group studied the actions well before deploying it and was therefore accurate in deploying the leadership style that was intended.",
+        "ModerateMismatch": "The deviation was not so high between the intended and the actual approaches. The group has a moderately deep understanding of the actions and were somewhat accurate in deploying them.",
+        "HighMismatch": "The deviation was quite high between the intended and the actual approaches. They could take more time to study the different actions that corresponded to the Intended style of leadership before deploying it.",
+        "NoMismatch": "No measurable action taken."
+      }
+    },
+    "desired-vs-intent": {
+      "description": "This shows the deviation between the leadership style that the team members wanted to be deployed and that which the group intended to deploy.",
+      "bands": {
+        "LowMismatch": "The deviation was quite low between the desired and the intended approaches. The group has a good grasp on the effects of the different leadership styles on team members' skill and morale levels. The group has also understood the team members' needs through studying the skill and morale levels.",
+        "ModerateMismatch": "The deviation was not so high between the desired and the intended approaches. The group had a moderately clear understanding of the different leadership styles and the team's skill and morale levels.",
+        "HighMismatch": "The deviation was quite high between the desired and the intended approaches. The group could do more to understand more clearly about the different leadership approaches. The group will also need to fully understand team members' skill and morale level.",
+        "NoMismatch": "No measurable action taken."
+      }
+    }
+  },
+  "questions": [
+    {
+      "title": "Competencies",
+      "items": [
+        "What are the organizational causes why certain competencies are well demonstrated and others are not?",
+        "Does your organizational context make it relevant for you to attempt to align your organization with the benchmark?"
+      ]
+    },
+    {
+      "title": "Leadership approach",
+      "items": [
+        "What clue does the group's preferred leadership approach give about organizational culture or management style?",
+        "What are the articulated messages and assumptions about people management, that are percolating through different levels of your organization? What are the assumptions that your managers make about people management?",
+        "Is this preferred leadership style pointing to a sub-culture within the organizational culture, or maybe a function, leader or location?"
+      ]
+    },
+    {
+      "title": "Sales funnel",
+      "items": [
+        "Is your organization able to fully utilize all the tools available for driving results?",
+        "Are there processes in place for learning to happen continuously and on the job?",
+        "Is learning being applied to course correct and drive results?",
+        "Are all opportunities to achieve results being fully explored and utilized?",
+        "Are upskilling and motivational tools available in the organization being fully utilized by the employees to drive results?"
+      ]
+    },
+    {
+      "title": "Leadership styles",
+      "items": [
+        "Are there processes and mechanisms for getting to know team members completely and continuously and using that to upskill and motivate them in a way that they resonate with?",
+        "Are there processes in place for studying the impact of measures taken to upskill and motivate employees?",
+        "Are the right kind of leadership approaches being deployed in order to drive results?",
+        "Are employees managing their team members mindfully and consciously?"
+      ]
+    },
+    {
+      "title": "Actions to drive results",
+      "items": [
+        "Does your organization focus more on improving skills and moving them up the ladder?",
+        "Does your organization prefer to build morale and push people to succeed through this approach?",
+        "Does your organization prefer to inspire and lead people to success?",
+        "Do the efforts and approaches the group takes to manage people get the results that are needed?"
+      ]
+    },
+    {
+      "title": "Management style",
+      "items": [
+        "Does your organization believe in nurturing bottom performers, increase their skill and morale and set them up for success. Or does it encourage working with top performers and push them to achieve even more?"
+      ]
+    }
+  ]
+}

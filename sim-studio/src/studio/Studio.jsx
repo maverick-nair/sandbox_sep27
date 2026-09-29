@@ -4,6 +4,8 @@ import { Button, Drawer, Modal, Pill, Switch, TextInput, Callout, Tip, copyText 
 import Overview from './sections/Overview.jsx';
 import Story from './sections/Story.jsx';
 import Onboarding from './sections/Onboarding.jsx';
+import Look from './sections/Look.jsx';
+import Game from './sections/Game.jsx';
 import Funnel from './sections/Funnel.jsx';
 import Team from './sections/Team.jsx';
 import Leadership from './sections/Leadership.jsx';
@@ -37,12 +39,14 @@ export const SECTIONS = [
   { id: 'overview', label: 'Overview', group: 'Plan', component: Overview },
   { id: 'story', label: 'Story and context', group: 'Build', component: Story },
   { id: 'onboarding', label: 'Learner onboarding', group: 'Build', component: Onboarding },
+  { id: 'look', label: 'Look and feel', group: 'Build', component: Look },
   { id: 'funnel', label: 'Funnel and target', group: 'Build', component: Funnel },
   { id: 'team', label: 'Team', group: 'Build', component: Team },
   { id: 'leadership', label: 'Leadership model', group: 'Build', component: Leadership },
   { id: 'actions', label: 'Actions', group: 'Build', component: Actions },
   { id: 'events', label: 'Events', group: 'Build', component: Events },
   { id: 'decisions', label: 'Decision moments', group: 'Build', component: Decisions },
+  { id: 'game', label: 'Game elements', group: 'Build', component: Game },
   { id: 'report', label: 'Report', group: 'Build', component: Report },
   { id: 'settings', label: 'Settings and delivery', group: 'Ship', component: Settings },
   { id: 'results', label: 'Learners and results', group: 'Ship', component: Results },

@@ -1,7 +1,7 @@
 // Learners and results: cohorts to run the simulation with, and what happened when people played
 // it. A group report (scores, reasoning quality, concepts to reinforce, each decision), the
 // leaderboard, groups, every learner's result and the scores prepared for LMS gradebooks.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { summarise } from '../results.js';
 import { Histogram, BarList, Legend } from '../charts.jsx';
 import { Leaderboard } from '../../learner/Debrief.jsx';
@@ -13,6 +13,11 @@ import { CRITERIA_LIBRARY } from '../../engine/nlp.js';
 import { downloadText } from '../store.js';
 import { slug } from '../Delivery.jsx';
 import { Button, Callout, Field, Pill, SectionHead, Seg, TextInput, copyText } from '../ui.jsx';
+import GroupReport from '../../report/GroupReport.jsx';
+import { aggregate } from '../../engine/group.js';
+import { downloadReport, fileSlug } from '../../report/download.js';
+import { useSynthetic, useIdeal } from './Report.jsx';
+import '../../report/report.css';
 
 const code6 = () => Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
 const day = (t) => (t ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -84,7 +89,7 @@ export default function Results({ def, update, sim, results, notify, onPlay, foc
         </div>
       )}
 
-      {tab === 'report' && (rows.length ? <Report def={live?.def || def} rows={rows} /> : <Empty live={live} onPlay={onPlay} onPractice={addPractice} />)}
+      {tab === 'report' && (rows.length ? <GroupReports def={live?.def || def} rows={rows} all={all} cohort={cohorts.find((c) => c.id === cohort)} notify={notify} /> : <Empty live={live} onPlay={onPlay} onPractice={addPractice} />)}
       {tab === 'cohorts' && <Cohorts def={def} update={update} sim={sim} all={all} notify={notify} />}
       {tab === 'learners' && <Learners def={def} sim={sim} rows={rows} results={results} notify={notify} practiceCount={practiceCount} onPractice={live ? addPractice : null} cohorts={cohorts} />}
       {tab === 'board' && (rows.length ? <div className="card"><Leaderboard rows={rows.filter((r) => r.completed !== false)} you={null} delivery={{ ...def.delivery, leaderboardSize: def.delivery.leaderboardSize || 10 }} />{!def.delivery.leaderboard && <p className="small muted">Learners do not see this: the leaderboard is off in Settings and delivery.</p>}</div> : <Empty live={live} onPlay={onPlay} onPractice={addPractice} />)}
@@ -103,6 +108,41 @@ function Empty({ live, onPlay, onPractice }) {
 }
 
 // ---------- group report ----------
+
+function GroupReports({ def, rows, all, cohort, notify }) {
+  const [view, setView] = useState('leadership');
+  return (
+    <div className="stack" style={{ '--gap': '14px' }}>
+      <Seg label="Report" value={view} onChange={setView} options={[{ value: 'leadership', label: 'Leadership group report' }, { value: 'decisions', label: 'Decisions and reasoning' }]} />
+      {view === 'leadership' ? <LeadershipGroup def={def} rows={rows} all={all} cohort={cohort} notify={notify} /> : <Report def={def} rows={rows} />}
+    </div>
+  );
+}
+
+function LeadershipGroup({ def, rows, all, cohort, notify }) {
+  const ref = useRef(null);
+  const done = rows.filter((r) => r.completed !== false && r.rp);
+  const everyone = all.filter((r) => r.completed !== false && r.rp);
+  const mode = def.report.group?.benchmark || 'auto';
+  // Comparing a group with itself says nothing, so Automatic needs the group to be a subset.
+  const useEveryone = mode === 'everyone' || (mode === 'auto' && everyone.length >= 20 && everyone.length > done.length);
+  const synthetic = useSynthetic(def, 30, 4242, !useEveryone);
+  const ideal = useIdeal(def);
+  const group = useMemo(() => aggregate(def, done.map((r) => r.rp)), [def, done.length, rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  const bench = useMemo(() => (useEveryone ? aggregate(def, everyone.map((r) => r.rp)) : synthetic.data?.agg || null), [def, useEveryone, everyone.length, synthetic.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const benchLabel = useEveryone ? 'Everyone' : 'Benchmark';
+  const title = cohort ? `${cohort.name}: group report` : 'Group report';
+  if (!done.length) return <Callout icon="i">These results were saved before the leadership group report existed, so they carry no report data. New results, including practice learners, fill this report.</Callout>;
+  return (
+    <div className="stack" style={{ '--gap': '12px' }}>
+      <div className="row">
+        <p className="small muted grow">{done.length} learner{done.length === 1 ? '' : 's'}{rows.length > done.length ? ` (${rows.length - done.length} older results carry no report data)` : ''}. Benchmark: {useEveryone ? `everyone who has played this simulation (${everyone.length})` : synthetic.data ? '30 synthetic learners of mixed ability (everyone who has played is used once at least 20 have, and this view is a smaller group)' : 'playing synthetic learners…'}. Change sections, words and the benchmark in Build, Report.</p>
+        <Button size="sm" onClick={async () => { const r = await downloadReport(ref.current, `${def.meta?.name || 'iLead'} ${title}`, `${fileSlug(def.meta?.name)}-${fileSlug(cohort?.name || 'group')}-report`); notify?.(r === 'saved' ? 'Group report downloaded' : r === 'declined' ? 'Download cancelled' : 'Downloads are not available here'); }}>Download as HTML</Button>
+      </div>
+      <div className="report-frame"><GroupReport ref={ref} def={def} group={group} bench={bench} benchLabel={benchLabel} benchNote={useEveryone ? `everyone who has played (${everyone.length})` : "30 synthetic learners"} title={title} subtitle={cohort ? `Cohort code ${cohort.code}` : 'All learners in this view'} ideal={ideal} date={new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })} /></div>
+    </div>
+  );
+}
 
 function Report({ def, rows }) {
   const s = useMemo(() => summarise(rows, def), [rows, def]);

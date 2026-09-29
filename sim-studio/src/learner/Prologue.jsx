@@ -7,6 +7,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { renderText } from '../engine/text.js';
 import { DEFAULT_SCORING } from '../engine/decisions.js';
 import { Avatar } from './Moment.jsx';
+import { Face } from './look.jsx';
+import { Logo, ProductArt, TargetArt, sceneBackground, Icon } from './art.jsx';
 import { moodOf, avatarColor } from './model.js';
 
 export const LANG_NAMES = { en: 'English', hi: 'Hindi', 'zh-Hans': 'Chinese (Simplified)', es: 'Spanish', fr: 'French', ja: 'Japanese', ar: 'Arabic', de: 'German', pt: 'Portuguese', id: 'Indonesian' };
@@ -54,18 +56,19 @@ export function FlipCard({ flipped, onFlip, front, back, label, className = '', 
 
 export function Cover({ def, saved, savedWeek, langs, language, setLanguage, onBegin, onResume, onSkip, onExit, preview }) {
   const chapters = chaptersOf(def);
+  const look = def.look || {};
+  const value = def.funnel.valuePerConversion * def.funnel.target;
   return (
-    <div className="lx-root lx-cover-root">
+    <div className="lx-root lx-cover-root" style={{ background: sceneBackground(look.scene, look.sceneImage), ...(look.brand ? { '--brand': look.brand } : {}) }}>
       <div className="lx-cover">
         <div className="lx-cover-card">
-          <span className="lx-mark big" aria-hidden="true">{t(def, '{{company}}').slice(0, 1)}</span>
-          <div className="lx-kicker">{t(def, '{{company}}')} · {t(def, '{{city}}')}</div>
+          <div className="row nowrap" style={{ '--gap': '12px' }}><Logo def={def} look={look} size={52} /><div className="lx-kicker">{t(def, '{{company}}')} · {t(def, '{{city}}')}</div></div>
           <h1>{t(def, 'Lead the {{product}} team at {{company}}')}</h1>
           <p className="lx-lede">{t(def, `You have just been appointed {{learner_role}}. For the next ${def.timeline.weeks} weeks, a team of ${team(def).length} people and a quarter's results are in your hands.`)}</p>
-          <div className="lx-cover-meta">
-            <span>About {minutesFor(def)} minutes</span>
-            <span>{chapters.length ? `A ${chapters.length}-part briefing first` : 'Straight into week 1'}</span>
-            <span>Progress saves as you go</span>
+          <div className="lx-cover-stakes">
+            <span><Icon name="objective" size={18} /><b>{def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency} `}{value.toLocaleString('en')}</b> revenue target</span>
+            <span><Icon name="team" size={18} /><b>{team(def).length}</b> people to lead</span>
+            <span><Icon name="clock" size={18} /><b>{def.timeline.timeLimit || minutesFor(def)}</b> minutes</span>
           </div>
           {langs.length > 1 && (
             <label className="lx-cover-lang"><span>Language</span>
@@ -86,10 +89,11 @@ export function Cover({ def, saved, savedWeek, langs, language, setLanguage, onB
             {preview && chapters.length > 0 && <button type="button" className="btn ghost lx-on-dark" onClick={onSkip}>Skip to week 1 (author)</button>}
             {onExit && <button type="button" className="btn ghost lx-on-dark" onClick={onExit}>{preview ? 'Back to Studio' : 'Leave'}</button>}
           </div>
+          <p className="small lx-cover-note">{chapters.length ? `A ${chapters.length}-part briefing first. ` : ''}Your progress saves as you go.</p>
         </div>
         <div className="lx-cover-deck" aria-hidden="true">
           {team(def).slice(0, 5).map((a, i) => (
-            <span key={a.id} className="lx-cover-cardback" style={{ '--i': i, '--c': avatarColor(a.name) }}><span className="lx-mark">{t(def, '{{company}}').slice(0, 1)}</span></span>
+            <span key={a.id} className="lx-cover-card-face" style={{ '--i': i }}><Face name={a.name} size={130} shape="square" /><b>{a.name.split(' ')[0]}</b></span>
           ))}
         </div>
       </div>
@@ -121,13 +125,13 @@ export default function Prologue({ def, preview, onExit, onBack, ready }) {
   });
   const setReady = (id) => (ok) => setGate((g) => (g[id] === ok ? g : { ...g, [id]: ok }));
   const body = {
-    company: CompanyChapter, mission: MissionChapter, flow: FlowChapter, team: TeamChapter, model: ModelChapter, howto: HowtoChapter, custom: CustomChapter,
+    welcome: WelcomeChapter, company: CompanyChapter, product: ProductChapter, targets: TargetsChapter, mission: MissionChapter, flow: FlowChapter, team: TeamChapter, model: ModelChapter, howto: HowtoChapter, custom: CustomChapter,
   }[step.kind];
 
   return (
-    <div className="lx-root lx-prologue-root">
+    <div className="lx-root lx-prologue-root" style={{ background: sceneBackground(def.look?.scene, def.look?.sceneImage), ...(def.look?.brand ? { '--brand': def.look.brand } : {}) }}>
       <header className="lx-pro-head">
-        <div className="lx-brand"><span className="lx-mark" aria-hidden="true">{t(def, '{{company}}').slice(0, 1)}</span><span className="lx-company">{t(def, '{{company}}')}</span></div>
+        <div className="lx-brand"><Logo def={def} look={def.look} size={30} /><span className="lx-company">{t(def, '{{company}}')}</span></div>
         <ol className="lx-pro-rail" aria-label="Briefing">
           {steps.map((s, k) => (
             <li key={s.id} className={k < i ? 'done' : k === i ? 'now' : ''}>
@@ -165,13 +169,78 @@ function BodyOf({ C, def, ch, setReady }) {
   return <C def={def} ch={ch} setReady={setReady} />;
 }
 
+function WelcomeChapter({ def }) {
+  const [opened, setOpened] = useState(false);
+  const ceo = t(def, '{{ceo}}');
+  return (
+    <div className="lx-welcome-card">
+      <div className="lx-welcome-who">
+        <Face name={ceo} size={150} />
+        <strong>{ceo}</strong>
+        <span className="small">CEO, {t(def, '{{company}}')}</span>
+      </div>
+      <div className="lx-welcome-letter">
+        {!opened ? (
+          <button type="button" className="lx-envelope-closed" onClick={() => setOpened(true)}>
+            <span className="lx-envelope-flap" aria-hidden="true" />
+            <span className="lx-envelope-from">A letter for the new {t(def, '{{learner_role}}')}</span>
+            <span className="lx-envelope-cta">Open the letter</span>
+          </button>
+        ) : (
+          <article className="lx-letter-paper">
+            {paragraphs(t(def, def.story.welcome)).map((p, k) => <p key={k}>{p}</p>)}
+          </article>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductChapter({ def, ch }) {
+  return (
+    <div className="lx-product-card">
+      <div className="lx-product-art">
+        <ProductArt kind={def.look?.productArt} image={def.look?.productImage} size={240} label={t(def, '{{product}}')} />
+        <strong>{t(def, '{{product}}')}</strong>
+      </div>
+      <div className="lx-ch-text">
+        {paragraphs(t(def, ch.body || def.story.overview)).map((p, k) => <p key={k}>{p}</p>)}
+        <p className="small lx-sign">{t(def, '{{ceo}}')}, CEO, {t(def, '{{company}}')}</p>
+      </div>
+    </div>
+  );
+}
+
+function TargetsChapter({ def }) {
+  const cur = def.funnel.currency === 'USD' ? '$' : `${def.funnel.currency || ''} `;
+  const v = def.funnel.valuePerConversion;
+  const rows = [
+    { h: `Sales revenue: ${cur}${(def.funnel.target * v).toLocaleString('en')}` },
+    { h: `${def.funnel.target} sales conversions`, s: `1 conversion = ${cur}${Number(v).toLocaleString('en')}` },
+    ...(def.story.goals || []).map((g) => ({ h: t(def, g) })),
+  ];
+  return (
+    <div className="lx-targets-card">
+      <div className="lx-targets-art"><TargetArt size={220} /></div>
+      <div>
+        {def.story.target && <p className="lx-targets-intro">{t(def, def.story.target)}</p>}
+        <ol className="lx-targets-list">
+          {rows.map((r, k) => <li key={k} style={{ '--i': k }}><span className="lx-target-n">{k + 1}</span><span><strong>{r.h}</strong>{r.s && <small>{r.s}</small>}</span></li>)}
+          <li className="time" style={{ '--i': rows.length }}><span className="lx-target-n clock"><Icon name="clock" size={18} /></span><span>Duration: <strong>{def.timeline.weeks} weeks</strong>{def.timeline.timeLimit ? <><br />Simulation time: <strong>{def.timeline.timeLimit} minutes</strong></> : null}</span></li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 function CompanyChapter({ def, ch }) {
   const [open, setOpen] = useState([]);
   const facts = (ch.facts || []).filter((f) => String(f.label || '').trim() || String(f.value || '').trim());
   return (
     <div className="lx-ch-grid">
       <div className="lx-ch-text">
-        {paragraphs(t(def, ch.body || def.story.overview)).map((p, k) => <p key={k}>{p}</p>)}
+        <div className="lx-company-mark"><Logo def={def} look={def.look} size={64} /><div><strong>{t(def, '{{company}}')}</strong><span className="small">{def.context.industry} · {t(def, '{{city}}')}</span></div></div>
+        {paragraphs(t(def, ch.body || (chaptersOf(def).some((c) => c.kind === 'product') ? '' : def.story.overview))).map((p, k) => <p key={k}>{p}</p>)}
       </div>
       {facts.length > 0 && (
         <div className="lx-facts">
@@ -272,10 +341,11 @@ function TeamChapter({ def, ch, setReady }) {
           const mood = moodOf(s0.m ?? 50);
           return (
             <FlipCard key={a.id} className="lx-person-card" style={{ '--i': k }} flipped={seen.includes(a.id)} onFlip={() => setSeen((x) => (x.includes(a.id) ? x : [...x, a.id]))} label={`Turn over the card for ${a.name}`}
-              front={<><span className="lx-mark">{t(def, '{{company}}').slice(0, 1)}</span><span className="lx-card-stage">{stageOf(a.startStage)}</span><span className="lx-flip-cue">Tap to meet</span></>}
+              front={<><Face name={a.name} size={96} shape="square" /><strong className="lx-card-name">{a.name}</strong><span className="lx-card-hi">“Hi, I’m {a.name.split(' ')[0]}. How do you do?”</span><span className="lx-card-stage">{stageOf(a.startStage)}</span><span className="lx-flip-cue">Know more about me</span></>}
               back={
                 <div className="lx-person-back">
-                  <div className="row nowrap" style={{ '--gap': '8px' }}><Avatar name={a.name} size={36} /><div style={{ minWidth: 0 }}><strong>{a.name}</strong><div className="small muted">{stageOf(a.startStage)} · {a.experience || 'experience not stated'}</div></div></div>
+                  <div className="row nowrap" style={{ '--gap': '8px' }}><Face name={a.name} size={40} /><div style={{ minWidth: 0 }}><strong>{a.name}</strong><div className="small muted">{stageOf(a.startStage)} · joined {a.joined || 'recently'}</div></div></div>
+                  <dl className="lx-card-facts"><dt>Experience</dt><dd>{a.experience || 'Not stated'}</dd><dt>Skills</dt><dd>{a.domain || 'Not stated'}</dd></dl>
                   <p>{t(def, a.bio, { actor: a.name, pronoun: a.pronoun })}</p>
                   <span className={`lx-mood ${mood.tone}`}>First impression: {mood.label.toLowerCase()}</span>
                 </div>
@@ -314,7 +384,7 @@ function ModelChapter({ def }) {
         </div>
         <span className="lx-quad-x" aria-hidden="true">Skill →</span>
       </div>
-      <p className="small muted">Skill is what someone can do in their current stage. Morale is how motivated and confident they feel. You cannot see either directly: read their profile, what they say, how they perform, or use Assess member.</p>
+      <p className="small muted">Skill is what someone can do in their current stage. Morale is how motivated and confident they feel. {def.team?.visibility === 'hidden' ? 'You cannot see either directly: read their profile, what they say, how they perform, or use Assess member.' : def.team?.visibility === 'bands' ? 'You will see both as low, medium or high on each person’s card. They move as you lead.' : 'You will see both as numbers on each person’s card, and they move as you lead. The hard part is choosing the style that fits, every week.'}</p>
       {practiceOn && (
         <div className="lx-practice">
           <h3>Try it <span className="small muted">(not scored)</span></h3>
