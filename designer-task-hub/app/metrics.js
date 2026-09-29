@@ -188,7 +188,40 @@
     return tasks.slice().sort((a, b) => (a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1));
   }
 
+  // Approved tasks (owner-written) + designer progress docs (each designer
+  // writes their own). Latest progress doc wins for status fields; daily
+  // updates are merged by date, the most recent write for a date winning.
+  const PROGRESS_FIELDS = ["status", "progress", "revisions", "blockers", "actualEnd"];
+  function mergeProgress(tasks, progressDocs) {
+    const byTask = new Map();
+    for (const p of progressDocs || []) {
+      if (!p || !p.taskId) continue;
+      if (!byTask.has(p.taskId)) byTask.set(p.taskId, []);
+      byTask.get(p.taskId).push(p);
+    }
+    return tasks.map((t) => {
+      const ps = (byTask.get(t.id) || []).slice().sort((a, b) => (a.updatedAt < b.updatedAt ? -1 : 1));
+      const out = { status: "Not Started", progress: 0, revisions: 0, blockers: "", actualEnd: "", ...t, updates: [] };
+      const days = new Map();
+      for (const p of ps) {
+        for (const k of PROGRESS_FIELDS) if (p[k] !== undefined) out[k] = p[k];
+        for (const u of p.updates || []) {
+          const cur = days.get(u.d);
+          if (!cur || (u.at || "") >= (cur.at || "")) days.set(u.d, u);
+        }
+      }
+      out.updates = Array.from(days.values()).sort((a, b) => (a.d < b.d ? -1 : 1));
+      return out;
+    });
+  }
+
+  // 4E lines -> flat product list with their line (the "master tasks")
+  function productsOf(config) {
+    return ((config && config.lines) || []).flatMap((l) => (l.products || []).map((p) => ({ name: p, group: l.name })));
+  }
+
   const api = {
+    mergeProgress, productsOf,
     todayIso, mondayOf, addDays, networkDays, derive, deriveAll, sortTasks, scorecard, pmTable, week, context,
     defaults, rating, projectLead, toDay, toIso, isoWeekday,
   };

@@ -1,6 +1,6 @@
 """Build the export template used by Design Task Hub.
 
-Takes the original "Product Designer Task Manager" workbook and adds three
+Takes the original "Product Designer Task Manager" workbook and adds four
 sheets without touching the existing four (Tracker, Scorecard, Settings,
 Leave & Holidays), their formulas, tables, dropdowns or formatting:
 
@@ -8,6 +8,7 @@ Leave & Holidays), their formulas, tables, dropdowns or formatting:
                 behind them (all driven by the existing tables and sheets)
   Task Details  master task / subtask tags, progress and hours per Tracker row
   Daily Log     one row per designer daily update
+  Task Funnel   every PM request, one row per subtask, with the owner decision
 
 The workbook is edited at the XML level (no openpyxl round trip) so the
 x14 dropdown validations, dynamic-array metadata and table definitions of
@@ -214,10 +215,32 @@ for k in range(PRJ_N):
     d.f(f"F{r}", f'IF($A{r}="","",COUNTIFS(tblTasks[Project],$A{r},tblTasks[Delivery Status],"Overdue"))', S_INT)
     d.f(f"G{r}", f'IF($A{r}="","",SUMIFS(tblTasks[Estimated Effort (Hrs)],tblTasks[Project],$A{r}))', S_DEC1)
 
+# Request funnel (subtask rows on the Task Funnel sheet)
+FUN_HEAD = PRJ_FIRST + PRJ_N + 2
+FUNNEL = ["Awaiting approval", "Changes requested", "Approved", "Rejected"]
+d.s(f"A{FUN_HEAD}", "Request Funnel", S_HEAD)
+d.s(f"B{FUN_HEAD}", "Subtasks", S_HEAD)
+for k, st in enumerate(FUNNEL):
+    r = FUN_HEAD + 1 + k
+    d.s(f"A{r}", st, S_TEXT)
+    d.f(f"B{r}", f"COUNTIFS('Task Funnel'!$O:$O,$A{r})", S_INT)
+# 4E lines (Task Details column Q)
+E4_HEAD = FUN_HEAD + len(FUNNEL) + 2
+for i, h in enumerate(["4E Line", "Tasks", "Open", "Est. Hours", "Hours Logged"]):
+    d.s(f"{col_letter(i + 1)}{E4_HEAD}", h, S_HEAD)
+for k, line in enumerate(["Evaluate", "Educate", "Experience", "Enable", "GENIE Platform", "Other"]):
+    r = E4_HEAD + 1 + k
+    d.s(f"A{r}", line, S_TEXT)
+    d.f(f"B{r}", f"COUNTIFS({TD}$Q:$Q,$A{r})", S_INT)
+    d.f(f"C{r}", f'B{r}-COUNTIFS({TD}$Q:$Q,$A{r},{TD}$H:$H,"Done*")', S_INT)
+    d.f(f"D{r}", f"SUMIFS({TD}$I:$I,{TD}$Q:$Q,$A{r})", S_DEC1)
+    d.f(f"E{r}", f"SUMIFS({TD}$K:$K,{TD}$Q:$Q,$A{r})", S_DEC1)
+DASH_LAST = E4_HEAD + 6
+
 dash_cols = [(1, 24)] + [(i, 18 if i == 9 else 12.5) for i in range(2, 17)]
 dash_view = '<sheetView showGridLines="0" workbookViewId="0"/>'
 dash_xml = d.xml(dash_cols, tail='<drawing r:id="rId1"/>', sheet_view=dash_view, fit_width=True,
-                 dim=f"A1:P{PRJ_FIRST + PRJ_N - 1}")
+                 dim=f"A1:P{DASH_LAST}")
 
 # ------------------------------------------------------------ Task Details
 TD_HEADS = [
@@ -226,7 +249,8 @@ TD_HEADS = [
     ("Status", S_HEAD_GREY, 13), ("Delivery Status", S_HEAD_GREY, 15), ("Est. Hours", S_HEAD_GREY, 10),
     ("Progress %", S_HEAD_TEAL, 11), ("Hours Logged", S_HEAD_TEAL, 11), ("Last Update", S_HEAD_TEAL, 13),
     ("Latest Note", S_HEAD_TEAL, 44), ("Assigned By", S_HEAD, 14), ("Assigned On", S_HEAD, 13),
-    ("Brief / Link", S_HEAD, 36),
+    ("Brief / Link", S_HEAD, 36), ("4E Line", S_HEAD, 12), ("Master Task Title", S_HEAD, 30),
+    ("Request ID", S_HEAD, 11), ("Approved On", S_HEAD, 13),
 ]
 t = Sheet()
 t.s("A1", "Task Details", S_TITLE)
@@ -237,8 +261,8 @@ for i, (h, st, _) in enumerate(TD_HEADS):
 frozen = ('<sheetView showGridLines="0" workbookViewId="0"><pane xSplit="1" ySplit="4" topLeftCell="B5" '
           'activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="B5" sqref="B5"/></sheetView>')
 td_xml = t.xml([(i + 1, w) for i, (_, _, w) in enumerate(TD_HEADS)],
-               extra_before_margins="", sheet_view=frozen, dim="A1:P4")
-td_xml = td_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:P4"/>')
+               extra_before_margins="", sheet_view=frozen, dim="A1:T4")
+td_xml = td_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:T4"/>')
 
 # --------------------------------------------------------------- Daily Log
 DL_HEADS = [("Date", 12), ("Task ID", 9), ("Designer", 14), ("Master Task", 20), ("Subtask", 18),
@@ -253,6 +277,19 @@ frozen2 = ('<sheetView showGridLines="0" workbookViewId="0"><pane ySplit="4" top
            'activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A5" sqref="A5"/></sheetView>')
 dl_xml = g.xml([(i + 1, w) for i, (_, w) in enumerate(DL_HEADS)], sheet_view=frozen2, dim="A1:J4")
 dl_xml = dl_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:J4"/>')
+
+# ------------------------------------------------------------- Task Funnel
+TF_HEADS = [("Request ID", 11), ("Submitted", 12), ("PM", 12), ("4E Line", 12), ("Product", 18), ("Project", 20),
+            ("Master Task", 30), ("Priority", 10), ("Subtask", 16), ("Detail", 40), ("Designer", 13), ("Start", 12),
+            ("End", 12), ("Est. Hours", 10), ("Status", 17), ("Decided On", 12), ("Owner Note", 36), ("Task ID", 9)]
+tf = Sheet()
+tf.s("A1", "Task Funnel", S_TITLE)
+tf.s("A2", "Every request PMs submitted, one row per subtask, with your decision. Approved subtasks become Tracker rows (Task ID).", S_NOTE)
+tf.heights[4] = 34
+for i, (h, _) in enumerate(TF_HEADS):
+    tf.s(f"{col_letter(i + 1)}4", h, S_HEAD)
+tf_xml = tf.xml([(i + 1, w) for i, (_, w) in enumerate(TF_HEADS)], sheet_view=frozen2, dim="A1:R4")
+tf_xml = tf_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:R4"/>')
 
 
 # ------------------------------------------------------------------ charts
@@ -421,7 +458,8 @@ parts["xl/styles.xml"] = styles.encode()
 wb = parts["xl/workbook.xml"].decode()
 wb = wb.replace("</sheets>", '<sheet name="Dashboard" sheetId="7" r:id="rId21"/>'
                              '<sheet name="Task Details" sheetId="8" r:id="rId22"/>'
-                             '<sheet name="Daily Log" sheetId="9" r:id="rId23"/></sheets>')
+                             '<sheet name="Daily Log" sheetId="9" r:id="rId23"/>'
+                             '<sheet name="Task Funnel" sheetId="10" r:id="rId24"/></sheets>')
 wb = wb.replace('<calcPr calcId="181029"/>', '<calcPr calcId="181029" fullCalcOnLoad="1"/>')
 assert 'fullCalcOnLoad="1"' in wb
 parts["xl/workbook.xml"] = wb.encode()
@@ -432,28 +470,30 @@ ws_type = f"{REL_NS}/worksheet"
 rels = rels.replace("</Relationships>",
                     f'<Relationship Id="rId21" Type="{ws_type}" Target="worksheets/sheet5.xml"/>'
                     f'<Relationship Id="rId22" Type="{ws_type}" Target="worksheets/sheet6.xml"/>'
-                    f'<Relationship Id="rId23" Type="{ws_type}" Target="worksheets/sheet7.xml"/></Relationships>')
+                    f'<Relationship Id="rId23" Type="{ws_type}" Target="worksheets/sheet7.xml"/>'
+                    f'<Relationship Id="rId24" Type="{ws_type}" Target="worksheets/sheet8.xml"/></Relationships>')
 parts["xl/_rels/workbook.xml.rels"] = rels.encode()
 parts.pop("xl/calcChain.xml", None)
 
 ct = parts["[Content_Types].xml"].decode()
 ct = ct.replace('<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/>', "")
 ws_ct = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
-extra = "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="{ws_ct}"/>' for i in (5, 6, 7))
+extra = "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="{ws_ct}"/>' for i in (5, 6, 7, 8))
 extra += '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'
 extra += "".join(f'<Override PartName="/xl/charts/chart{i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>' for i in range(len(charts)))
 ct = ct.replace("</Types>", extra + "</Types>")
 parts["[Content_Types].xml"] = ct.encode()
 
 app = parts["docProps/app.xml"].decode()
-app = app.replace("<vt:i4>4</vt:i4>", "<vt:i4>7</vt:i4>").replace('<vt:vector size="4" baseType="lpstr">', '<vt:vector size="7" baseType="lpstr">')
+app = app.replace("<vt:i4>4</vt:i4>", "<vt:i4>8</vt:i4>").replace('<vt:vector size="4" baseType="lpstr">', '<vt:vector size="8" baseType="lpstr">')
 app = app.replace("<vt:lpstr>Leave &amp; Holidays</vt:lpstr></vt:vector>",
-                  "<vt:lpstr>Leave &amp; Holidays</vt:lpstr><vt:lpstr>Dashboard</vt:lpstr><vt:lpstr>Task Details</vt:lpstr><vt:lpstr>Daily Log</vt:lpstr></vt:vector>")
+                  "<vt:lpstr>Leave &amp; Holidays</vt:lpstr><vt:lpstr>Dashboard</vt:lpstr><vt:lpstr>Task Details</vt:lpstr><vt:lpstr>Daily Log</vt:lpstr><vt:lpstr>Task Funnel</vt:lpstr></vt:vector>")
 parts["docProps/app.xml"] = app.encode()
 
 parts["xl/worksheets/sheet5.xml"] = dash_xml.encode()
 parts["xl/worksheets/sheet6.xml"] = td_xml.encode()
 parts["xl/worksheets/sheet7.xml"] = dl_xml.encode()
+parts["xl/worksheets/sheet8.xml"] = tf_xml.encode()
 parts["xl/worksheets/_rels/sheet5.xml.rels"] = dash_rels.encode()
 parts["xl/drawings/drawing1.xml"] = drawing_xml.encode()
 parts["xl/drawings/_rels/drawing1.xml.rels"] = drawing_rels.encode()

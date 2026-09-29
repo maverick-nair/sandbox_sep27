@@ -47,6 +47,10 @@ function fixtureTasks(n) {
       id: "task" + String(i).padStart(3, "0"),
       createdAt: `2026-08-01T10:${String(i % 60).padStart(2, "0")}:00Z`,
       master: config.masterTags[i % 3].name,
+      fourE: config.masterTags[i % 3].group,
+      masterTitle: "Master " + (i % 4),
+      requestId: "req" + (i % 4),
+      requestRef: "R-00" + ((i % 4) + 1),
       sub: config.subTags[i % 3],
       title: `Screen set ${i + 1} <&> "quoted"`,
       project: config.projects[i % 3].name,
@@ -71,12 +75,21 @@ function fixtureTasks(n) {
 }
 
 const tasks = fixtureTasks(60); // more than the template's 50 table rows
+const requests = [
+  { id: "req0", ref: "R-001", submittedAt: d(-40), pmName: "Raghav", fourE: "Platform", product: "GenieTracker", project: "GenieTracker Revamp",
+    masterTitle: "Master 0", priority: "High", status: "approved", decidedAt: d(-39), ownerNote: "",
+    subtasks: [{ sub: "Feature design", detail: "Flows", designer: "Pragati", start: d(-30), end: d(-25), effort: 8, taskId: "task000" }] },
+  { id: "req9", ref: "R-002", submittedAt: d(-2), pmName: "SL", fourE: "Evaluate", product: "Nano AI", project: "Nano AI Launch",
+    masterTitle: "New builder", priority: "Medium", status: "pending",
+    subtasks: [{ sub: "Wireframes", detail: "A", designer: "Swathi", start: d(1), end: d(4), effort: 6 }, { sub: "UX research", detail: "B", designer: "", start: d(5), end: d(8), effort: 4 }] },
+  { id: "reqd", status: "draft", subtasks: [{ sub: "x" }] },
+];
 const leave = [{ designer: "Pragati", from: d(1), to: d(2), type: "Planned Leave", note: "" }];
 const period = { from: d(-40), to: d(10) };
 
 async function buildFile() {
   const { bytes, warnings } = await X.build({ JSZip, DOMParser, XMLSerializer }, TEMPLATE,
-    { config, tasks, leave, period });
+    { config, tasks, leave, period, requests });
   const dir = fs.mkdtempSync(path.join(process.env.DTH_TMP || os.tmpdir(), "dth-"));
   const file = path.join(dir, "out.xlsx");
   fs.writeFileSync(file, bytes);
@@ -98,6 +111,10 @@ test("export keeps the workbook structure and grows the tables", async () => {
   const c1 = await zip.file("xl/charts/chart1.xml").async("string");
   assert.match(c1, /\$A\$68:\$A\$69/);
   new DOMParser().parseFromString(s1, "application/xml"); // well-formed
+  const s8 = await zip.file("xl/worksheets/sheet8.xml").async("string");
+  assert.equal((s8.match(/<row r="(5|6|7)"/g) || []).length, 3, "3 funnel rows (drafts excluded)");
+  assert.match(s8, /Awaiting approval/);
+  assert.match(s8, /T-001/, "approved subtask links to its Tracker ID");
 });
 
 const recalc = process.env.RECALC;
@@ -116,8 +133,9 @@ rows = [[t.cell(r, c).value for c in range(1, 22)] for r in range(5, 65)]
 sc = [[s.cell(r, c).value for c in range(1, 11)] for r in range(12, 14)]
 wk = [[s.cell(r, c).value for c in range(3, 11)] for r in (39, 40, 45, 46)]
 kpi = [d.cell(5, c).value for c in range(1, 17, 2)]
-det = [[td.cell(r, c).value for c in range(1, 9)] for r in (5, 64)]
-print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det}, default=str))
+det = [[td.cell(r, c).value for c in range(1, 21)] for r in (5, 64)]
+fun = [[d.cell(r, 2).value for r in range(149, 153)], [d.cell(r, 2).value for r in range(155, 161)]]
+print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det, "fun": fun}, default=str))
 `, file], { encoding: "utf8" });
   const x = JSON.parse(dump);
   const derived = M.deriveAll(tasks, config, today);
@@ -157,5 +175,8 @@ print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det}, def
   assert.equal(x.kpi[0], 60);
   assert.equal(x.det[0][1], config.masterTags[0].name);
   assert.equal(x.det[1][0], "T-060");
+  assert.equal(x.det[0][16], "Platform", "4E line column");
+  assert.deepEqual(x.fun[0], [2, 0, 1, 0], "funnel counts on the Dashboard");
+  assert.equal(x.fun[1][0], 20, "Evaluate row counts its tasks");
   console.log("excel file:", file);
 });

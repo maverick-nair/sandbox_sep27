@@ -22,7 +22,10 @@
     dashboard: "xl/worksheets/sheet5.xml",
     details: "xl/worksheets/sheet6.xml",
     log: "xl/worksheets/sheet7.xml",
+    funnel: "xl/worksheets/sheet8.xml",
   };
+
+  const FUNNEL_LABEL = { pending: "Awaiting approval", changes: "Changes requested", approved: "Approved", rejected: "Rejected" };
 
   function serial(iso) {
     if (!iso) return null;
@@ -266,10 +269,14 @@
       td.str("N" + r, t.assignedBy, S.center);
       td.date("O" + r, t.createdAt, S.date);
       td.str("P" + r, t.brief, S.wrap);
+      td.str("Q" + r, t.fourE, S.center);
+      td.str("R" + r, t.masterTitle, S.wrap);
+      td.str("S" + r, t.requestRef, S.center);
+      td.date("T" + r, t.approvedAt || t.createdAt, S.date);
     });
     const lastTd = 4 + Math.max(1, tasks.length);
-    td.setAutoFilter("A4:P" + lastTd);
-    td.setDimension("A1:P" + lastTd);
+    td.setAutoFilter("A4:T" + lastTd);
+    td.setDimension("A1:T" + lastTd);
     zip.file(SHEETS.details, td.toString());
 
     // ---- Daily Log
@@ -294,6 +301,37 @@
     lg.setAutoFilter("A4:J" + lastLg);
     lg.setDimension("A1:J" + lastLg);
     zip.file(SHEETS.log, lg.toString());
+
+    // ---- Task Funnel: one row per requested subtask
+    const fn = new SheetDoc(await read(SHEETS.funnel), P);
+    let fr = 5;
+    for (const q of data.requests || []) {
+      if (!FUNNEL_LABEL[q.status]) continue; // drafts stay with the PM
+      for (const st of q.subtasks || []) {
+        fn.str("A" + fr, q.ref, S.center);
+        fn.date("B" + fr, q.submittedAt, S.date);
+        fn.str("C" + fr, q.pmName, S.center);
+        fn.str("D" + fr, q.fourE, S.center);
+        fn.str("E" + fr, q.product, S.text);
+        fn.str("F" + fr, q.project, S.text);
+        fn.str("G" + fr, q.masterTitle, S.wrap);
+        fn.str("H" + fr, q.priority, S.center);
+        fn.str("I" + fr, st.sub, S.text);
+        fn.str("J" + fr, st.detail, S.wrap);
+        fn.str("K" + fr, st.designer, S.center);
+        fn.date("L" + fr, st.start, S.date);
+        fn.date("M" + fr, st.end, S.date);
+        fn.num("N" + fr, st.effort, S.dec1);
+        fn.str("O" + fr, FUNNEL_LABEL[q.status], S.center);
+        fn.date("P" + fr, q.decidedAt, S.date);
+        fn.str("Q" + fr, q.ownerNote, S.wrap);
+        fn.str("R" + fr, st.taskId ? idOf.get(st.taskId) || "" : "", S.center);
+        fr++;
+      }
+    }
+    fn.setAutoFilter("A4:R" + Math.max(5, fr - 1));
+    fn.setDimension("A1:R" + Math.max(5, fr - 1));
+    zip.file(SHEETS.funnel, fn.toString());
 
     // ---- Dashboard: product tag list, then trim chart ranges to real counts
     const ds = new SheetDoc(await read(SHEETS.dashboard), P);
@@ -323,7 +361,7 @@
     // ---- Designer copy: hide owner-only sheets and lock the sheet list
     if (data.designerCopy) {
       let wb = await read("xl/workbook.xml");
-      for (const name of ["Scorecard", "Settings", "Dashboard", "Task Details", "Daily Log"]) {
+      for (const name of ["Scorecard", "Settings", "Dashboard", "Task Details", "Daily Log", "Task Funnel"]) {
         wb = wb.replace(`<sheet name="${name}" `, `<sheet name="${name}" state="hidden" `);
       }
       wb = wb.replace(/<bookViews>/, '<workbookProtection lockStructure="1"/><bookViews>');

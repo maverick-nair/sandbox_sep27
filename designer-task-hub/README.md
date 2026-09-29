@@ -1,38 +1,46 @@
 # Design Task Hub
 
-A small web app for assigning and tracking product design work, built around the
-**Product Designer Task Manager** workbook. Product managers assign tasks in a
-form, designers post daily progress and weekly leave, and the owner gets the
-data back as that same Excel workbook, with a Dashboard sheet added.
+A small web app for requesting, approving and tracking product design work,
+built around the **Product Designer Task Manager** workbook. Product managers
+submit task requests, the owner approves them through a task funnel, designers
+post daily progress and weekly leave, and the owner gets everything back as
+that same Excel workbook with a Dashboard sheet added.
 
-## Who sees what
+## Three interfaces, three links
 
-| Person | Views | Writes to the workbook |
-|---|---|---|
-| Product manager | Assign task, My assignments | Tracker columns B to I (task, project, designer, priority, dates, effort) |
-| Designer | My tasks, My leave | Tracker columns J to M (status, actual end date, revision rounds, blockers), Leave & Holidays |
-| Owner | Dashboard, All tasks, Assign task, Designer view, Leave & holidays, People, Lists & scoring, Export to Excel | Everything, including Settings and the Scorecard period |
+One page serves three separate interfaces. Each group gets only its own link,
+and each interface has its own header, colour and navigation:
 
-Designers never see the Scorecard, Settings or the dashboard. Everyone except
-the owner asks to join once (role plus their name on the tracker) and the owner
-approves them under **People**.
+| Link | Interface | For | What they do |
+|---|---|---|---|
+| `#pm` | **Task Creation** (navy) | Product managers | Build a request: 4E line, product (options depend on the line), project, master task title, priority, brief, then one or more detailed subtasks, each with its own designer, start, end and hours. A live timeline and designer availability sit beside the form. Submit it to the owner, save a draft, and follow each request's status and, once approved, its live progress. |
+| `#designer` | **Designer Tracker** (teal) | Product designers | Only their own approved tasks and a personal timeline. Post one update per task per day (status, progress, hours, revision rounds, note, blocker) and log leave weekly. |
+| `#owner` | **Owner Dashboard** (graphite) | The owner only | Task funnel (approve, send back with a note, or reject; adjust designers and dates first, with a capacity check), overview dashboard, all tasks, leave, people and links, lists and 4E setup, Excel export. |
 
-Tasks are tagged with a **master task** (the product, grouped by product line:
-Platform, Evaluate, Educate, Experience, Enable) and a **subtask** (the kind of
-design work), and each one links to a project. On the Tracker, Task Assigned
-reads `GenieTracker / Feature design: Onboarding flow for admins`.
+Opening another group's link shows a short "this page is for ..." notice.
+First-time visitors ask to join from their link; the owner approves them under
+**People & links**, which also has copy buttons for the three links.
+
+## The task funnel
+
+Draft -> Awaiting approval -> Approved (tasks created) or Changes requested
+(PM edits and resubmits) or Rejected. Nothing reaches a designer until the
+owner approves. Each approved subtask becomes one Tracker row, and on the
+Tracker Task Assigned reads `Nano AI / Feature design: Question editor ...`.
 
 ## The workbook
 
 `workbook/Product Designer Task Manager (original).xlsx` is the source workbook.
-`tools/build_template.py` adds three sheets to it and writes `workbook/template.xlsx`:
+`tools/build_template.py` adds four sheets to it and writes `workbook/template.xlsx`:
 
 - **Dashboard**: KPI tiles and six native Excel charts (designer scores,
   utilisation this week, delivery status, hours logged per week, effort by
   product, tasks by project), driven by formulas on the existing sheets.
 - **Task Details**: master task, subtask, progress, hours logged and latest
-  note, row-aligned with the Tracker.
+  note, 4E line, master task title and request ID, row-aligned with the Tracker.
 - **Daily Log**: one row per designer update per task per day.
+- **Task Funnel**: every submitted request, one row per subtask, with the
+  owner's decision, note and resulting Task ID.
 
 The script edits the file at the XML level, so the original Tracker, Scorecard,
 Settings and Leave & Holidays sheets keep every formula, table, dropdown and
@@ -43,7 +51,7 @@ past its 50 template rows when needed), leave, holidays, Settings lists and
 scoring values, and the Scorecard period. It can also produce a **designer
 copy** with the owner-only sheets hidden and the sheet list locked.
 
-`app/metrics.js` is the workbook's formulas in JavaScript (TAT, planned days,
+`app/app.js` is the page script (all three interfaces). `app/metrics.js` is the workbook's formulas in JavaScript (TAT, planned days,
 delivery status, speed, quality, task score, Scorecard, weekly workload), so the
 in-app dashboard shows the same numbers Excel does.
 
@@ -64,9 +72,19 @@ without them it is skipped.
 
 ## Data
 
-The published page stores its data in the artifact's own database:
-`config/main` (lists, tags, holidays, scoring), `config/people` (approved
-members), `claims/<person>` (join requests), `tasks/*` (tasks with their
-daily updates), `leave/*` and `checkins/*` (weekly leave confirmations). Lists
-and people are writable by the owner only. PMs and designers need Contributor
-access to the page to save.
+The page keeps its data in the artifact's own database, with access rules so
+each group can only write its own part:
+
+| Path | Written by | Holds |
+|---|---|---|
+| `config/main` | Owner | Designers, PMs, projects with lead PM, 4E lines with products, subtask types, holidays, scoring |
+| `config/people` | Owner | Approved members (role, name on the tracker) |
+| `claims/<person>` | That person | Join request |
+| `requests/<pm>/items/*` | That PM (the owner reads and decides) | Requests with their subtasks and decision history |
+| `tasks/*` | Owner (on approval) | Approved tasks, one per subtask |
+| `progress/<designer>/tasks/*` | That designer | Status, progress, revisions, blockers and daily updates |
+| `leave/<designer>`, `leave/<designer>/items/*` | That designer | Weekly leave confirmations and leave entries |
+
+PMs and designers need Contributor access to the page to save. PMs cannot
+see each other's requests, and nobody but the owner can create or change
+approved tasks or the lists.

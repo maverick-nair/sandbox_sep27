@@ -57,7 +57,7 @@ const SEED = {
     designers: ["Pragati", "Swathi"],
     pms: ["Raghav", "SL", "Arun", "Naveen", "Manu"],
     projects: [{ name: "Project 1 (rename)", lead: "Raghav" }, { name: "Project 2 (rename)", lead: "SL" }],
-    masterTags: [{ name: "GenieTracker", group: "Platform" }, { name: "Nano AI", group: "Evaluate" }, { name: "AI Koach", group: "Enable" }],
+    lines: [{ name: "Evaluate", products: ["Conversation AI", "Nano AI", "PitchPerfect AI"] }, { name: "Enable", products: ["AI Koach"] }],
     subTags: ["Feature design", "UX research", "Wireframes"],
     holidays: [], scoring: {},
   },
@@ -74,80 +74,141 @@ const SEED = {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
-  const go = async (as) => { await page.goto("https://app.test/?as=" + as); await page.waitForSelector("main:not(:has(.skeleton))"); };
   const shot = (n) => page.screenshot({ path: path.join(OUT, n + ".png"), fullPage: true });
   const tab = (name) => page.getByRole("tab", { name }).click();
 
+  const go = async (as, app) => { await page.goto(`https://app.test/?as=${as}#${app}`); await page.waitForSelector("main:not(:has(.skeleton))"); };
+  const expectText = (t, timeout = 4000) => page.getByText(t).first().waitFor({ timeout });
   await page.goto("https://app.test/?as=owner");
   await page.evaluate((seed) => localStorage.setItem("mockdb", JSON.stringify(seed)), SEED);
-
-  // Owner assigns two tasks
-  await go("owner");
-  await tab("Assign task");
-  await page.getByRole("button", { name: "Assign task" }).click();
-  await page.getByText("Pick a master task.").waitFor({ timeout: 3000 });
-  const assign = async (master, sub, title, designer, target, effort) => {
-    await page.getByRole("button", { name: master, exact: true }).click();
-    await page.getByRole("button", { name: sub, exact: true }).click();
-    await page.fill("#t-title", title);
-    await page.selectOption("#t-project", "Project 1 (rename)");
-    await page.selectOption("#t-designer", designer);
-    await page.fill("#t-target", target);
-    await page.fill("#t-effort", String(effort));
-    await page.waitForTimeout(450);
-    await page.getByRole("button", { name: "Assign task" }).click();
-    await page.getByText(`Assigned to ${designer}`).waitFor();
-  };
   const today = await page.evaluate(() => window.DTHMetrics.todayIso());
   const plus = (n) => page.evaluate(([t, n]) => window.DTHMetrics.addDays(t, n), [today, n]);
-  await assign("GenieTracker", "Feature design", "Onboarding flow for admins", "Pragati", await plus(6), 16);
-  await assign("Nano AI", "Wireframes", "Assessment builder", "Pragati", await plus(3), 10);
-  await shot("01-owner-assign");
-  await tab("All tasks");
-  await page.getByText("Onboarding flow for admins").waitFor();
-  await shot("02-owner-all");
 
-  // A designer asks to join, the owner approves
-  await go("u_des1");
-  await page.getByText("Tell us who you are").waitFor();
-  await page.selectOption("#claim-name", "Pragati");
+  // Owner dashboard opens; three links on People & links
+  await go("owner", "owner");
+  await page.locator(".brand b", { hasText: "Owner Dashboard" }).waitFor();
+  await tab("People & links");
+  if ((await page.locator(".link-row").count()) !== 3) throw new Error("expected three links");
+
+  // A PM and a designer join through their own links; owner approves
+  await go("u_pm1", "pm");
+  await expectText("Join Task Creation");
+  await page.selectOption("#join-name", "Raghav");
   await page.getByRole("button", { name: "Send request" }).click();
-  await page.getByText("Waiting for approval").waitFor();
-  await go("owner");
-  await tab("People");
-  await page.getByRole("button", { name: "Approve" }).click();
-  await page.getByText("can now use Design Task Hub").waitFor();
+  await expectText("Waiting for approval");
+  await go("u_des1", "designer");
+  await expectText("Join Designer Tracker");
+  await page.selectOption("#join-name", "Pragati");
+  await page.getByRole("button", { name: "Send request" }).click();
+  await expectText("Waiting for approval");
+  await go("owner", "owner");
+  await tab("People & links");
+  await page.getByRole("button", { name: "Approve" }).first().click();
+  await expectText("can now use");
+  await page.getByRole("button", { name: "Approve" }).first().click();
+  await page.waitForFunction(() => document.querySelectorAll("button").length && ![...document.querySelectorAll("button")].some((b) => b.textContent === "Approve"));
 
-  // Designer posts a daily update and logs leave
-  await go("u_des1");
-  await page.getByText("Good ", { exact: false }).first().waitFor();
+  // Wrong interface is refused
+  await go("u_des1", "pm");
+  await expectText("Task Creation is for product managers");
+  await go("u_pm1", "owner");
+  await expectText("Owner Dashboard is for the owner");
+
+  // PM builds a request with two subtasks
+  await go("u_pm1", "pm");
+  await page.getByRole("button", { name: "Submit for approval" }).click();
+  await expectText("Choose the 4E line.");
+  await page.selectOption("#r-line", "Evaluate");
+  await page.selectOption("#r-product", "Nano AI");
+  await page.selectOption("#r-project", "Project 1 (rename)");
+  await page.fill("#r-title", "Assessment builder revamp");
+  const st = page.locator(".subtask");
+  const fillSub = async (i, type, detail, designer, s0, e0, hrs) => {
+    const b = st.nth(i);
+    await b.locator("select").nth(0).selectOption(type);
+    await b.locator("select").nth(1).selectOption(designer);
+    await b.locator("textarea").fill(detail);
+    await b.locator('input[type="date"]').nth(0).fill(s0);
+    await b.locator('input[type="date"]').nth(1).fill(e0);
+    await b.locator('input[type="number"]').fill(String(hrs));
+    await page.waitForTimeout(420);
+  };
+  await fillSub(0, "Feature design", "Question editor with drag to reorder, empty and error states", "Pragati", await plus(0), await plus(4), 14);
+  await page.getByRole("button", { name: "Add subtask" }).click();
+  await fillSub(1, "UX research", "Five interviews with assessment admins", "", await plus(5), await plus(9), 10);
+  await shot("01-pm-form");
+  await page.getByRole("button", { name: "Submit for approval" }).click();
+  await expectText("Sent to the owner for approval");
+  await expectText("Awaiting approval");
+  await shot("02-pm-requests");
+
+  // Nothing reaches the designer before approval
+  await go("u_des1", "designer");
+  await expectText("You're all caught up");
+
+  // Owner reviews: must assign subtask 2, then approves
+  await go("owner", "owner");
+  await tab(/Task funnel/);
+  await expectText("Assessment builder revamp");
+  await shot("03-owner-funnel");
+  await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
+  await expectText("Assign a designer.");
+  await page.locator("article.req select").nth(1).selectOption("Swathi");
+  await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
+  await expectText("Approved. 2 tasks added to the Tracker");
+
+  // Second request goes back with changes, PM resubmits
+  await go("u_pm1", "pm");
+  await page.selectOption("#r-line", "Enable");
+  await page.selectOption("#r-product", "AI Koach");
+  await page.selectOption("#r-project", "Project 2 (rename)");
+  await page.fill("#r-title", "Coach nudges");
+  await fillSub(0, "Wireframes", "Nudge cards on the home screen", "Pragati", await plus(2), await plus(6), 8);
+  await page.getByRole("button", { name: "Submit for approval" }).click();
+  await expectText("Sent to the owner for approval");
+  await go("owner", "owner");
+  await tab(/Task funnel/);
+  await page.getByRole("button", { name: "Request changes" }).click();
+  await expectText("Tell the PM what to change.");
+  await page.locator("article.req textarea").fill("Split the wireframes into mobile and desktop");
+  await page.getByRole("button", { name: "Request changes" }).click();
+  await expectText("Sent back to the PM");
+  await go("u_pm1", "pm");
+  await tab(/My requests/);
+  await expectText("Split the wireframes into mobile and desktop");
+  await page.getByRole("button", { name: "Edit and resubmit" }).click();
+  await expectText("Owner's note:");
+  await page.getByRole("button", { name: "Resubmit for approval" }).click();
+  await expectText("Sent to the owner for approval");
+
+  // Designer sees approved work and posts an update
+  await go("u_des1", "designer");
+  await expectText("Question editor with drag to reorder, empty and error states");
   const card = page.locator("article.task").first();
   await card.locator('input[type="number"]').fill("3.5");
   await card.locator('input[type="range"]').fill("40");
   await card.getByPlaceholder("For example: Finished").fill("Explored three layouts");
   await card.getByRole("button", { name: /Save today's update/ }).click();
-  await page.getByText(/Update saved for T-00/).waitFor();
-  await shot("03-designer-today");
-  const card2 = page.locator("article.task").nth(1);
-  await card2.getByRole("button", { name: "Blocked", exact: true }).click();
-  await card2.getByRole("button", { name: /Save today's update/ }).click();
-  await page.getByText("Say what is blocking").waitFor();
-  await card2.getByPlaceholder("Waiting on copy").fill("Waiting on scoring rules from PM");
-  await card2.getByRole("button", { name: /Save today's update/ }).click();
-  await page.getByText(/Update saved for T-00/).waitFor();
+  await expectText(/Update saved for T-00/);
+  await shot("04-designer-tasks");
   await tab("My leave");
   await page.fill("#l-from", await plus(8));
   await page.fill("#l-to", await plus(9));
-  await page.getByRole("button", { name: "Add leave" }).click();
-  await page.getByText("Leave added").waitFor();
-  await shot("04-designer-leave");
+  await page.getByRole("button", { name: /Add leave/ }).click();
+  await expectText("Leave added");
   const tabsSeen = await page.getByRole("tab").allTextContents();
-  if (tabsSeen.some((t) => /Dashboard|Lists|Export|People/.test(t))) throw new Error("designer sees owner tabs: " + tabsSeen);
+  if (tabsSeen.some((t) => /Overview|funnel|Export|People|request/i.test(t))) throw new Error("designer sees other tabs: " + tabsSeen);
 
-  // Owner dashboard and export
-  await go("owner");
-  await tab("Dashboard");
-  await shot("05-owner-dashboard");
+  // PM sees live progress on the approved request
+  await go("u_pm1", "pm");
+  await tab(/My requests/);
+  await page.getByRole("button", { name: "All" }).click();
+  await expectText("T-001");
+  await expectText("40%");
+
+  // Owner overview and export
+  await go("owner", "owner");
+  await shot("05-owner-overview");
   await tab("Export to Excel");
   await page.getByRole("button", { name: "Download Excel" }).click();
   await page.getByText(/^Saved "Product Designer Task Manager/).waitFor({ timeout: 20000 });
@@ -157,15 +218,11 @@ const SEED = {
   // Phone width, dark
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
-  await go("u_des1");
-  await shot("06-designer-phone-dark");
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-  if (overflow) errors.push("horizontal overflow at phone width");
-  await go("owner");
-  await tab("Dashboard");
-  await shot("07-owner-dashboard-phone-dark");
-  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) errors.push("dashboard overflows at phone width");
-
+  for (const [as, app, n] of [["u_pm1", "pm", "06-pm-phone-dark"], ["u_des1", "designer", "07-designer-phone-dark"], ["owner", "owner", "08-owner-phone-dark"]]) {
+    await go(as, app);
+    await shot(n);
+    if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) errors.push(`${app} overflows at phone width`);
+  }
   await browser.close();
   console.log(JSON.stringify({ out: OUT, errors, file: saved.filename }, null, 2));
   if (errors.length) process.exit(1);
