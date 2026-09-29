@@ -330,7 +330,7 @@ function validateRequest(f) {
   const e = { subs: {} };
   if (!f.fourE) e.fourE = "Choose the 4E line.";
   if (!f.product) e.product = "Choose the product.";
-  if (!f.project) e.project = "Link the request to a project.";
+  if (!f.project.trim()) e.project = "Name the project this work belongs to.";
   if (!f.masterTitle.trim()) e.masterTitle = "Name the master task.";
   if (!f.subtasks.length) e.subtasks = "Add at least one subtask.";
   f.subtasks.forEach((s) => {
@@ -350,7 +350,8 @@ function requestBody(f, status, prev) {
   const history = (prev && prev.history ? prev.history.slice() : []);
   if (status !== "draft") history.push({ at: nowIso(), status, by: "pm", name: pmName() });
   return {
-    pmName: pmName(), pmUid: S.me.id, fourE: f.fourE, product: f.product, project: f.project, masterTitle: f.masterTitle.trim(),
+    pmName: pmName(), pmUid: S.me.id, fourE: f.fourE, product: f.product, project: f.project.trim(), projectIsNew: !projectNames().includes(f.project.trim()),
+    masterTitle: f.masterTitle.trim(),
     priority: f.priority, brief: f.brief.trim(),
     subtasks: f.subtasks.map((s) => ({ key: s.key, sub: s.sub, detail: s.detail.trim(), designer: s.designer, start: s.start, end: s.end, effort: Number(s.effort) || 0 })),
     status, updatedAt: nowIso(), submittedAt: prev && prev.submittedAt ? prev.submittedAt : status === "pending" ? nowIso() : "",
@@ -364,6 +365,8 @@ function saveRequest(f, status) {
     f.errors = validateRequest(f);
     if (Object.keys(f.errors).length) { render(); toast("Some fields need attention"); return; }
   } else f.errors = {};
+  const m = M.matchNames(f.project, projectNames());
+  if (m.exact) f.project = m.exact;
   const prev = f.id ? allRequests().find((r) => r.id === f.id) : null;
   const ref = f.id ? db.doc(`requests/${S.me.id}/items/${f.id}`) : db.collection(`requests/${S.me.id}/items`).doc();
   guard("req", async () => {
@@ -375,9 +378,8 @@ function saveRequest(f, status) {
 function viewPmForm(root) {
   const f = S.form || (S.form = blankRequest());
   const c = cfg(), e = f.errors || {};
-  const lead = M.projectLead(c, f.project);
   root.appendChild(head(f.id ? "Edit request" : "New request", f.id ? f.masterTitle || "Untitled request" : "Create a design request",
-    "Pick the 4E line and product, describe each subtask with its own timeline, then submit. Nothing reaches designers until the owner approves it.",
+    "Pick the 4E line and product, name the project, and describe each subtask with its own timeline. The owner reviews every request and decides who works on it.",
     roleOf() === "admin" ? field("Requesting as", "as-pm", select("as-pm", pmName(), c.pms, (v) => { f.asPm = v; render(); })) : null));
   const back = f.id ? allRequests().find((r) => r.id === f.id) : null;
   if (back && back.status === "changes" && back.ownerNote) root.appendChild(h("div", { class: "note-box" }, h("b", null, "Owner's note: "), back.ownerNote));
@@ -388,7 +390,12 @@ function viewPmForm(root) {
     h("div", { class: "fields" },
       field("4E line", "r-line", select("r-line", f.fourE, lines().map((l) => l.name), (v) => { f.fourE = v; if (!productsFor(v).includes(f.product)) f.product = ""; delete e.fourE; render(); }, "Choose a line"), e.fourE),
       field("Product", "r-product", (() => { const s = select("r-product", f.product, products, (v) => { f.product = v; delete e.product; render(); }, f.fourE ? "Choose a product" : "Choose a 4E line first"); s.disabled = !f.fourE; return s; })(), e.product),
-      field("Project", "r-project", select("r-project", f.project, c.projects.map((p) => p.name), (v) => { f.project = v; delete e.project; render(); }, "Choose a project"), e.project, f.project ? "Lead PM: " + lead : null),
+      h("div", { class: "field" }, h("label", { for: "r-project" }, "Project"),
+        h("input", { id: "r-project", type: "text", list: "dl-projects", maxlength: "80", autocomplete: "off", placeholder: "Type the project name", value: f.project,
+          oninput: (ev) => { f.project = ev.target.value; f.projectKeep = false; delete e.project; softRender(); },
+          onchange: (ev) => { f.project = ev.target.value; render(); } }),
+        projectDatalist(), projectHint(f, (v) => { f.project = v; f.projectKeep = false; render(); }, () => { f.projectKeep = true; render(); }, true),
+        e.project ? h("div", { class: "err" }, e.project) : null),
       field("Priority", "r-priority", select("r-priority", f.priority, PRIORITIES, (v) => { f.priority = v; }))),
     field("Master task title", "r-title", h("input", { id: "r-title", type: "text", maxlength: "120", placeholder: "For example: Team analytics for managers", value: f.masterTitle, oninput: (ev) => { f.masterTitle = ev.target.value; delete e.masterTitle; softRender(); } }), e.masterTitle),
     field("Brief or link (optional)", "r-brief", h("textarea", { id: "r-brief", rows: "2", placeholder: "PRD section, Figma file, goals and constraints", value: f.brief, oninput: (ev) => { f.brief = ev.target.value; } })));
@@ -398,9 +405,9 @@ function viewPmForm(root) {
     h("div", { class: "row" }, h("h3", null, `Subtasks (${f.subtasks.length})`), h("span", { class: "spacer" }),
       h("span", { class: "hint" }, "Each subtask becomes one row on the Tracker once approved.")),
     subtaskCards, e.subtasks ? h("div", { class: "err" }, e.subtasks) : null,
-    h("div", null, h("button", { class: "btn", onclick: () => { const last = f.subtasks[f.subtasks.length - 1]; const n = blankSubtask(); if (last) { n.designer = last.designer; n.start = last.end || ""; } f.subtasks.push(n); render(); } }, "Add subtask")));
+    h("div", null, h("button", { class: "btn", onclick: () => { const last = f.subtasks[f.subtasks.length - 1]; const n = blankSubtask(); if (last) n.start = last.end || ""; f.subtasks.push(n); render(); } }, "Add subtask")));
 
-  const tl = requestTimeline(f.subtasks);
+  const tl = requestTimeline(f.subtasks, false);
   const totals = f.subtasks.reduce((a, s) => a + (Number(s.effort) || 0), 0);
   const starts = f.subtasks.map((s) => s.start).filter(Boolean).sort(), ends = f.subtasks.map((s) => s.end).filter(Boolean).sort();
   const span = starts.length && ends.length ? `${fmtDate(starts[0])} to ${fmtDate(ends[ends.length - 1])}, ${workdays(starts[0], ends[ends.length - 1])} working days` : "Add dates to see the timeline";
@@ -417,14 +424,11 @@ function viewPmForm(root) {
     f.id ? h("button", { class: "btn ghost", onclick: () => { S.form = blankRequest(); render(); } }, "Start a new request") : null,
     h("span", { class: "hint" }, `Submitted by ${pmName() || "you"}`));
 
-  root.appendChild(h("div", { class: "grid2" },
-    h("div", { class: "stack", style: "gap:20px" }, master, subSection, timeline, preview, actions),
-    h("div", { class: "stack", style: "gap:20px;position:sticky;top:130px" }, availabilityAside(f))));
+  root.appendChild(h("div", { class: "stack", style: "gap:20px;max-width:880px" }, master, subSection, timeline, preview, actions));
 }
 function subtaskEditor(f, s, i, e) {
   const c = cfg();
   const id = (k) => `st-${k}-${s.key}`;
-  const cap = s.designer && s.start && s.end && s.end >= s.start ? designerLoad(s.designer, s.start, s.end) : null;
   return h("div", { class: "subtask" },
     h("div", { class: "subtask-head" }, h("span", { class: "n" }, String(i + 1)), h("b", null, s.sub || "Subtask"),
       s.start && s.end && s.end >= s.start ? h("span", { class: "small muted" }, `${workdays(s.start, s.end)} working days`) : null,
@@ -432,15 +436,12 @@ function subtaskEditor(f, s, i, e) {
       h("button", { class: "btn sm ghost", onclick: () => { const cp = { ...clone(s), key: blankSubtask().key }; f.subtasks.splice(i + 1, 0, cp); render(); } }, "Duplicate"),
       f.subtasks.length > 1 ? h("button", { class: "btn sm ghost danger", onclick: () => { f.subtasks.splice(i, 1); render(); } }, "Remove") : null),
     h("div", { class: "fields" },
-      field("Subtask type", id("sub"), select(id("sub"), s.sub, c.subTags, (v) => { s.sub = v; delete e.sub; render(); }, "Choose a type"), e.sub),
-      field("Designer", id("des"), select(id("des"), s.designer, c.designers, (v) => { s.designer = v; render(); }, "Owner decides"), null)),
+      field("Subtask type", id("sub"), select(id("sub"), s.sub, c.subTags, (v) => { s.sub = v; delete e.sub; render(); }, "Choose a type"), e.sub)),
     field("Detail", id("det"), h("textarea", { id: id("det"), rows: "3", maxlength: "600", placeholder: "What exactly needs designing, which screens or states, and what done looks like", value: s.detail, oninput: (ev) => { s.detail = ev.target.value; delete e.detail; softRender(); } }), e.detail),
     h("div", { class: "fields" },
       field("Start", id("start"), h("input", { id: id("start"), type: "date", value: s.start, onchange: (ev) => { s.start = ev.target.value; if (s.end && s.end < s.start) s.end = s.start; delete e.start; render(); } }), e.start),
       field("End", id("end"), h("input", { id: id("end"), type: "date", value: s.end, min: s.start || null, onchange: (ev) => { s.end = ev.target.value; delete e.end; render(); } }), e.end),
-      field("Effort (hours)", id("eff"), h("input", { id: id("eff"), type: "number", min: "0.5", step: "0.5", inputmode: "decimal", value: s.effort, oninput: (ev) => { s.effort = ev.target.value; delete e.effort; softRender(); } }), e.effort)),
-    cap ? h("div", { class: "cap" }, h("span", null, `${s.designer} in these dates:`), pill(cap.status, WL[cap.status]),
-      h("span", null, `peak ${pct(cap.peak)} booked`), cap.leave ? h("span", null, `, ${cap.leave} leave day${cap.leave === 1 ? "" : "s"}`) : null) : null);
+      field("Effort (hours)", id("eff"), h("input", { id: id("eff"), type: "number", min: "0.5", step: "0.5", inputmode: "decimal", value: s.effort, oninput: (ev) => { s.effort = ev.target.value; delete e.effort; softRender(); } }), e.effort)));
 }
 // Peak weekly utilisation and leave days for one designer across a date range
 function designerLoad(name, from, to) {
@@ -453,10 +454,25 @@ function designerLoad(name, from, to) {
   for (let d = from; d <= to; d = M.addDays(d, 1)) if (leave.some((l) => l.designer === name && l.from <= d && l.to >= d) && M.isoWeekday(M.toDay(d)) <= ctx.s.daysPerWeek && !ctx.holidays.has(d)) leaveDays++;
   return { peak, status, leave: leaveDays };
 }
-function requestTimeline(subtasks) {
-  const rows = subtasks.filter((s) => s.start && s.end && s.end >= s.start).map((s, i) => ({
-    label: h("span", null, `${subtasks.indexOf(s) + 1}. ${s.sub || "Subtask"} `, h("small", null, s.designer || "unassigned")),
-    start: s.start, end: s.end, color: designerColor(s.designer), text: s.designer || "", tip: `${s.sub || "Subtask"}\n${fmtDate(s.start)} to ${fmtDate(s.end)}\n${s.designer || "Owner decides"}, ${fmt1(s.effort)} hrs`,
+const projectNames = () => cfg().projects.map((p) => p.name);
+function projectDatalist() { return h("datalist", { id: "dl-projects" }, projectNames().map((n) => h("option", { value: n }))); }
+// Existing, similar or new: the hint under a free-text project field
+function projectHint(f, use, keep, isPm) {
+  const name = (f.project || "").trim();
+  if (!name) return h("div", { class: "hint" }, "Start typing to pick an existing project, or enter a new name.");
+  const m = M.matchNames(name, projectNames());
+  if (m.exact) return h("div", { class: "hint" }, `Existing project${m.exact !== name ? ` "${m.exact}"` : ""}. Lead PM: ${M.projectLead(cfg(), m.exact)}`);
+  if (m.similar.length && !f.projectKeep) return h("div", { class: "cap" }, h("span", null, "Similar existing project:"),
+    m.similar.map((n) => h("button", { class: "chip", type: "button", onclick: () => use(n) }, n)),
+    h("button", { class: "btn sm ghost", type: "button", onclick: keep }, `Keep "${name}" as new`));
+  return h("div", { class: "hint" }, pill("New project", "info"), " ", isPm ? "It joins the project list when the owner approves this request, with you as lead PM." : `Approving adds it to Lists & 4E with lead PM ${f.pmName || "the requesting PM"}.`);
+}
+function requestTimeline(subtasks, showDesigner = true) {
+  const rows = subtasks.filter((s) => s.start && s.end && s.end >= s.start).map((s) => ({
+    label: h("span", null, `${subtasks.indexOf(s) + 1}. ${s.sub || "Subtask"} `, showDesigner ? h("small", null, s.designer || "unassigned") : null),
+    start: s.start, end: s.end, color: showDesigner ? designerColor(s.designer) : "var(--accent)",
+    text: showDesigner ? s.designer || "" : s.effort ? `${fmt1(s.effort)} hrs` : "",
+    tip: `${s.sub || "Subtask"}\n${fmtDate(s.start)} to ${fmtDate(s.end)}\n` + (showDesigner ? `${s.designer || "Not assigned yet"}, ` : "") + `${fmt1(s.effort)} hrs`,
   }));
   return rows.length ? gantt(rows) : null;
 }
@@ -476,17 +492,6 @@ function gantt(rows) {
     rows.map((r) => h("div", { class: "g-row" }, h("div", { class: "g-label" }, r.label),
       h("div", { class: "g-track" }, grid(), td >= a && td <= b ? h("i", { class: "g-today", style: `left:${pos(td)}%`, title: "Today" }) : null,
         h("div", { class: "g-bar", style: `left:${pos(r.start)}%;width:${Math.max(1.2, pos(M.addDays(r.end, 1)) - pos(r.start))}%;background:${r.color}`, "data-tip": r.tip }, r.text))))));
-}
-function availabilityAside(f) {
-  const c = cfg(), ctx = M.context(c), all = tasks(), leave = allLeave();
-  const weeks = Array.from({ length: 4 }, (_, i) => M.addDays(M.mondayOf(today()), 7 * i));
-  const picked = new Set((f ? f.subtasks : []).map((s) => s.designer).filter(Boolean));
-  return h("aside", { class: "card pad stack" },
-    h("div", null, h("h3", null, "Designer availability"), h("div", { class: "hint" }, `Approved work as a share of capacity (${fmt0(ctx.s.weeklyHours)} hrs/week, less leave and holidays).`)),
-    c.designers.length ? h("div", { class: "tbl-wrap" }, h("div", { class: "heat", style: "grid-template-columns: minmax(64px, 90px) repeat(4, minmax(46px, 1fr))" },
-      h("div"), weeks.map((w) => h("div", { class: "hd" }, fmtDate(w))),
-      c.designers.map((d) => [h("div", { class: "nm", style: picked.has(d) ? "color:var(--accent)" : null }, d), weeks.map((w) => heatCell(all, leave, d, w, ctx))]))) : h("div", { class: "hint" }, "No designers yet."),
-    h("div", { class: "legend" }, Object.entries(WL).map(([k, v]) => h("span", null, h("i", { style: `background:var(--${v === "neutral" ? "faint" : v + "-ink"})` }), k))));
 }
 function heatCell(all, leave, d, w, ctx) {
   const x = M.week(all, leave, d, w, ctx);
@@ -515,14 +520,14 @@ function viewPmRequests(root) {
     root.appendChild(h("article", { class: "card pad req" },
       h("div", { class: "req-head" }, h("div", { class: "t" }, h("div", { class: "row", style: "gap:6px" }, h("span", { class: "tag" }, r.fourE || "-"), h("span", { class: "tag sub" }, r.product || "-")),
         h("h3", { style: "margin-top:6px" }, r.masterTitle || "Untitled request"),
-        h("div", { class: "small muted" }, `${r.project || "No project"} · ${r.priority} priority` + (r.submittedAt ? ` · submitted ${fmtDate(r.submittedAt)}` : "") + (r.decidedAt ? ` · decided ${fmtDate(r.decidedAt)}` : ""))),
+        h("div", { class: "small muted" }, `${r.project || "No project"}${r.projectIsNew && r.status !== "approved" ? " (new project)" : ""} · ${r.priority} priority` + (r.submittedAt ? ` · submitted ${fmtDate(r.submittedAt)}` : "") + (r.decidedAt ? ` · decided ${fmtDate(r.decidedAt)}` : ""))),
         reqPill(r.status)),
       r.ownerNote && r.status !== "pending" ? h("div", { class: "note-box" }, h("b", null, "Owner's note: "), r.ownerNote) : null,
       h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["#", "Subtask", "Designer", "Timeline", "Hours", r.status === "approved" ? "Progress" : null].filter(Boolean).map((x) => h("th", null, x)))),
         h("tbody", null, (r.subtasks || []).map((s, i) => {
           const t = s.taskId ? byId.get(s.taskId) : null;
           return h("tr", null, h("td", { class: "mono" }, t ? t.taskId : String(i + 1)), h("td", null, h("b", null, s.sub), h("div", { class: "small muted", style: "max-width:44ch" }, s.detail)),
-            h("td", null, s.designer || h("span", { class: "muted" }, "Owner decides")), h("td", { class: "small" }, `${fmtDate(s.start)} to ${fmtDate(s.end)}`), h("td", { class: "n" }, fmt1(s.effort)),
+            h("td", null, r.status === "approved" && s.designer ? s.designer : h("span", { class: "muted small" }, "Owner assigns")), h("td", { class: "small" }, `${fmtDate(s.start)} to ${fmtDate(s.end)}`), h("td", { class: "n" }, fmt1(s.effort)),
             r.status === "approved" ? h("td", null, t ? h("div", null, deliveryPill(t), h("div", { class: "bar-cell", style: "margin-top:6px" }, h("span", { class: "track" }, h("i", { style: `width:${t.progress || 0}%;background:var(--des)` })), h("span", { class: "num small" }, (t.progress || 0) + "%"))) : h("span", { class: "muted small" }, "Removed")) : null);
         })))),
       actions.length ? h("div", { class: "row" }, actions) : null));
@@ -778,7 +783,7 @@ function viewOverview(root) {
 
 // ---- funnel review
 function reviewFor(r) {
-  if (!S.review[r.id] || S.review[r.id].updatedAt !== r.updatedAt) S.review[r.id] = { updatedAt: r.updatedAt, subtasks: clone(r.subtasks || []), note: "", err: "", subErr: {} };
+  if (!S.review[r.id] || S.review[r.id].updatedAt !== r.updatedAt) S.review[r.id] = { updatedAt: r.updatedAt, subtasks: clone(r.subtasks || []), note: "", err: "", subErr: {}, project: r.project || "", pmName: r.pmName, projectKeep: false };
   return S.review[r.id];
 }
 function viewFunnel(root) {
@@ -789,6 +794,7 @@ function viewFunnel(root) {
   root.appendChild(head("Review and approve", "Task funnel", "Requests from PMs wait here. Adjust designers and dates if needed, then approve to create Tracker tasks, or send it back with a note.",
     h("div", { class: "seg" }, tabs.map(([k, l]) => h("button", { "aria-pressed": String(S.funnelTab === k), onclick: () => { S.funnelTab = k; render(); } }, `${l} (${pick(k).length})`)))));
   root.appendChild(funnelStrip());
+  root.appendChild(projectDatalist());
   if (!list.length) return root.appendChild(h("div", { class: "card empty" }, h("h3", null, S.funnelTab === "pending" ? "No requests waiting" : "Nothing here"),
     h("p", { style: "margin:0" }, S.funnelTab === "pending" ? "PMs submit requests from Task Creation. Share its link from People & links." : "")));
   for (const r of list) root.appendChild(S.funnelTab === "pending" ? reviewCard(r) : decidedCard(r));
@@ -797,7 +803,7 @@ function reqHeader(r) {
   return h("div", { class: "req-head" }, h("div", { class: "t" },
     h("div", { class: "row", style: "gap:6px" }, h("span", { class: "mono muted" }, r.ref || ""), h("span", { class: "tag" }, r.fourE), h("span", { class: "tag sub" }, r.product), r.priority === "High" ? pill("High priority", "serious") : null),
     h("h3", { style: "margin-top:6px" }, r.masterTitle),
-    h("div", { class: "small muted" }, `${r.project} (lead ${M.projectLead(cfg(), r.project)}) · requested by ${r.pmName} · submitted ${fmtDate(r.submittedAt)}` + (r.resubmittedAt ? `, resubmitted ${fmtDate(r.resubmittedAt)}` : ""))),
+    h("div", { class: "small muted" }, `${r.project}${projectNames().includes(r.project) ? ` (lead ${M.projectLead(cfg(), r.project)})` : r.status === "approved" ? "" : " (new project)"} · requested by ${r.pmName} · submitted ${fmtDate(r.submittedAt)}` + (r.resubmittedAt ? `, resubmitted ${fmtDate(r.resubmittedAt)}` : ""))),
     reqPill(r.status));
 }
 function reviewCard(r) {
@@ -816,6 +822,9 @@ function reviewCard(r) {
   const impact = capacityImpact(rv.subtasks);
   return h("article", { class: "card pad req" }, reqHeader(r),
     r.brief ? h("div", { class: "small", style: "overflow-wrap:anywhere" }, h("b", null, "Brief: "), r.brief) : null,
+    projectNames().includes(rv.project.trim()) && rv.project.trim() === r.project ? null : h("div", { class: "field", style: "max-width:520px" }, h("label", { for: "rv-prj-" + r.id }, "Project"),
+      h("input", { id: "rv-prj-" + r.id, type: "text", list: "dl-projects", maxlength: "80", autocomplete: "off", value: rv.project, oninput: (ev) => { rv.project = ev.target.value; rv.projectKeep = false; rv.err = ""; softRender(); }, onchange: (ev) => { rv.project = ev.target.value; render(); } }),
+      projectHint(rv, (v) => { rv.project = v; render(); }, () => { rv.projectKeep = true; render(); }, false)),
     h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["#", "Subtask", "Designer", "Start", "End", "Hours"].map((x) => h("th", null, x)))), h("tbody", null, rows))),
     requestTimeline(rv.subtasks),
     impact.length ? h("div", { class: "stack", style: "gap:6px" }, h("div", { class: "label" }, "Capacity after approval"),
@@ -855,21 +864,29 @@ function approveRequest(r, rv) {
     if (Object.keys(e).length) rv.subErr[s.key] = e;
   });
   if (Object.keys(rv.subErr).length) { toast("Assign a designer and valid dates to every subtask"); return render(); }
+  const names = projectNames();
+  const project = M.matchNames(rv.project, names).exact || rv.project.trim();
+  if (!project) { rv.err = "Name the project before approving."; return render(); }
   const base = Date.now(), at = new Date(base).toISOString();
   guard("decide", async () => {
+    if (!names.includes(project)) {
+      const conf = S.config ? clone(S.config) : clone(EMPTY_CFG);
+      conf.projects = conf.projects.concat([{ name: project, lead: r.pmName || "" }]);
+      await db.doc("config/main").set(conf);
+    }
     const out = [];
     for (let i = 0; i < rv.subtasks.length; i++) {
       const s = rv.subtasks[i];
       const ref = db.collection("tasks").doc();
       await ref.set({ requestId: r.id, requestUid: r.uid, fourE: r.fourE, master: r.product, masterTitle: r.masterTitle, sub: s.sub, title: s.detail.split("\n")[0].slice(0, 140),
-        detail: s.detail, brief: r.brief || "", project: r.project, designer: s.designer, priority: r.priority, start: s.start, target: s.end, effort: Number(s.effort) || 0,
+        detail: s.detail, brief: r.brief || "", project, designer: s.designer, priority: r.priority, start: s.start, target: s.end, effort: Number(s.effort) || 0,
         assignedBy: r.pmName, requestedAt: r.submittedAt, approvedAt: at, createdAt: new Date(base + i).toISOString(), createdBy: S.me.id });
       out.push({ ...s, effort: Number(s.effort) || 0, taskId: ref.id });
     }
-    await db.doc(`requests/${r.uid}/items/${r.id}`).update({ status: "approved", subtasks: out, decidedAt: at, ownerNote: rv.note.trim(), updatedAt: at,
+    await db.doc(`requests/${r.uid}/items/${r.id}`).update({ status: "approved", subtasks: out, project, decidedAt: at, ownerNote: rv.note.trim(), updatedAt: at,
       history: (r.history || []).concat([{ at, status: "approved", by: "owner", note: rv.note.trim() }]) });
     delete S.review[r.id];
-    toast(`Approved. ${out.length} task${out.length === 1 ? "" : "s"} added to the Tracker`);
+    toast(`Approved. ${out.length} task${out.length === 1 ? "" : "s"} added to the Tracker` + (names.includes(project) ? "" : `, and "${project}" added to projects`));
   });
 }
 function decide(r, rv, status) {

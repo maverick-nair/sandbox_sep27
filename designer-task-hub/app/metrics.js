@@ -220,8 +220,51 @@
     return ((config && config.lines) || []).flatMap((l) => (l.products || []).map((p) => ({ name: p, group: l.name })));
   }
 
+  // Project name matching for free-text entry. "exact" is an existing name
+  // that differs only in case, spacing or punctuation (or word order); "similar"
+  // lists close names worth suggesting, best first.
+  const STOP = new Set(["project", "the", "and", "for", "of", "a", "an"]);
+  const normName = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  function lev(a, b) {
+    const m = a.length, n = b.length;
+    if (!m || !n) return Math.max(m, n);
+    let prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function matchNames(query, names, limit = 3) {
+    const nq = normName(query);
+    if (!nq) return { exact: null, similar: [] };
+    const cq = nq.replace(/ /g, "");
+    const toks = (x) => new Set(x.split(" ").filter((t) => t && !STOP.has(t)));
+    const nums = (set) => [...set].filter((t) => /^\d+$/.test(t)).sort().join(",");
+    const tq = toks(nq);
+    let exact = null;
+    const scored = [];
+    for (const name of names || []) {
+      const nn = normName(name), cn = nn.replace(/ /g, "");
+      if (!nn) continue;
+      const tn = toks(nn);
+      if (cn === cq || (tq.size && tn.size === tq.size && [...tq].every((t) => tn.has(t)))) { if (!exact) exact = name; continue; }
+      if (cq.length < 3) continue;
+      const ratio = 1 - lev(cq, cn) / Math.max(cq.length, cn.length);
+      const inter = [...tq].filter((t) => tn.has(t)).length, union = new Set([...tq, ...tn]).size;
+      const jac = union ? inter / union : 0;
+      const contains = Math.min(cq.length, cn.length) >= 4 && (cn.includes(cq) || cq.includes(cn));
+      let score = Math.max(ratio, jac, contains ? 0.85 : 0);
+      if (nums(tq) && nums(tn) && nums(tq) !== nums(tn)) score *= 0.5; // "Project 1" is not "Project 2"
+      if (score >= 0.6) scored.push({ name, score });
+    }
+    scored.sort((x, y) => y.score - x.score);
+    return { exact, similar: scored.slice(0, limit).map((x) => x.name) };
+  }
+
   const api = {
-    mergeProgress, productsOf,
+    mergeProgress, productsOf, matchNames,
     todayIso, mondayOf, addDays, networkDays, derive, deriveAll, sortTasks, scorecard, pmTable, week, context,
     defaults, rating, projectLead, toDay, toIso, isoWeekday,
   };

@@ -88,7 +88,8 @@ const SEED = {
   await go("owner", "owner");
   await page.locator(".brand b", { hasText: "Owner Dashboard" }).waitFor();
   await tab("People & links");
-  if ((await page.locator(".link-row").count()) !== 3) throw new Error("expected three links");
+  await page.locator(".link-row").first().waitFor();
+  if ((await page.locator(".link-row").count()) !== 3) throw new Error("expected three links; errors: " + errors.join(" / "));
 
   // A PM and a designer join through their own links; owner approves
   await go("u_pm1", "pm");
@@ -120,13 +121,16 @@ const SEED = {
   await expectText("Choose the 4E line.");
   await page.selectOption("#r-line", "Evaluate");
   await page.selectOption("#r-product", "Nano AI");
-  await page.selectOption("#r-project", "Project 1 (rename)");
+  await page.fill("#r-project", "project 1");
+  await page.getByRole("button", { name: "Project 1 (rename)", exact: true }).click();
+  await expectText("Existing project. Lead PM: Raghav");
+  if (await page.getByText("Designer availability").count()) throw new Error("PM form still shows designer availability");
+  if (await page.locator(".subtask select").count() !== 1) throw new Error("PM subtask should only have the type dropdown");
   await page.fill("#r-title", "Assessment builder revamp");
   const st = page.locator(".subtask");
   const fillSub = async (i, type, detail, designer, s0, e0, hrs) => {
     const b = st.nth(i);
     await b.locator("select").nth(0).selectOption(type);
-    await b.locator("select").nth(1).selectOption(designer);
     await b.locator("textarea").fill(detail);
     await b.locator('input[type="date"]').nth(0).fill(s0);
     await b.locator('input[type="date"]').nth(1).fill(e0);
@@ -153,6 +157,7 @@ const SEED = {
   await shot("03-owner-funnel");
   await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
   await expectText("Assign a designer.");
+  await page.locator("article.req select").nth(0).selectOption("Pragati");
   await page.locator("article.req select").nth(1).selectOption("Swathi");
   await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
   await expectText("Approved. 2 tasks added to the Tracker");
@@ -161,7 +166,9 @@ const SEED = {
   await go("u_pm1", "pm");
   await page.selectOption("#r-line", "Enable");
   await page.selectOption("#r-product", "AI Koach");
-  await page.selectOption("#r-project", "Project 2 (rename)");
+  await page.fill("#r-project", "Coach Nudges Pilot");
+  await page.waitForTimeout(420);
+  await expectText("It joins the project list when the owner approves");
   await page.fill("#r-title", "Coach nudges");
   await fillSub(0, "Wireframes", "Nudge cards on the home screen", "Pragati", await plus(2), await plus(6), 8);
   await page.getByRole("button", { name: "Submit for approval" }).click();
@@ -180,6 +187,14 @@ const SEED = {
   await expectText("Owner's note:");
   await page.getByRole("button", { name: "Resubmit for approval" }).click();
   await expectText("Sent to the owner for approval");
+  await go("owner", "owner");
+  await tab(/Task funnel/);
+  await expectText("Approving adds it to Lists & 4E with lead PM Raghav");
+  await page.locator("article.req select").nth(0).selectOption("Pragati");
+  await page.getByRole("button", { name: /Approve and create 1 task/ }).click();
+  await expectText('added to projects');
+  const projects = await page.evaluate(() => JSON.parse(localStorage.getItem("mockdb"))["config/main"].projects);
+  if (!projects.some((p) => p.name === "Coach Nudges Pilot" && p.lead === "Raghav")) throw new Error("new project not added: " + JSON.stringify(projects));
 
   // Designer sees approved work and posts an update
   await go("u_des1", "designer");

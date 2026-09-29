@@ -13,7 +13,7 @@ and each interface has its own header, colour and navigation:
 
 | Link | Interface | For | What they do |
 |---|---|---|---|
-| `#pm` | **Task Creation** (navy) | Product managers | Build a request: 4E line, product (options depend on the line), project, master task title, priority, brief, then one or more detailed subtasks, each with its own designer, start, end and hours. A live timeline and designer availability sit beside the form. Submit it to the owner, save a draft, and follow each request's status and, once approved, its live progress. |
+| `#pm` | **Task Creation** (navy) | Product managers | Build a request: 4E line, product (options depend on the line), project name, master task title, priority, brief, then one or more detailed subtasks, each with its own start, end and hours, shown on a live timeline. PMs don't choose designers; the owner assigns every subtask. Submit to the owner, save a draft, and follow each request's status and, once approved, its live progress. |
 | `#designer` | **Designer Tracker** (teal) | Product designers | Only their own approved tasks and a personal timeline. Post one update per task per day (status, progress, hours, revision rounds, note, blocker) and log leave weekly. |
 | `#owner` | **Owner Dashboard** (graphite) | The owner only | Task funnel (approve, send back with a note, or reject; adjust designers and dates first, with a capacity check), overview dashboard, all tasks, leave, people and links, lists and 4E setup, Excel export. |
 
@@ -27,6 +27,17 @@ Draft -> Awaiting approval -> Approved (tasks created) or Changes requested
 (PM edits and resubmits) or Rejected. Nothing reaches a designer until the
 owner approves. Each approved subtask becomes one Tracker row, and on the
 Tracker Task Assigned reads `Nano AI / Feature design: Question editor ...`.
+
+## Project names
+
+PMs type the project name. As they type, existing projects are offered, and a
+name that only differs in case, spacing, punctuation or word order is saved as
+the existing project. A close but different name (a typo, a shorter or longer
+version) is suggested as "Similar existing project", and the PM can pick it or
+keep their name. A new name travels with the request marked "New project";
+the owner can rename or merge it in the funnel, and approving adds it to the
+project list with the requesting PM as lead, so the Tracker's PM (Project
+Lead) column maps it. Matching lives in `matchNames` in `app/metrics.js`.
 
 ## The workbook
 
