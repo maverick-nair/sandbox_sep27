@@ -396,6 +396,8 @@ const PW = "Design#Hub2026";
   await page.clock.fastForward("02:00");
   await expectText("You were signed out after 30 minutes of inactivity.");
 
+  // Sample data for the demo build (tools/build_demo.js)
+  fs.writeFileSync(path.join(OUT, "seed.json"), await page.evaluate(() => JSON.stringify({ db: JSON.parse(localStorage.getItem("mockdb")), auth: JSON.parse(localStorage.getItem("mockauth")) })));
   await browser.close();
   console.log(JSON.stringify({ out: OUT, errors, file: saved.filename, margins: report["1280:owner/overview"] }, null, 2));
   if (errors.length) process.exit(1);

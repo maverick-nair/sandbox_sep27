@@ -556,7 +556,10 @@ function viewAuth(root, app) {
         h("span", { class: "spacer" }), h("button", { type: "button", class: "linkish", onclick: () => switchTo("forgot") }, "Forgot password?")),
       h("button", { id: "signin-submit", type: "submit", class: "btn accent auth-cta", disabled: S.busy.auth }, S.busy.auth ? "Signing in" : "Sign in"),
       h("div", { class: "hint" }, "Leave \"Keep me signed in\" unticked on shared computers. You'll be signed out after 30 minutes of inactivity."),
-      h("div", { class: "auth-switch" }, "First time here? ", h("button", { type: "button", class: "linkish", onclick: () => switchTo("signup") }, "Create your account")));
+      h("div", { class: "auth-switch" }, "First time here? ", h("button", { type: "button", class: "linkish", onclick: () => switchTo("signup") }, "Create your account")),
+      // Preview builds list their sample accounts; a click fills the form
+      CFG.demoAccounts ? h("div", { class: "demo-box" }, h("b", null, "Preview with sample data. "), "Pick an account to sign in as:",
+        h("div", { class: "row", style: "margin-top:8px" }, CFG.demoAccounts.map((d) => h("button", { type: "button", class: "chip", onclick: () => { f.email = d.email; f.password = d.password; render(); } }, d.label)))) : null);
   } else if (view === "signup") {
     const issues = f.password ? passwordIssues(f.password) : [];
     put(card, h("div", { class: "eyebrow" }, "Create account"), h("h1", null, "Set up your account"),
