@@ -9,7 +9,9 @@ const tpl = fs.readFileSync(path.join(root, "workbook/template.xlsx")).toString(
 html = html.replace("/*__METRICS__*/", () => read("app/metrics.js"))
   .replace("/*__EXPORT__*/", () => read("app/export.js"))
   .replace("/*__TEMPLATE__*/", () => tpl)
-  .replace("/*__APP__*/", () => read("app/app.js"));
+  .replace("/*__APP__*/", () => read("app/app.js"))
+  .replaceAll("/*__LOGO_DARK__*/", () => fs.readFileSync(path.join(root, "app/assets/ks_logo.png")).toString("base64"))
+  .replaceAll("/*__LOGO_WHITE__*/", () => fs.readFileSync(path.join(root, "app/assets/ks_logo_white.png")).toString("base64"));
 fs.mkdirSync(path.join(root, "dist"), { recursive: true });
 fs.writeFileSync(path.join(root, "dist/index.html"), html);
 console.log(`dist/index.html ${(html.length / 1024).toFixed(0)} KB`);

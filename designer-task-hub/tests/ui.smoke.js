@@ -41,11 +41,14 @@ const MOCK = () => {
       listeners.push(f); setTimeout(f, 5); return () => {};
     },
   });
-  const people = { owner: "Manu Nair", u_pm1: "Raghav K", u_des1: "Pragati S" };
+  const people = { owner: ["Manu Nair", "manu.nair@knolskape.com"], u_pm1: ["Raghav K", "raghav@knolskape.com"], u_des1: ["Pragati S", "pragati@knolskape.com"],
+    u_des2: ["Swathi R", "swathi@knolskape.com"], u_ext: ["Outside Person", "outsider@gmail.com"] };
+  const prof = (i) => ({ id: i, name: (people[i] || [""])[0], avatarUrl: "", color: "#888", email: (people[i] || [])[1] || null, isMe: i === as, guest: false });
   const user = {
-    me: async () => ({ id: as, name: people[as] || "New Person", avatarUrl: "", color: "#888", email: null, isOwner: as === "owner", canEdit: as === "owner" }),
+    me: async () => ({ ...prof(as), isOwner: as === "owner", canEdit: as === "owner" }),
     isOwner: async () => as === "owner", id: async () => as,
-    profiles: async (ids) => Object.fromEntries(ids.map((i) => [i, { id: i, name: people[i] || "", avatarUrl: "", color: "#888", email: null, isMe: i === as, guest: false }])),
+    profiles: async (ids) => Object.fromEntries(ids.map((i) => [i, prof(i)])),
+    search: async (q) => Object.keys(people).filter((i) => q && (people[i][0] + " " + people[i][1]).toLowerCase().includes(q.toLowerCase())).map(prof),
   };
   window.__saved = null;
   const downloads = { save: async ({ filename, data }) => { const b = new Uint8Array(await data.arrayBuffer()); window.__saved = { filename, b64: btoa(Array.from(b, (c) => String.fromCharCode(c)).join("")) }; return { status: "saved" }; } };
@@ -71,6 +74,7 @@ const SEED = {
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await ctx.addInitScript(MOCK);
   const page = await ctx.newPage();
+  global.PAGE = page;
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
@@ -79,35 +83,38 @@ const SEED = {
 
   const go = async (as, app) => { await page.goto(`https://app.test/?as=${as}#${app}`); await page.waitForSelector("main:not(:has(.skeleton))"); };
   const expectText = (t, timeout = 4000) => page.getByText(t).first().waitFor({ timeout });
-  await page.goto("https://app.test/?as=owner");
+  await page.goto("https://app.test/?as=boot");
   await page.evaluate((seed) => localStorage.setItem("mockdb", JSON.stringify(seed)), SEED);
   const today = await page.evaluate(() => window.DTHMetrics.todayIso());
   const plus = (n) => page.evaluate(([t, n]) => window.DTHMetrics.addDays(t, n), [today, n]);
 
-  // Owner dashboard opens; three links on People & links
+  // Owner dashboard opens; three links on People & access
   await go("owner", "owner");
-  await page.locator(".brand b", { hasText: "Owner Dashboard" }).waitFor();
-  await tab("People & links");
+  await page.locator(".app-id b", { hasText: "Owner Dashboard" }).waitFor();
+  await tab("People & access");
   await page.locator(".link-row").first().waitFor();
   if ((await page.locator(".link-row").count()) !== 3) throw new Error("expected three links; errors: " + errors.join(" / "));
 
-  // A PM and a designer join through their own links; owner approves
+  // Role based access: owner adds Pragati and Swathi by official ID
+  for (const [q, nm] of [["pragati@", "Pragati"], ["swathi@", "Swathi"]]) {
+    await page.fill("#add-q", q);
+    await page.locator(".results button").first().click();
+    await page.selectOption("#add-name", nm);
+    await page.getByRole("button", { name: "Give access" }).click();
+    await expectText("can now use Designer Tracker");
+  }
+  // An outside account is turned away; a PM requests access and is approved
+  await go("u_ext", "pm");
+  await expectText("Use your official ID");
   await go("u_pm1", "pm");
-  await expectText("Join Task Creation");
+  await expectText("You don't have access to Task Creation yet");
   await page.selectOption("#join-name", "Raghav");
-  await page.getByRole("button", { name: "Send request" }).click();
-  await expectText("Waiting for approval");
-  await go("u_des1", "designer");
-  await expectText("Join Designer Tracker");
-  await page.selectOption("#join-name", "Pragati");
-  await page.getByRole("button", { name: "Send request" }).click();
+  await page.getByRole("button", { name: "Request access" }).click();
   await expectText("Waiting for approval");
   await go("owner", "owner");
-  await tab("People & links");
+  await tab(/People & access/);
   await page.getByRole("button", { name: "Approve" }).first().click();
-  await expectText("can now use");
-  await page.getByRole("button", { name: "Approve" }).first().click();
-  await page.waitForFunction(() => document.querySelectorAll("button").length && ![...document.querySelectorAll("button")].some((b) => b.textContent === "Approve"));
+  await expectText("can now use Task Creation");
 
   // Wrong interface is refused
   await go("u_des1", "pm");
@@ -131,15 +138,22 @@ const SEED = {
   const fillSub = async (i, type, detail, designer, s0, e0, hrs) => {
     const b = st.nth(i);
     await b.locator("select").nth(0).selectOption(type);
-    await b.locator("textarea").fill(detail);
+    await b.locator('textarea[id^="st-det-"]').fill(detail);
     await b.locator('input[type="date"]').nth(0).fill(s0);
     await b.locator('input[type="date"]').nth(1).fill(e0);
-    await b.locator('input[type="number"]').fill(String(hrs));
+    await b.locator('input[id^="st-eff-"]').fill(String(hrs));
     await page.waitForTimeout(420);
   };
   await fillSub(0, "Feature design", "Question editor with drag to reorder, empty and error states", "Pragati", await plus(0), await plus(4), 14);
   await page.getByRole("button", { name: "Add subtask" }).click();
   await fillSub(1, "UX research", "Five interviews with assessment admins", "", await plus(5), await plus(9), 10);
+  // a batch: 4 product demo videos, two named up front
+  await page.getByRole("button", { name: "Add subtask" }).click();
+  await fillSub(2, "Feature design", "Product demo videos for the builder", "", await plus(1), await plus(8), 24);
+  await st.nth(2).locator('input[id^="st-qty-"]').fill("4");
+  await page.waitForTimeout(420);
+  await st.nth(2).locator('textarea[id^="st-titles-"]').fill("Intro to the builder\nSetting up questions");
+  await expectText("(4 videos)");
   await shot("01-pm-form");
   await page.getByRole("button", { name: "Submit for approval" }).click();
   await expectText("Sent to the owner for approval");
@@ -155,12 +169,14 @@ const SEED = {
   await tab(/Task funnel/);
   await expectText("Assessment builder revamp");
   await shot("03-owner-funnel");
-  await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
+  await page.getByRole("button", { name: /Approve and create 3 tasks/ }).click();
   await expectText("Assign a designer.");
-  await page.locator("article.req select").nth(0).selectOption("Pragati");
-  await page.locator("article.req select").nth(1).selectOption("Swathi");
-  await page.getByRole("button", { name: /Approve and create 2 tasks/ }).click();
-  await expectText("Approved. 2 tasks added to the Tracker");
+  await page.getByRole("button", { name: "Split", exact: true }).click();
+  await expectText("Split share");
+  const des = page.locator("article.req select");
+  for (const [i, n] of [[0, "Pragati"], [1, "Swathi"], [2, "Pragati"], [3, "Swathi"]]) await des.nth(i).selectOption(n);
+  await page.getByRole("button", { name: /Approve and create 4 tasks/ }).click();
+  await expectText("Approved. 4 tasks added to the Tracker");
 
   // Second request goes back with changes, PM resubmits
   await go("u_pm1", "pm");
@@ -199,12 +215,24 @@ const SEED = {
   // Designer sees approved work and posts an update
   await go("u_des1", "designer");
   await expectText("Question editor with drag to reorder, empty and error states");
-  const card = page.locator("article.task").first();
+  const card = page.locator("article.task", { hasText: "Question editor" });
   await card.locator('input[type="number"]').fill("3.5");
   await card.locator('input[type="range"]').fill("40");
   await card.getByPlaceholder("For example: Finished").fill("Explored three layouts");
   await card.getByRole("button", { name: /Save today's update/ }).click();
   await expectText(/Update saved for T-00/);
+  const batch = page.locator("article.task", { hasText: "Product demo videos" });
+  await batch.getByText("0 of 2 videos done").waitFor();
+  await batch.getByRole("button", { name: "Done", exact: true }).click();
+  await batch.getByRole("button", { name: /Save today's update/ }).click();
+  await expectText("are not done yet");
+  await batch.locator(".item select").nth(0).selectOption("Done");
+  await batch.locator(".item select").nth(1).selectOption("Done");
+  await batch.locator('input[id^="it-l-"]').first().fill("https://example.com/intro.mp4");
+  await batch.locator('input[id^="hrs-"]').fill("5");
+  await shot("04a-designer-batch");
+  await batch.getByRole("button", { name: /Save today's update/ }).click();
+  await expectText(/T-00\d marked done/);
   await shot("04-designer-tasks");
   await tab("My leave");
   await page.fill("#l-from", await plus(8));
@@ -230,6 +258,12 @@ const SEED = {
   const saved = await page.evaluate(() => window.__saved);
   fs.writeFileSync(path.join(OUT, "export.xlsx"), Buffer.from(saved.b64, "base64"));
 
+  // Tablet width: icon rail
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await go("owner", "owner");
+  await shot("07a-owner-tablet");
+  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) errors.push("owner overflows at tablet width");
+
   // Phone width, dark
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
@@ -241,4 +275,4 @@ const SEED = {
   await browser.close();
   console.log(JSON.stringify({ out: OUT, errors, file: saved.filename }, null, 2));
   if (errors.length) process.exit(1);
-})().catch((e) => { console.error(e); process.exit(1); });
+})().catch(async (e) => { console.error(e); try { await global.PAGE.screenshot({ path: path.join(OUT, "fail.png"), fullPage: true }); console.error("screenshot:", path.join(OUT, "fail.png")); } catch (x) {} process.exit(1); });

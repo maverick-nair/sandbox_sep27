@@ -1,6 +1,6 @@
 """Build the export template used by Design Task Hub.
 
-Takes the original "Product Designer Task Manager" workbook and adds four
+Takes the original "Product Designer Task Manager" workbook and adds five
 sheets without touching the existing four (Tracker, Scorecard, Settings,
 Leave & Holidays), their formulas, tables, dropdowns or formatting:
 
@@ -9,6 +9,7 @@ Leave & Holidays), their formulas, tables, dropdowns or formatting:
   Task Details  master task / subtask tags, progress and hours per Tracker row
   Daily Log     one row per designer daily update
   Task Funnel   every PM request, one row per subtask, with the owner decision
+  Deliverables  one row per item inside a batch task (each video of a set)
 
 The workbook is edited at the XML level (no openpyxl round trip) so the
 x14 dropdown validations, dynamic-array metadata and table definitions of
@@ -34,8 +35,9 @@ S_CENTER, S_TEXT, S_WRAP, S_DATE, S_INT, S_DEC1, S_PCT = 9, 10, 14, 11, 12, 60, 
 S_SECTION = 35  # bold
 
 # Palette (validated categorical order from the app's chart palette)
-BLUE, ORANGE, AQUA, YELLOW, MAGENTA = "2A78D6", "EB6834", "1BAF7A", "EDA100", "E87BA4"
-GOOD, WARN, SERIOUS, CRIT, GREY, NAVY = "0CA30C", "FAB219", "EC835A", "D03B3B", "A6A6A6", "1F3864"
+# KNOLSKAPE brand steps, validated for colour-blind separation in this order
+BLUE, ORANGE, AQUA, YELLOW, MAGENTA = "0337D8", "E86A00", "7E9CF0", "C12400", "8A9A1A"
+GOOD, WARN, SERIOUS, CRIT, GREY, NAVY = "5E8C00", "FBD300", "E85C24", "C12400", "A6A6A6", "111827"
 
 
 def col_letter(n):
@@ -235,7 +237,29 @@ for k, line in enumerate(["Evaluate", "Educate", "Experience", "Enable", "GENIE 
     d.f(f"C{r}", f'B{r}-COUNTIFS({TD}$Q:$Q,$A{r},{TD}$H:$H,"Done*")', S_INT)
     d.f(f"D{r}", f"SUMIFS({TD}$I:$I,{TD}$Q:$Q,$A{r})", S_DEC1)
     d.f(f"E{r}", f"SUMIFS({TD}$K:$K,{TD}$Q:$Q,$A{r})", S_DEC1)
-DASH_LAST = E4_HEAD + 6
+# Deliverables completed per week (batch tasks, Deliverables sheet)
+DEL_HEAD = E4_HEAD + 9
+DEL_FIRST = DEL_HEAD + 1
+DV = "'Deliverables'!"
+d.s(f"A{DEL_HEAD}", "Deliverables done, week of", S_HEAD)
+for k in range(DES_N):
+    c = col_letter(2 + k)
+    d.f(f"{c}{DEL_HEAD}", f"Scorecard!$A${12 + k}", S_HEAD)
+d.s(f"G{DEL_HEAD}", "Team Total", S_HEAD)
+for k in range(WK_N):
+    r = DEL_FIRST + k
+    d.f(f"A{r}", f"$A${WK_FIRST + k}", S_DATE)
+    for j in range(DES_N):
+        c = col_letter(2 + j)
+        d.f(f"{c}{r}", f'IF({c}${DEL_HEAD}="","",COUNTIFS({DV}$B:$B,{c}${DEL_HEAD},{DV}$H:$H,"Done",{DV}$I:$I,">="&$A{r},{DV}$I:$I,"<"&($A{r}+7)))', S_INT)
+    d.f(f"G{r}", f'COUNTIFS({DV}$H:$H,"Done",{DV}$I:$I,">="&$A{r},{DV}$I:$I,"<"&($A{r}+7))', S_INT)
+HPD = DEL_FIRST + WK_N
+d.s(f"A{HPD}", "Hours per deliverable", S_SECTION)
+for j in range(DES_N):
+    c = col_letter(2 + j)
+    d.f(f"{c}{HPD}", f'IF({c}${DEL_HEAD}="","",IFERROR(SUMIFS({TD}$K:$K,{TD}$F:$F,{c}${DEL_HEAD},{TD}$U:$U,">1")/SUMIFS({TD}$W:$W,{TD}$F:$F,{c}${DEL_HEAD},{TD}$U:$U,">1"),"-"))', S_DEC1)
+d.f(f"G{HPD}", f'IFERROR(SUMIFS({TD}$K:$K,{TD}$U:$U,">1")/SUMIFS({TD}$W:$W,{TD}$U:$U,">1"),"-")', S_DEC1)
+DASH_LAST = HPD
 
 dash_cols = [(1, 24)] + [(i, 18 if i == 9 else 12.5) for i in range(2, 17)]
 dash_view = '<sheetView showGridLines="0" workbookViewId="0"/>'
@@ -250,7 +274,8 @@ TD_HEADS = [
     ("Progress %", S_HEAD_TEAL, 11), ("Hours Logged", S_HEAD_TEAL, 11), ("Last Update", S_HEAD_TEAL, 13),
     ("Latest Note", S_HEAD_TEAL, 44), ("Assigned By", S_HEAD, 14), ("Assigned On", S_HEAD, 13),
     ("Brief / Link", S_HEAD, 36), ("4E Line", S_HEAD, 12), ("Master Task Title", S_HEAD, 30),
-    ("Request ID", S_HEAD, 11), ("Approved On", S_HEAD, 13),
+    ("Request ID", S_HEAD, 11), ("Approved On", S_HEAD, 13), ("Qty", S_HEAD, 7), ("Unit", S_HEAD, 12),
+    ("Items Done", S_HEAD_TEAL, 10),
 ]
 t = Sheet()
 t.s("A1", "Task Details", S_TITLE)
@@ -261,8 +286,8 @@ for i, (h, st, _) in enumerate(TD_HEADS):
 frozen = ('<sheetView showGridLines="0" workbookViewId="0"><pane xSplit="1" ySplit="4" topLeftCell="B5" '
           'activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="B5" sqref="B5"/></sheetView>')
 td_xml = t.xml([(i + 1, w) for i, (_, _, w) in enumerate(TD_HEADS)],
-               extra_before_margins="", sheet_view=frozen, dim="A1:T4")
-td_xml = td_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:T4"/>')
+               extra_before_margins="", sheet_view=frozen, dim="A1:W4")
+td_xml = td_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:W4"/>')
 
 # --------------------------------------------------------------- Daily Log
 DL_HEADS = [("Date", 12), ("Task ID", 9), ("Designer", 14), ("Master Task", 20), ("Subtask", 18),
@@ -281,15 +306,28 @@ dl_xml = dl_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:J4"/>')
 # ------------------------------------------------------------- Task Funnel
 TF_HEADS = [("Request ID", 11), ("Submitted", 12), ("PM", 12), ("4E Line", 12), ("Product", 18), ("Project", 20),
             ("Master Task", 30), ("Priority", 10), ("Subtask", 16), ("Detail", 40), ("Designer", 13), ("Start", 12),
-            ("End", 12), ("Est. Hours", 10), ("Status", 17), ("Decided On", 12), ("Owner Note", 36), ("Task ID", 9)]
+            ("End", 12), ("Est. Hours", 10), ("Status", 17), ("Decided On", 12), ("Owner Note", 36), ("Task ID", 9),
+            ("Qty", 7), ("Unit", 12)]
 tf = Sheet()
 tf.s("A1", "Task Funnel", S_TITLE)
 tf.s("A2", "Every request PMs submitted, one row per subtask, with your decision. Approved subtasks become Tracker rows (Task ID).", S_NOTE)
 tf.heights[4] = 34
 for i, (h, _) in enumerate(TF_HEADS):
     tf.s(f"{col_letter(i + 1)}4", h, S_HEAD)
-tf_xml = tf.xml([(i + 1, w) for i, (_, w) in enumerate(TF_HEADS)], sheet_view=frozen2, dim="A1:R4")
-tf_xml = tf_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:R4"/>')
+tf_xml = tf.xml([(i + 1, w) for i, (_, w) in enumerate(TF_HEADS)], sheet_view=frozen2, dim="A1:T4")
+tf_xml = tf_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:T4"/>')
+
+# ------------------------------------------------------------ Deliverables
+DLV_HEADS = [("Task ID", 9), ("Designer", 13), ("Product", 18), ("Subtask", 16), ("Batch", 34), ("#", 5),
+             ("Deliverable", 34), ("Status", 13), ("Done On", 12), ("Revisions", 10), ("Link", 40)]
+dv = Sheet()
+dv.s("A1", "Deliverables", S_TITLE)
+dv.s("A2", "One row per item inside a batch task (for example each video in a set of 12), written by Design Task Hub on export.", S_NOTE)
+dv.heights[4] = 34
+for i, (h, _) in enumerate(DLV_HEADS):
+    dv.s(f"{col_letter(i + 1)}4", h, S_HEAD_TEAL)
+dv_xml = dv.xml([(i + 1, w) for i, (_, w) in enumerate(DLV_HEADS)], sheet_view=frozen2, dim="A1:K4")
+dv_xml = dv_xml.replace("</sheetData>", '</sheetData><autoFilter ref="A4:K4"/>')
 
 
 # ------------------------------------------------------------------ charts
@@ -408,8 +446,15 @@ ser = [bar_series(0, f"{D}$E${PRJ_HEAD}", prj_cat, f"{D}$E${PRJ_FIRST}:$E${PRJ_F
        bar_series(1, f"{D}$D${PRJ_HEAD}", prj_cat, f"{D}$D${PRJ_FIRST}:$D${PRJ_FIRST + PRJ_N - 1}", BLUE)]
 charts.append(chart_space("Tasks by project: completed and open", bar_chart(ser, "bar", "stacked") + axes("l", "b", "0", reverse_cat=True)))
 
-# Drawing: two charts per band, three bands
-anchors = [(0, 7, 8, 25), (8, 7, 16, 25), (0, 26, 8, 44), (8, 26, 16, 44), (0, 45, 8, 63), (8, 45, 16, 63)]
+# 7 Deliverables per week (next to its table)
+dl_cat = f"{D}$A${DEL_FIRST}:$A${DEL_FIRST + WK_N - 1}"
+ser = [bar_series(i, f"{D}${col_letter(2 + i)}${DEL_HEAD}", dl_cat, f"{D}${col_letter(2 + i)}${DEL_FIRST}:${col_letter(2 + i)}${DEL_FIRST + WK_N - 1}", col)
+       for i, col in enumerate([BLUE, ORANGE, AQUA, YELLOW, MAGENTA])]
+charts.append(chart_space("Deliverables completed per week", bar_chart(ser) + axes("b", "l", "0", cat_fmt="dd-mmm", auto_cat=False)))
+
+# Drawing: two charts per band, three bands, plus the deliverables chart
+anchors = [(0, 7, 8, 25), (8, 7, 16, 25), (0, 26, 8, 44), (8, 26, 16, 44), (0, 45, 8, 63), (8, 45, 16, 63),
+           (8, DEL_HEAD - 3, 16, DEL_HEAD + 15)]
 frames = []
 for i, (c1, r1, c2, r2) in enumerate(anchors):
     frames.append(
@@ -459,7 +504,8 @@ wb = parts["xl/workbook.xml"].decode()
 wb = wb.replace("</sheets>", '<sheet name="Dashboard" sheetId="7" r:id="rId21"/>'
                              '<sheet name="Task Details" sheetId="8" r:id="rId22"/>'
                              '<sheet name="Daily Log" sheetId="9" r:id="rId23"/>'
-                             '<sheet name="Task Funnel" sheetId="10" r:id="rId24"/></sheets>')
+                             '<sheet name="Task Funnel" sheetId="10" r:id="rId24"/>'
+                             '<sheet name="Deliverables" sheetId="11" r:id="rId25"/></sheets>')
 wb = wb.replace('<calcPr calcId="181029"/>', '<calcPr calcId="181029" fullCalcOnLoad="1"/>')
 assert 'fullCalcOnLoad="1"' in wb
 parts["xl/workbook.xml"] = wb.encode()
@@ -471,29 +517,31 @@ rels = rels.replace("</Relationships>",
                     f'<Relationship Id="rId21" Type="{ws_type}" Target="worksheets/sheet5.xml"/>'
                     f'<Relationship Id="rId22" Type="{ws_type}" Target="worksheets/sheet6.xml"/>'
                     f'<Relationship Id="rId23" Type="{ws_type}" Target="worksheets/sheet7.xml"/>'
-                    f'<Relationship Id="rId24" Type="{ws_type}" Target="worksheets/sheet8.xml"/></Relationships>')
+                    f'<Relationship Id="rId24" Type="{ws_type}" Target="worksheets/sheet8.xml"/>'
+                    f'<Relationship Id="rId25" Type="{ws_type}" Target="worksheets/sheet9.xml"/></Relationships>')
 parts["xl/_rels/workbook.xml.rels"] = rels.encode()
 parts.pop("xl/calcChain.xml", None)
 
 ct = parts["[Content_Types].xml"].decode()
 ct = ct.replace('<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/>', "")
 ws_ct = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
-extra = "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="{ws_ct}"/>' for i in (5, 6, 7, 8))
+extra = "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="{ws_ct}"/>' for i in (5, 6, 7, 8, 9))
 extra += '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'
 extra += "".join(f'<Override PartName="/xl/charts/chart{i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>' for i in range(len(charts)))
 ct = ct.replace("</Types>", extra + "</Types>")
 parts["[Content_Types].xml"] = ct.encode()
 
 app = parts["docProps/app.xml"].decode()
-app = app.replace("<vt:i4>4</vt:i4>", "<vt:i4>8</vt:i4>").replace('<vt:vector size="4" baseType="lpstr">', '<vt:vector size="8" baseType="lpstr">')
+app = app.replace("<vt:i4>4</vt:i4>", "<vt:i4>9</vt:i4>").replace('<vt:vector size="4" baseType="lpstr">', '<vt:vector size="9" baseType="lpstr">')
 app = app.replace("<vt:lpstr>Leave &amp; Holidays</vt:lpstr></vt:vector>",
-                  "<vt:lpstr>Leave &amp; Holidays</vt:lpstr><vt:lpstr>Dashboard</vt:lpstr><vt:lpstr>Task Details</vt:lpstr><vt:lpstr>Daily Log</vt:lpstr><vt:lpstr>Task Funnel</vt:lpstr></vt:vector>")
+                  "<vt:lpstr>Leave &amp; Holidays</vt:lpstr><vt:lpstr>Dashboard</vt:lpstr><vt:lpstr>Task Details</vt:lpstr><vt:lpstr>Daily Log</vt:lpstr><vt:lpstr>Task Funnel</vt:lpstr><vt:lpstr>Deliverables</vt:lpstr></vt:vector>")
 parts["docProps/app.xml"] = app.encode()
 
 parts["xl/worksheets/sheet5.xml"] = dash_xml.encode()
 parts["xl/worksheets/sheet6.xml"] = td_xml.encode()
 parts["xl/worksheets/sheet7.xml"] = dl_xml.encode()
 parts["xl/worksheets/sheet8.xml"] = tf_xml.encode()
+parts["xl/worksheets/sheet9.xml"] = dv_xml.encode()
 parts["xl/worksheets/_rels/sheet5.xml.rels"] = dash_rels.encode()
 parts["xl/drawings/drawing1.xml"] = drawing_xml.encode()
 parts["xl/drawings/_rels/drawing1.xml.rels"] = drawing_rels.encode()

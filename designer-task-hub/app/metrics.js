@@ -203,16 +203,46 @@
       const ps = (byTask.get(t.id) || []).slice().sort((a, b) => (a.updatedAt < b.updatedAt ? -1 : 1));
       const out = { status: "Not Started", progress: 0, revisions: 0, blockers: "", actualEnd: "", ...t, updates: [] };
       const days = new Map();
+      const itemState = {};
       for (const p of ps) {
         for (const k of PROGRESS_FIELDS) if (p[k] !== undefined) out[k] = p[k];
         for (const u of p.updates || []) {
           const cur = days.get(u.d);
           if (!cur || (u.at || "") >= (cur.at || "")) days.set(u.d, u);
         }
+        for (const [id, st] of Object.entries(p.items || {})) {
+          const cur = itemState[id];
+          if (!cur || (st.at || "") >= (cur.at || "")) itemState[id] = st;
+        }
       }
       out.updates = Array.from(days.values()).sort((a, b) => (a.d < b.d ? -1 : 1));
+      out.deliverables = batchItems(t, itemState);
+      if (out.deliverables) {
+        const done = out.deliverables.filter((x) => x.status === "Done");
+        out.itemsDone = done.length;
+        out.progress = Math.round((done.length / out.deliverables.length) * 100);
+        // Tracker Revision Rounds for a batch = average rounds per item (whole number)
+        out.revisionsExact = out.deliverables.reduce((a, x) => a + (Number(x.revisions) || 0), 0) / out.deliverables.length;
+        out.revisions = Math.round(out.revisionsExact);
+      }
       return out;
     });
+  }
+
+  // A batch task (qty > 1) expands into one deliverable per unit: planned
+  // titles from the request, then the designer's own state per item.
+  function batchItems(t, state) {
+    const qty = Math.max(1, Math.floor(Number(t.qty) || 1));
+    if (qty <= 1) return null;
+    const planned = t.items || [];
+    const out = [];
+    for (let i = 0; i < qty; i++) {
+      const id = (planned[i] && planned[i].id) || "i" + (i + 1);
+      const st = (state || {})[id] || {};
+      out.push({ id, n: i + 1, title: st.title || (planned[i] && planned[i].title) || "", status: st.status || "Not Started",
+        link: st.link || "", revisions: Number(st.revisions) || 0, doneAt: st.status === "Done" ? st.doneAt || "" : "", at: st.at || "" });
+    }
+    return out;
   }
 
   // 4E lines -> flat product list with their line (the "master tasks")
@@ -264,7 +294,7 @@
   }
 
   const api = {
-    mergeProgress, productsOf, matchNames,
+    mergeProgress, batchItems, productsOf, matchNames,
     todayIso, mondayOf, addDays, networkDays, derive, deriveAll, sortTasks, scorecard, pmTable, week, context,
     defaults, rating, projectLead, toDay, toIso, isoWeekday,
   };

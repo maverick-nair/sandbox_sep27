@@ -21,6 +21,9 @@ const SERIES = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"]
 const DELIVERY = { "Done On Time": "good", "Done Late": "serious", "On Track": "info", "Scheduled": "neutral", "Overdue": "critical", "Blocked": "warn", "Not Scheduled": "neutral" };
 const DELIVERY_COLOR = { "Done On Time": "var(--good)", "Done Late": "var(--serious)", "On Track": "var(--s1)", "Scheduled": "#86b6ef", "Overdue": "var(--critical)", "Blocked": "var(--warn)", "Not Scheduled": "var(--faint)" };
 const WL = { "Overloaded": "critical", "Balanced": "good", "Under-utilised": "info", "On leave / holiday": "neutral" };
+const UNITS = ["items", "videos", "product demos", "project overviews", "screens", "banners", "illustrations", "slides", "animations"];
+const qtyOf = (x) => Math.max(1, Math.floor(Number(x && x.qty) || 1));
+const unitLabel = (x) => `${qtyOf(x)} ${qtyOf(x) === 1 ? String(x.unit || "item").replace(/s$/, "") : x.unit || "items"}`;
 const REQ = { draft: ["Draft", "neutral"], pending: ["Awaiting approval", "warn"], changes: ["Changes requested", "serious"], approved: ["Approved", "good"], rejected: ["Rejected", "critical"] };
 
 // ------------------------------------------------------------------ state
@@ -202,22 +205,58 @@ function pmName() {
   const first = (S.me.name || "").split(" ")[0].toLowerCase();
   return cfg().pms.find((p) => p.toLowerCase() === first) || cfg().pms[0] || "";
 }
+// Simple stroke icons (24px grid)
+const ICONS = {
+  overview: "M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z",
+  funnel: "M3 5h18l-7 8v6l-4-2v-4z",
+  list: "M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01",
+  designers: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17 11l2 2 4-4",
+  calendar: "M4 5h16v16H4zM16 3v4M8 3v4M4 10h16",
+  people: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  sliders: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+  download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
+  plus: "M12 5v14M5 12h14",
+  inbox: "M22 12h-6l-2 3h-4l-2-3H2M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z",
+  check: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
+  bell: "M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+  pen: "M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z",
+  compass: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z",
+  layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+};
+function icon(name) {
+  return svg("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" },
+    svg("path", { d: ICONS[name] || ICONS.list }));
+}
+const APP_ICON = { pm: "pen", designer: "layers", owner: "compass" };
+// [id, label, count, icon, group]
 function tabsFor(app) {
   if (app === "owner") {
     const pending = allRequests().filter((r) => r.status === "pending").length;
-    return [["overview", "Overview"], ["funnel", "Task funnel", pending], ["tasks", "All tasks"], ["designers", "Designers"],
-      ["leave", "Leave & holidays"], ["people", "People & links", Object.keys(S.claims).length], ["lists", "Lists & 4E"], ["export", "Export to Excel"]];
+    return [["overview", "Overview", 0, "overview", "Workspace"], ["funnel", "Task funnel", pending, "funnel", "Workspace"], ["tasks", "All tasks", 0, "list", "Workspace"],
+      ["designers", "Designers", 0, "designers", "Workspace"], ["leave", "Leave & holidays", 0, "calendar", "Workspace"],
+      ["people", "People & access", Object.keys(S.claims).length, "people", "Setup"], ["lists", "Lists & 4E", 0, "sliders", "Setup"], ["export", "Export to Excel", 0, "download", "Setup"]];
   }
   if (app === "pm") {
     const back = allRequests().filter((r) => r.status === "changes").length;
-    return [["new", S.form && S.form.id ? "Edit request" : "New request"], ["mine", "My requests", back]];
+    return [["new", S.form && S.form.id ? "Edit request" : "New request", 0, "plus", "Requests"], ["mine", "My requests", back, "inbox", "Requests"]];
   }
   if (app === "designer") {
     const open = tasks().filter((t) => t.designer === designerName() && !t.actualEnd).length;
-    return [["tasks", "My tasks", open], ["leave", "My leave"]];
+    return [["tasks", "My tasks", open, "check", "My work"], ["leave", "My leave", 0, "calendar", "My work"]];
   }
   return [];
 }
+function alerts(app) {
+  if (app === "owner") { const n = allRequests().filter((r) => r.status === "pending").length + Object.keys(S.claims).length;
+    return { n, label: `${n} waiting for you`, go: () => { S.tab.owner = Object.keys(S.claims).length && !allRequests().some((r) => r.status === "pending") ? "people" : "funnel"; S.funnelTab = "pending"; } }; }
+  if (app === "pm") { const n = allRequests().filter((r) => r.uid === S.me.id && r.status === "changes").length; return { n, label: `${n} sent back to you`, go: () => { S.tab.pm = "mine"; } }; }
+  if (app === "designer") { const td = today(); const n = tasks().filter((t) => t.designer === designerName() && !t.actualEnd && t.start && t.start <= td && !(t.updates || []).some((u) => u.d === td)).length;
+    return { n, label: `${n} task${n === 1 ? "" : "s"} not updated today`, go: () => { S.tab.designer = "tasks"; } }; }
+  return { n: 0, label: "", go: () => {} };
+}
+const DOCK_LABEL = { overview: "Overview", funnel: "Funnel", tasks: "Tasks", designers: "Designers", leave: "Leave", people: "People", lists: "Lists", export: "Export", new: "New", mine: "Requests" };
+const SEARCH_HINT = { owner: "Search tasks, products, IDs", pm: "Search my requests", designer: "Search my tasks" };
 
 // ---------------------------------------------------------------- render
 let raf = 0;
@@ -245,29 +284,42 @@ function paint() {
   }
   window.scrollTo(0, scrollY);
 }
+function go(app, id) { S.tab[app] = id; S.confirm = null; if (app === "owner") S.edit = null; render(); window.scrollTo(0, 0); }
 function paintHeader(app) {
-  const brand = document.getElementById("brand");
-  brand.replaceChildren(h("span", { class: "brand-mark", "aria-hidden": "true" }, h("i"), h("i"), h("i"), h("i")),
-    h("span", null, h("small", null, "Design Task Hub"), h("b", null, app ? APPS[app].name : "Welcome")));
-  const who = document.getElementById("who");
-  who.replaceChildren();
   const role = roleOf();
-  if (S.me.id) {
-    if (S.me.avatarUrl) who.appendChild(h("img", { src: S.me.avatarUrl, alt: "" }));
-    who.appendChild(h("span", null, role === "admin" ? (S.me.name || "Owner") : rosterName() || S.me.name || "You"));
-    if (role) who.appendChild(h("span", { class: "role" }, role === "admin" ? "Owner" : role === "pm" ? "Product manager" : "Designer"));
-  }
+  const ok = S.ready && app && role && allowed(app);
+  const list = ok ? tabsFor(app) : [];
+  if (list.length && !list.find((t) => t[0] === S.tab[app])) S.tab[app] = list[0][0];
+  const cur = list.find((t) => t[0] === S.tab[app]);
+  document.getElementById("brand").replaceChildren(h("div", { class: "app-id" },
+    h("span", { class: "mark" }, icon(APP_ICON[app] || "compass")),
+    h("div", null, h("small", null, "Design Task Hub"), h("b", null, app ? APPS[app].name : "Welcome"))));
   const tabs = document.getElementById("tabs");
   tabs.replaceChildren();
-  const list = S.ready && app && allowed(app) ? tabsFor(app) : [];
-  if (list.length && !list.find((t) => t[0] === S.tab[app])) S.tab[app] = list[0][0];
-  for (const [id, label, count] of list) {
-    const b = h("button", { class: "tab", role: "tab", "aria-selected": String(S.tab[app] === id),
-      onclick: () => { S.tab[app] = id; S.confirm = null; if (app === "owner") S.edit = null; render(); window.scrollTo(0, 0); } }, label);
-    if (count) b.appendChild(h("span", { class: "count" }, String(count)));
-    tabs.appendChild(b);
+  let group = null;
+  for (const [id, label, count, ic, grp] of list) {
+    if (grp !== group) { group = grp; tabs.appendChild(h("div", { class: "nav-group", role: "presentation" }, grp)); }
+    tabs.appendChild(h("button", { class: "tab", role: "tab", "aria-selected": String(S.tab[app] === id), title: label, onclick: () => go(app, id) },
+      icon(ic), h("span", { class: "label" }, label), count ? h("span", { class: "count" }, String(count)) : null));
   }
-  tabs.hidden = !list.length;
+  const dock = document.getElementById("dock");
+  dock.replaceChildren(...list.map(([id, label, count, ic]) => h("button", { "aria-current": S.tab[app] === id ? "page" : null, "aria-label": label, onclick: () => go(app, id) },
+    icon(ic), h("span", null, DOCK_LABEL[id] || label), count ? h("span", { class: "count" }, String(count)) : null)));
+  dock.hidden = !list.length;
+  const name = role === "admin" ? (S.me.name || "Owner") : rosterName() || S.me.name || "";
+  const roleLabel = role === "admin" ? "Owner" : role === "pm" ? "Product manager" : role === "designer" ? "Product designer" : S.me.email || "";
+  document.getElementById("who").replaceChildren(h("span", { class: "warmline" }),
+    S.me.id ? h("div", { class: "me" }, avatar(S.me.avatarUrl, name, "avatar"), h("div", { style: "min-width:0" }, h("b", null, name || "You"), h("small", null, roleLabel))) : null);
+  const top = document.getElementById("top");
+  const al = ok ? alerts(app) : { n: 0 };
+  const logo = document.querySelector(".logo.dark"), logoW = document.querySelector(".logo.white");
+  top.replaceChildren(
+    h("div", { class: "crumb" }, logo ? h("img", { class: "mlogo mdark", src: logo.src, alt: "KNOLSKAPE" }) : null, logoW ? h("img", { class: "mlogo mwhite", src: logoW.src, alt: "" }) : null, h("b", null, app ? APPS[app].name : "Design Task Hub"), cur ? h("span", null, "/ " + cur[1]) : null),
+    ok ? h("label", { class: "search" }, icon("search"), h("input", { id: "top-search", type: "search", placeholder: SEARCH_HINT[app], "aria-label": SEARCH_HINT[app], value: S.search || "",
+      oninput: (e) => { S.search = e.target.value; if (app === "owner") { S.filters.q = S.search; S.tab.owner = "tasks"; } if (app === "pm") S.tab.pm = "mine"; if (app === "designer") S.tab.designer = "tasks"; softRender(); } })) : null,
+    ok ? h("button", { class: "icon-btn", "aria-label": al.n ? al.label : "Nothing needs you", "data-tip": al.n ? al.label : "Nothing needs you right now", onclick: () => { al.go(); render(); window.scrollTo(0, 0); } },
+      icon("bell"), al.n ? h("span", { class: "count" }, String(al.n)) : null) : null,
+    S.me.id ? avatar(S.me.avatarUrl, name, "me-mini") : null);
 }
 function body(root, app) {
   if (S.noDb) root.appendChild(h("div", { class: "banner warn" }, "Saving is unavailable in this view. Open the link from claude.ai while signed in."));
@@ -295,6 +347,33 @@ function gate(title, text, action) {
 function head(eyebrow, title, text, right) {
   return h("div", { class: "head" }, h("div", null, h("div", { class: "eyebrow" }, eyebrow), h("h1", null, title), text ? h("p", null, text) : null), right || null);
 }
+// Landing banner: soft brand gradient, floating brand shapes, headline stats
+function hero({ kicker, title, text, stats, actions, right }) {
+  return h("section", { class: "hero" },
+    h("div", { class: "shapes", "aria-hidden": "true" }, h("i", { class: "shape torus" }), h("i", { class: "shape sphere" }), h("i", { class: "shape cube" }), h("i", { class: "shape cone" }), h("i", { class: "shape pill-shape" })),
+    h("div", { class: "hero-body" }, kicker ? h("div", { class: "eyebrow" }, kicker) : null, h("h1", null, title), text ? h("p", null, text) : null,
+      stats && stats.length ? h("div", { class: "hero-stats" }, stats.map(([v, l, color]) => h("div", { class: "hero-stat" }, h("div", { class: "v", style: color ? `color:${color}` : null }, v), h("div", { class: "l" }, l)))) : null,
+      actions ? h("div", { class: "hero-actions" }, actions) : null),
+    right ? h("div", { style: "position:relative;z-index:2;margin-top:14px" }, right) : null);
+}
+const LINE_COLOR = { Evaluate: "#0337D8", Educate: "#6E7D00", Experience: "#E86A00", Enable: "#C12400", "GENIE Platform": "#111827" };
+const lineColor = (line) => LINE_COLOR[line] || "#5B6FD8";
+function initials(name) {
+  const caps = String(name || "?").match(/[A-Z0-9]/g) || [];
+  const words = String(name || "?").split(/\s+/).filter(Boolean);
+  const pick = caps.length >= 2 ? caps.slice(0, 2).join("") : words.map((w) => w[0]).join("").slice(0, 2);
+  return (pick || "?").toUpperCase();
+}
+// Profile photo, or initials when the platform has no picture
+function avatar(url, name, cls, style) {
+  if (url) return h("img", { class: cls || "avatar", src: url, alt: "", style });
+  return h("span", { class: (cls || "avatar") + " ini", style, "aria-hidden": "true" }, initials(name || "?"));
+}
+function tile(product, line, sm) {
+  const c = lineColor(line || lineOf(product));
+  return h("span", { class: "tile" + (sm ? " sm" : ""), style: `background:linear-gradient(145deg, color-mix(in srgb, ${c} 70%, #fff), ${c})`, title: product || "", "aria-hidden": "true" }, initials(product));
+}
+function lineTag(line) { return line ? h("span", { class: "tag sub" }, h("i", { class: "dot", style: `background:${lineColor(line)}` }), line) : null; }
 
 // ------------------------------------------------------------------ join
 function viewJoin(root, app) {
@@ -306,10 +385,12 @@ function viewJoin(root, app) {
   }
   const fixed = app === "pm" ? "pm" : app === "designer" ? "designer" : null;
   if (app === "owner") return root.appendChild(gate("This dashboard is private", "Only the owner can open the Owner Dashboard. Use the link you were given for Task Creation or the Designer Tracker."));
+  if (!isOfficial(S.me.email)) return root.appendChild(gate("Use your official ID", `You're signed in as ${S.me.email}. Access is given to official @${S.domain} accounts only. Sign in to claude.ai with your work account and open this link again.`));
   const f = S.joinForm || (S.joinForm = { role: fixed || "designer", name: "", err: "" });
   if (fixed) f.role = fixed;
   const names = f.role === "pm" ? cfg().pms : cfg().designers;
-  root.appendChild(head("First visit", fixed ? `Join ${APPS[app].name}` : "Tell us who you are", "The owner confirms each person once. After that this link opens straight to your page."));
+  root.appendChild(head("Access", `You don't have access to ${fixed ? APPS[app].name : "Design Task Hub"} yet`,
+    `Access is role based and tied to your official ID${S.me.email ? ` (${S.me.email})` : ""}. The owner adds people directly, or you can send a request below.`));
   root.appendChild(h("div", { class: "card pad stack", style: "max-width:560px" },
     fixed ? null : h("div", { class: "field" }, h("span", { class: "label" }, "I am a"),
       h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
@@ -318,11 +399,14 @@ function viewJoin(root, app) {
     h("div", null, h("button", { class: "btn accent", disabled: S.busy.claim, onclick: () => {
       if (!f.name) { f.err = "Choose your name from the list."; return render(); }
       guard("claim", () => db.doc("claims/" + S.me.id).set({ role: f.role, name: f.name, at: nowIso() }));
-    } }, "Send request"))));
+    } }, "Request access"))));
 }
 
 // ============================================================ TASK CREATION
-function blankSubtask() { return { key: Math.random().toString(36).slice(2, 9), sub: "", detail: "", designer: "", start: "", end: "", effort: "" }; }
+function blankSubtask() { return { key: Math.random().toString(36).slice(2, 9), sub: "", detail: "", designer: "", start: "", end: "", effort: "", qty: "1", unit: "videos", titles: "" }; }
+function itemsFromTitles(titles, qty) {
+  return String(titles || "").split("\n").map((t) => t.trim()).filter(Boolean).slice(0, qty).map((title, i) => ({ id: "i" + (i + 1), title }));
+}
 function blankRequest() {
   return { id: null, fourE: "", product: "", project: "", masterTitle: "", priority: "Medium", brief: "", subtasks: [blankSubtask()], errors: {}, asPm: "" };
 }
@@ -341,6 +425,8 @@ function validateRequest(f) {
     if (!s.end) x.end = "Add an end date.";
     else if (s.start && s.end < s.start) x.end = "End date is before the start date.";
     if (!(Number(s.effort) > 0)) x.effort = "Estimate the hours.";
+    const q = Number(s.qty || 1);
+    if (!Number.isInteger(q) || q < 1 || q > 200) x.qty = "Use a whole number from 1 to 200.";
     if (Object.keys(x).length) e.subs[s.key] = x;
   });
   if (!Object.keys(e.subs).length) delete e.subs;
@@ -353,7 +439,11 @@ function requestBody(f, status, prev) {
     pmName: pmName(), pmUid: S.me.id, fourE: f.fourE, product: f.product, project: f.project.trim(), projectIsNew: !projectNames().includes(f.project.trim()),
     masterTitle: f.masterTitle.trim(),
     priority: f.priority, brief: f.brief.trim(),
-    subtasks: f.subtasks.map((s) => ({ key: s.key, sub: s.sub, detail: s.detail.trim(), designer: s.designer, start: s.start, end: s.end, effort: Number(s.effort) || 0 })),
+    subtasks: f.subtasks.map((s) => {
+      const qty = qtyOf(s);
+      return { key: s.key, sub: s.sub, detail: s.detail.trim(), designer: s.designer || "", start: s.start, end: s.end, effort: Number(s.effort) || 0,
+        qty, unit: qty > 1 ? s.unit || "items" : "", titles: qty > 1 ? s.titles || "" : "", items: qty > 1 ? itemsFromTitles(s.titles, qty) : [] };
+    }),
     status, updatedAt: nowIso(), submittedAt: prev && prev.submittedAt ? prev.submittedAt : status === "pending" ? nowIso() : "",
     resubmittedAt: prev && prev.submittedAt && status === "pending" ? nowIso() : prev && prev.resubmittedAt ? prev.resubmittedAt : "",
     ownerNote: prev ? prev.ownerNote || "" : "", history,
@@ -378,9 +468,12 @@ function saveRequest(f, status) {
 function viewPmForm(root) {
   const f = S.form || (S.form = blankRequest());
   const c = cfg(), e = f.errors || {};
-  root.appendChild(head(f.id ? "Edit request" : "New request", f.id ? f.masterTitle || "Untitled request" : "Create a design request",
-    "Pick the 4E line and product, name the project, and describe each subtask with its own timeline. The owner reviews every request and decides who works on it.",
-    roleOf() === "admin" ? field("Requesting as", "as-pm", select("as-pm", pmName(), c.pms, (v) => { f.asPm = v; render(); })) : null));
+  const mineReq = allRequests().filter((r) => r.uid === S.me.id);
+  const cnt = (st) => String(mineReq.filter((r) => r.status === st).length);
+  root.appendChild(hero({ kicker: f.id ? "Edit request" : "New request", title: f.id ? f.masterTitle || "Untitled request" : "Create a design request",
+    text: "Pick the 4E line and product, name the project, and describe each subtask with its own timeline. The owner reviews every request and assigns the designers.",
+    stats: [[cnt("pending"), "Awaiting approval"], [cnt("changes"), "Sent back"], [cnt("approved"), "Approved"], [cnt("draft"), "Drafts"]],
+    right: roleOf() === "admin" ? h("div", { style: "max-width:240px" }, field("Requesting as", "as-pm", select("as-pm", pmName(), c.pms, (v) => { f.asPm = v; render(); }))) : null }));
   const back = f.id ? allRequests().find((r) => r.id === f.id) : null;
   if (back && back.status === "changes" && back.ownerNote) root.appendChild(h("div", { class: "note-box" }, h("b", null, "Owner's note: "), back.ownerNote));
 
@@ -416,7 +509,7 @@ function viewPmForm(root) {
     tl || h("div", { class: "hint" }, "Bars appear once subtasks have start and end dates."));
 
   const preview = f.product || f.subtasks.some((s) => s.sub) ? h("div", { class: "preview" }, h("div", { class: "k" }, "On the Tracker, once approved"),
-    f.subtasks.map((s) => h("div", null, X.taskAssigned({ master: f.product, sub: s.sub, title: s.detail.split("\n")[0].slice(0, 80) }) || "-"))) : null;
+    f.subtasks.map((s) => h("div", null, X.taskAssigned({ master: f.product, sub: s.sub, title: s.detail.split("\n")[0].slice(0, 80), qty: qtyOf(s), unit: s.unit }) || "-"))) : null;
 
   const actions = h("div", { class: "row" },
     h("button", { class: "btn accent", disabled: S.busy.req, onclick: () => saveRequest(f, "pending") }, back && back.status === "changes" ? "Resubmit for approval" : "Submit for approval"),
@@ -436,7 +529,12 @@ function subtaskEditor(f, s, i, e) {
       h("button", { class: "btn sm ghost", onclick: () => { const cp = { ...clone(s), key: blankSubtask().key }; f.subtasks.splice(i + 1, 0, cp); render(); } }, "Duplicate"),
       f.subtasks.length > 1 ? h("button", { class: "btn sm ghost danger", onclick: () => { f.subtasks.splice(i, 1); render(); } }, "Remove") : null),
     h("div", { class: "fields" },
-      field("Subtask type", id("sub"), select(id("sub"), s.sub, c.subTags, (v) => { s.sub = v; delete e.sub; render(); }, "Choose a type"), e.sub)),
+      field("Subtask type", id("sub"), select(id("sub"), s.sub, c.subTags, (v) => { s.sub = v; delete e.sub; render(); }, "Choose a type"), e.sub),
+      field("Quantity", id("qty"), h("input", { id: id("qty"), type: "number", min: "1", max: "200", step: "1", inputmode: "numeric", value: s.qty || "1", oninput: (ev) => { s.qty = ev.target.value; delete e.qty; softRender(); } }), e.qty,
+        qtyOf(s) > 1 ? "Tracked as one batch with a checklist" : "1 for a single piece of work"),
+      qtyOf(s) > 1 ? field("Unit", id("unit"), select(id("unit"), s.unit || "videos", UNITS, (v) => { s.unit = v; render(); })) : null),
+    qtyOf(s) > 1 ? field(`Titles of the ${s.unit || "items"} (optional, one per line)`, id("titles"), h("textarea", { id: id("titles"), rows: String(Math.min(6, qtyOf(s))), placeholder: `For example:\nIntro to the platform\nSetting up a cohort\nThe designer can name the rest`, value: s.titles || "", oninput: (ev) => { s.titles = ev.target.value; } }),
+      null, `${Math.min(qtyOf(s), String(s.titles || "").split("\n").filter((x) => x.trim()).length)} of ${qtyOf(s)} named`) : null,
     field("Detail", id("det"), h("textarea", { id: id("det"), rows: "3", maxlength: "600", placeholder: "What exactly needs designing, which screens or states, and what done looks like", value: s.detail, oninput: (ev) => { s.detail = ev.target.value; delete e.detail; softRender(); } }), e.detail),
     h("div", { class: "fields" },
       field("Start", id("start"), h("input", { id: id("start"), type: "date", value: s.start, onchange: (ev) => { s.start = ev.target.value; if (s.end && s.end < s.start) s.end = s.start; delete e.start; render(); } }), e.start),
@@ -469,10 +567,10 @@ function projectHint(f, use, keep, isPm) {
 }
 function requestTimeline(subtasks, showDesigner = true) {
   const rows = subtasks.filter((s) => s.start && s.end && s.end >= s.start).map((s) => ({
-    label: h("span", null, `${subtasks.indexOf(s) + 1}. ${s.sub || "Subtask"} `, showDesigner ? h("small", null, s.designer || "unassigned") : null),
+    label: h("span", null, `${subtasks.indexOf(s) + 1}. ${s.sub || "Subtask"} `, qtyOf(s) > 1 ? h("small", null, `x${qtyOf(s)} `) : null, showDesigner ? h("small", null, s.designer || "unassigned") : null),
     start: s.start, end: s.end, color: showDesigner ? designerColor(s.designer) : "var(--accent)",
     text: showDesigner ? s.designer || "" : s.effort ? `${fmt1(s.effort)} hrs` : "",
-    tip: `${s.sub || "Subtask"}\n${fmtDate(s.start)} to ${fmtDate(s.end)}\n` + (showDesigner ? `${s.designer || "Not assigned yet"}, ` : "") + `${fmt1(s.effort)} hrs`,
+    tip: `${s.sub || "Subtask"}${qtyOf(s) > 1 ? ", " + unitLabel(s) : ""}\n${fmtDate(s.start)} to ${fmtDate(s.end)}\n` + (showDesigner ? `${s.designer || "Not assigned yet"}, ` : "") + `${fmt1(s.effort)} hrs`,
   }));
   return rows.length ? gantt(rows) : null;
 }
@@ -503,7 +601,9 @@ function heatCell(all, leave, d, w, ctx) {
 function viewPmRequests(root) {
   const mine = allRequests().filter((r) => r.uid === S.me.id).sort((a, b) => ((a.updatedAt || "") < (b.updatedAt || "") ? 1 : -1));
   const f = S.pmFilter;
-  const list = mine.filter((r) => f === "all" || (f === "active" ? ["draft", "pending", "changes"].includes(r.status) : ["approved", "rejected"].includes(r.status)));
+  const q = (S.search || "").trim().toLowerCase();
+  const list = mine.filter((r) => f === "all" || (f === "active" ? ["draft", "pending", "changes"].includes(r.status) : ["approved", "rejected"].includes(r.status)))
+    .filter((r) => !q || [r.masterTitle, r.product, r.fourE, r.project, ...(r.subtasks || []).map((x) => `${x.sub} ${x.detail}`)].join(" ").toLowerCase().includes(q));
   const counts = (st) => mine.filter((r) => r.status === st).length;
   root.appendChild(head("My requests", `${counts("pending")} awaiting approval`,
     counts("changes") ? `${counts("changes")} sent back with changes requested.` : "Approved requests show live progress from designers.",
@@ -526,9 +626,9 @@ function viewPmRequests(root) {
       h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["#", "Subtask", "Designer", "Timeline", "Hours", r.status === "approved" ? "Progress" : null].filter(Boolean).map((x) => h("th", null, x)))),
         h("tbody", null, (r.subtasks || []).map((s, i) => {
           const t = s.taskId ? byId.get(s.taskId) : null;
-          return h("tr", null, h("td", { class: "mono" }, t ? t.taskId : String(i + 1)), h("td", null, h("b", null, s.sub), h("div", { class: "small muted", style: "max-width:44ch" }, s.detail)),
+          return h("tr", null, h("td", { class: "mono" }, t ? t.taskId : String(i + 1)), h("td", null, h("b", null, s.sub), qtyOf(s) > 1 ? h("span", { class: "tag sub", style: "margin-left:6px" }, unitLabel(s)) : null, h("div", { class: "small muted", style: "max-width:44ch" }, s.detail)),
             h("td", null, r.status === "approved" && s.designer ? s.designer : h("span", { class: "muted small" }, "Owner assigns")), h("td", { class: "small" }, `${fmtDate(s.start)} to ${fmtDate(s.end)}`), h("td", { class: "n" }, fmt1(s.effort)),
-            r.status === "approved" ? h("td", null, t ? h("div", null, deliveryPill(t), h("div", { class: "bar-cell", style: "margin-top:6px" }, h("span", { class: "track" }, h("i", { style: `width:${t.progress || 0}%;background:var(--des)` })), h("span", { class: "num small" }, (t.progress || 0) + "%"))) : h("span", { class: "muted small" }, "Removed")) : null);
+            r.status === "approved" ? h("td", null, t ? h("div", null, deliveryPill(t), h("div", { class: "bar-cell", style: "margin-top:6px" }, h("span", { class: "track" }, h("i", { style: `width:${t.progress || 0}%;background:var(--ks-orange)` })), h("span", { class: "num small" }, (t.progress || 0) + "%"))) : h("span", { class: "muted small" }, "Removed")) : null);
         })))),
       actions.length ? h("div", { class: "row" }, actions) : null));
   }
@@ -538,23 +638,26 @@ function viewPmRequests(root) {
 function viewDesignerTasks(root) {
   const name = designerName();
   const mine = tasks().filter((t) => t.designer === name);
-  const open = mine.filter((t) => !t.actualEnd).sort((a, b) => ((a.target || "9") < (b.target || "9") ? -1 : 1));
+  const q = (S.search || "").trim().toLowerCase();
+  const match = (t) => !q || [t.title, t.master, t.sub, t.taskId, t.project, t.masterTitle].join(" ").toLowerCase().includes(q);
+  const open = mine.filter((t) => !t.actualEnd && match(t)).sort((a, b) => ((a.target || "9") < (b.target || "9") ? -1 : 1));
   const done = mine.filter((t) => t.actualEnd).sort((a, b) => (a.actualEnd < b.actualEnd ? 1 : -1));
   const td = today();
   const updated = open.filter((t) => (t.updates || []).some((u) => u.d === td)).length;
   const hoursToday = mine.reduce((a, t) => a + (t.updates || []).filter((u) => u.d === td).reduce((x, u) => x + (Number(u.hours) || 0), 0), 0);
   const dueWeek = open.filter((t) => t.target && t.target <= M.addDays(M.mondayOf(td), 6)).length;
   const hr = new Date().getHours();
-  root.appendChild(head(fmtDate(td, true), `${hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening"}${name ? ", " + name : ""}`,
-    open.length ? "Post one update per task each day: status, progress, hours spent and any blocker." : "No open tasks right now.",
-    roleOf() === "admin" ? field("Viewing as", "acting-des", select("acting-des", name, cfg().designers, (v) => { S.actingDesigner = v; render(); })) : null));
-  root.appendChild(h("div", { class: "kpis" }, kpi(`${updated}/${open.length}`, "Updated today"), kpi(fmt1(hoursToday), "Hours logged today"),
-    kpi(String(dueWeek), "Due this week"), kpi(String(open.filter((t) => t.delivery === "Overdue").length), "Overdue")));
+  const overdue = open.filter((t) => t.delivery === "Overdue").length;
+  const itemsLeft = open.reduce((a, t) => a + (t.deliverables ? t.deliverables.length - (t.itemsDone || 0) : 0), 0);
+  root.appendChild(hero({ kicker: fmtDate(td, true), title: `${hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening"}${name ? ", " + name : ""}`,
+    text: open.length ? "Post one update per task each day: status, progress, hours spent and any blocker." : "No open tasks right now. New work appears here once the owner approves it.",
+    stats: [[`${updated}/${open.length}`, "Updated today"], [fmt1(hoursToday), "Hours today"], [String(dueWeek), "Due this week"], [String(overdue), "Overdue", overdue ? "var(--critical-ink)" : null]].concat(itemsLeft ? [[String(itemsLeft), "Deliverables to go"]] : []),
+    right: roleOf() === "admin" ? h("div", { style: "max-width:240px" }, field("Viewing as", "acting-des", select("acting-des", name, cfg().designers, (v) => { S.actingDesigner = v; render(); }))) : null }));
   const nudge = leaveNudge(name);
   if (nudge) root.appendChild(nudge);
   if (open.length) {
     const rows = open.filter((t) => t.start && t.target).slice(0, 12).map((t) => ({ label: h("span", null, t.taskId + " ", h("small", null, t.sub)), start: t.start, end: t.target,
-      color: t.delivery === "Overdue" ? "var(--critical)" : t.delivery === "Blocked" ? "var(--warn)" : "var(--des)", text: t.product || t.master, tip: `${t.title}\n${fmtDate(t.start)} to ${fmtDate(t.target)}` }));
+      color: t.delivery === "Overdue" ? "var(--critical)" : t.delivery === "Blocked" ? "var(--warn)" : "var(--ks-orange)", text: (t.product || t.master) + (qtyOf(t) > 1 ? ` · ${t.itemsDone || 0}/${qtyOf(t)}` : ""), tip: `${t.title}\n${fmtDate(t.start)} to ${fmtDate(t.target)}` }));
     if (rows.length) root.appendChild(h("div", { class: "card pad stack" }, h("h3", null, "My timeline"), gantt(rows)));
   }
   if (!open.length) root.appendChild(h("div", { class: "card empty" }, h("h3", null, "You're all caught up"), h("p", { style: "margin:0" }, "Tasks the owner approves for you appear here.")));
@@ -569,7 +672,8 @@ function draftFor(t) {
   if (!S.drafts[t.id]) {
     const u = (t.updates || []).find((x) => x.d === td);
     S.drafts[t.id] = { status: u ? u.status : (t.status === "Not Started" ? "In Progress" : t.status), progress: u ? u.progress : (t.progress || 0),
-      hours: u ? String(u.hours) : "", note: u ? u.note || "" : "", blocker: t.blockers || "", revisions: Number(t.revisions) || 0, actualEnd: t.actualEnd || td, err: "" };
+      hours: u ? String(u.hours) : "", note: u ? u.note || "" : "", blocker: t.blockers || "", revisions: Number(t.revisions) || 0, actualEnd: t.actualEnd || td, err: "",
+      items: t.deliverables ? Object.fromEntries(t.deliverables.map((x) => [x.id, { title: x.title, status: x.status, link: x.link, revisions: x.revisions }])) : null };
   }
   return S.drafts[t.id];
 }
@@ -581,22 +685,25 @@ function taskCard(t, name) {
   return h("article", { class: "card task" + (t.delivery === "Overdue" ? " overdue" : t.delivery === "Blocked" ? " blocked" : "") },
     h("div", { class: "task-top" }, h("span", { class: "mono muted" }, t.taskId), t.fourE ? h("span", { class: "tag sub" }, t.fourE) : null, h("span", { class: "tag" }, t.master), h("span", { class: "tag sub" }, t.sub),
       h("span", { class: "spacer" }), t.priority === "High" ? pill("High priority", "serious") : null, deliveryPill(t)),
-    h("div", null, t.masterTitle ? h("div", { class: "small muted" }, t.masterTitle) : null, h("div", { class: "task-title" }, t.title),
+    h("div", null, t.masterTitle ? h("div", { class: "small muted" }, t.masterTitle) : null, h("div", { class: "task-title" }, t.title, qtyOf(t) > 1 ? h("span", { class: "tag sub", style: "margin-left:8px;vertical-align:2px" }, unitLabel(t)) : null),
       h("div", { class: "meta" }, h("span", null, t.project), h("span", null, "PM " + (t.assignedBy || t.pm)), h("span", null, `${fmtDate(t.start)} to ${fmtDate(t.target)}`),
         h("span", { style: t.delivery === "Overdue" ? "color:var(--critical-ink);font-weight:600" : null }, workdaysLeft(t)),
         t.effort ? h("span", null, `${fmt1(t.effort)} hrs estimated, ${fmt1(t.hoursLogged)} logged`) : null)),
     t.brief ? h("div", { class: "small muted", style: "overflow-wrap:anywhere" }, t.brief) : null,
-    h("div", { class: "progress", "aria-label": `Progress ${t.progress || 0}%` }, h("i", { style: `width:${t.progress || 0}%` })),
+    t.deliverables ? h("div", { class: "batch-bar" }, h("b", { class: "small", style: "white-space:nowrap" }, `${t.itemsDone || 0} of ${t.deliverables.length} ${t.unit || "items"} done`),
+      h("div", { class: "progress", "aria-label": `Progress ${t.progress || 0}%` }, h("i", { style: `width:${t.progress || 0}%` })), h("span", { class: "num small" }, `${t.progress || 0}%`))
+      : h("div", { class: "progress", "aria-label": `Progress ${t.progress || 0}%` }, h("i", { style: `width:${t.progress || 0}%` })),
     h("div", { class: "update" },
       h("div", { class: "row" }, h("b", { class: "small" }, todays ? "Today's update is saved. Change it any time today." : "Today's update"), h("span", { class: "spacer" }), todays ? pill("Updated today", "good") : pill("Not updated today", "neutral")),
       h("div", { class: "field" }, h("span", { class: "label" }, "Status"),
         h("div", { class: "seg" }, STATUSES.filter((s) => s !== "Not Started" || t.status === "Not Started").map((s) =>
           h("button", { "aria-pressed": String(d.status === s), onclick: () => { d.status = s; if (s === "Done") d.progress = 100; d.err = ""; render(); } }, s)))),
+      d.items ? itemChecklist(t, d, k) : null,
       h("div", { class: "fields" },
-        h("div", { class: "field" }, h("label", { for: k("prog") }, `Progress: ${d.progress}%`),
+        d.items ? null : h("div", { class: "field" }, h("label", { for: k("prog") }, `Progress: ${d.progress}%`),
           h("input", { id: k("prog"), type: "range", min: "0", max: "100", step: "5", value: d.progress, oninput: (e) => { d.progress = Number(e.target.value); e.target.previousSibling.textContent = `Progress: ${d.progress}%`; } })),
         field("Hours spent today", k("hrs"), h("input", { id: k("hrs"), type: "number", min: "0", max: "16", step: "0.5", inputmode: "decimal", placeholder: "0", value: d.hours, oninput: (e) => { d.hours = e.target.value; } })),
-        h("div", { class: "field" }, h("span", { class: "label" }, "Revision rounds"),
+        d.items ? null : h("div", { class: "field" }, h("span", { class: "label" }, "Revision rounds"),
           h("div", { class: "stepper" }, h("button", { "aria-label": "One fewer revision", onclick: () => { d.revisions = Math.max(0, d.revisions - 1); render(); } }, "-"),
             h("span", null, d.revisions), h("button", { "aria-label": "One more revision", onclick: () => { d.revisions += 1; render(); } }, "+"))),
         d.status === "Done" ? field("Actual end date", k("end"), h("input", { id: k("end"), type: "date", value: d.actualEnd, max: td, onchange: (e) => { d.actualEnd = e.target.value; } })) : null),
@@ -605,23 +712,63 @@ function taskCard(t, name) {
       d.err ? h("div", { class: "err" }, d.err) : null,
       h("div", { class: "row" }, h("button", { class: "btn accent", disabled: S.busy["u" + t.id], onclick: () => saveUpdate(t, d, name) }, todays ? "Update today's entry" : "Save today's update"))),
     history.length ? h("details", null, h("summary", { class: "small" }, `Recent updates (${(t.updates || []).length})`),
-      h("div", { class: "history", style: "margin-top:8px" }, history.map((u) => h("div", null, h("b", null, fmtDate(u.d, true)), `  ${u.status}, ${u.progress}%`, u.hours ? `, ${fmt1(u.hours)} hrs` : "", u.note ? `. ${u.note}` : "")))) : null);
+      h("div", { class: "history", style: "margin-top:8px" }, history.map((u) => h("div", null, h("b", null, fmtDate(u.d, true)), `  ${u.status}, ${u.progress}%`, u.itemsDone ? `, ${u.itemsDone} ${t.unit || "items"} done` : "", u.hours ? `, ${fmt1(u.hours)} hrs` : "", u.note ? `. ${u.note}` : "")))) : null);
+}
+// Per-item checklist for batch tasks (for example 12 videos)
+function itemChecklist(t, d, k) {
+  const noun = String(t.unit || "items").replace(/s$/, "");
+  const doneN = Object.values(d.items).filter((x) => x.status === "Done").length;
+  return h("div", { class: "field" },
+    h("div", { class: "row" }, h("span", { class: "label" }, `${t.unit || "Items"} (${doneN} of ${t.deliverables.length} done)`), h("span", { class: "spacer" }),
+      h("span", { class: "hint" }, "Progress and revision rounds are worked out from this list")),
+    h("div", { class: "items" }, t.deliverables.map((x) => {
+      const st = d.items[x.id];
+      return h("div", { class: "item" + (st.status === "Done" ? " done" : "") },
+        h("span", { class: "n" }, String(x.n)),
+        h("input", { id: k("it-t-" + x.id), type: "text", maxlength: "120", placeholder: `${noun[0].toUpperCase() + noun.slice(1)} ${x.n} title`, value: st.title, "aria-label": `Title of ${noun} ${x.n}`, oninput: (e) => { st.title = e.target.value; } }),
+        select(k("it-s-" + x.id), st.status, ["Not Started", "In Progress", "In Review", "Done"], (v) => { st.status = v; d.err = ""; render(); }),
+        h("div", { class: "stepper sm", title: "Revision rounds" }, h("button", { "aria-label": "One fewer revision", onclick: () => { st.revisions = Math.max(0, st.revisions - 1); render(); } }, "-"),
+          h("span", null, st.revisions), h("button", { "aria-label": "One more revision", onclick: () => { st.revisions += 1; render(); } }, "+")),
+        h("input", { id: k("it-l-" + x.id), class: "ilink", type: "url", placeholder: "Link to the file", value: st.link, "aria-label": `Link for ${noun} ${x.n}`, oninput: (e) => { st.link = e.target.value; } }));
+    })));
 }
 function saveUpdate(t, d, name) {
   if (d.status === "Blocked" && !d.blocker.trim()) { d.err = "Say what is blocking this task so the PM can help."; return render(); }
   const hours = d.hours === "" ? 0 : Number(d.hours);
   if (!(hours >= 0 && hours <= 24)) { d.err = "Hours must be between 0 and 24."; return render(); }
   const td = today(), at = nowIso();
+  let items = null, itemsDoneToday = 0;
+  if (d.items) {
+    const list = t.deliverables;
+    const done = list.filter((x) => d.items[x.id].status === "Done").length;
+    if (d.status === "Done" && done < list.length) { d.err = `${list.length - done} ${t.unit || "items"} are not done yet. Mark each one done first.`; return render(); }
+    if (done === list.length && d.status !== "Blocked") d.status = "Done";
+    items = {};
+    for (const x of list) {
+      const st = d.items[x.id];
+      const changed = st.title !== x.title || st.status !== x.status || st.link !== x.link || st.revisions !== x.revisions;
+      const doneAt = st.status === "Done" ? (x.status === "Done" && x.doneAt ? x.doneAt : td) : "";
+      items[x.id] = { title: st.title.trim(), status: st.status, link: st.link.trim(), revisions: st.revisions, doneAt, at: changed ? at : x.at || at };
+    }
+    d.progress = Math.round((done / list.length) * 100);
+    itemsDoneToday = Object.values(items).filter((x) => x.doneAt === td).length;
+    d.revisions = Math.round(list.reduce((a, x) => a + d.items[x.id].revisions, 0) / list.length);
+  }
   const entry = { d: td, status: d.status, progress: d.progress, hours, note: d.note.trim(), blocker: d.blocker.trim(), by: S.me.id, at };
+  if (items) entry.itemsDone = itemsDoneToday;
   const updates = (t.updates || []).filter((u) => u.d !== td).concat([entry]).sort((a, b) => (a.d < b.d ? -1 : 1));
   guard("u" + t.id, async () => {
-    await db.doc(`progress/${S.me.id}/tasks/${t.id}`).set({ taskId: t.id, designer: name, status: d.status, progress: d.progress, revisions: d.revisions,
-      blockers: d.blocker.trim(), actualEnd: d.status === "Done" ? (d.actualEnd || td) : "", updates, updatedAt: at });
+    const body = { taskId: t.id, designer: name, status: d.status, progress: d.progress, revisions: d.revisions,
+      blockers: d.blocker.trim(), actualEnd: d.status === "Done" ? (items ? latestDone(items) || td : d.actualEnd || td) : "", updates, updatedAt: at };
+    if (items) body.items = items;
+    await db.doc(`progress/${S.me.id}/tasks/${t.id}`).set(body);
     await ensureOwnerId();
     delete S.drafts[t.id];
     toast(d.status === "Done" ? `${t.taskId} marked done` : `Update saved for ${t.taskId}`);
   });
 }
+
+function latestDone(items) { return Object.values(items).reduce((a, x) => (x.doneAt > a ? x.doneAt : a), ""); }
 
 // ------------------------------------------------------------------ leave
 function leaveNudge(name) {
@@ -693,7 +840,7 @@ function viewDesignerLeave(root) {
 // ========================================================== OWNER DASHBOARD
 async function ensureOwnerId() {
   if (!S.me.isOwner || !S.peopleLoaded || S.ownerId === S.me.id) return;
-  await db.doc("config/people").set({ map: S.people, ownerId: S.me.id });
+  await savePeople(S.people);
 }
 function funnelStages() {
   const reqs = allRequests(), all = tasks();
@@ -732,16 +879,18 @@ function viewOverview(root) {
   const scores = all.map((t) => t.score).filter((v) => v !== "");
   const inP = (d) => d >= p.from && d <= p.to;
   const hoursP = all.reduce((a, t) => a + (t.updates || []).filter((u) => inP(u.d)).reduce((x, u) => x + (Number(u.hours) || 0), 0), 0);
-  root.appendChild(head("Performance and productivity", "Overview", "Same formulas as your Scorecard. Speed and Quality use tasks completed in the period; Commitment is as of today.",
-    h("div", { class: "stack", style: "gap:8px;align-items:flex-end" },
+  const pendingN = allRequests().filter((r) => r.status === "pending").length;
+  const overdueN = all.filter((t) => t.delivery === "Overdue").length;
+  const itemsDoneP = all.reduce((a, t) => a + (t.deliverables || []).filter((x) => x.status === "Done" && x.doneAt && inP(x.doneAt)).length, 0);
+  root.appendChild(hero({ kicker: "Performance and productivity", title: pendingN ? `${pendingN} request${pendingN === 1 ? "" : "s"} waiting for your approval` : "Your design team at a glance",
+    text: "Same formulas as your Scorecard. Speed and Quality use tasks completed in the period; Commitment is as of today.",
+    stats: [[String(all.length - doneAll.length), "Open tasks"], [String(overdueN), "Overdue", overdueN ? "var(--critical-ink)" : null], [pct(onTime), "On-time"],
+      [scores.length ? fmt0(scores.reduce((a, b) => a + b, 0) / scores.length) : "-", "Avg task score"], [fmt1(hoursP), `Hours, ${p.label}`], [String(itemsDoneP), `Deliverables, ${p.label}`]],
+    actions: [pendingN ? h("button", { class: "btn accent", onclick: () => go("owner", "funnel") }, "Review requests") : null,
       h("div", { class: "seg" }, [["month", "This month"], ["last", "Last month"], ["30", "30 days"], ["quarter", "Quarter"], ["custom", "Custom"]].map(([k, l]) => h("button", { "aria-pressed": String(S.period === k), onclick: () => { S.period = k; render(); } }, l))),
       S.period === "custom" ? h("div", { class: "row" }, h("input", { id: "p-from", type: "date", value: S.custom.from, "aria-label": "Period from", onchange: (e) => { S.custom.from = e.target.value; render(); } }),
-        h("input", { id: "p-to", type: "date", value: S.custom.to, "aria-label": "Period to", onchange: (e) => { S.custom.to = e.target.value; render(); } })) : null)));
-  root.appendChild(h("div", { class: "stack", style: "gap:8px" }, h("div", { class: "eyebrow" }, "Task funnel"), funnelStrip()));
-  root.appendChild(h("div", { class: "kpis" },
-    kpi(String(all.length), "Approved tasks"), kpi(String(doneAll.length), "Completed"), kpi(String(all.length - doneAll.length), "Open"),
-    kpi(String(all.filter((t) => t.delivery === "Overdue").length), "Overdue", all.some((t) => t.delivery === "Overdue") ? "var(--critical-ink)" : null),
-    kpi(pct(onTime), "On-time (all done)"), kpi(scores.length ? fmt0(scores.reduce((a, b) => a + b, 0) / scores.length) : "-", "Avg task score"), kpi(fmt1(hoursP), `Hours logged, ${p.label}`)));
+        h("input", { id: "p-to", type: "date", value: S.custom.to, "aria-label": "Period to", onchange: (e) => { S.custom.to = e.target.value; render(); } })) : null] }));
+  root.appendChild(h("div", { class: "stack", style: "gap:10px" }, h("div", { class: "section-title" }, h("h2", null, "Task funnel"), h("span", { class: "muted" }, "From request to done")), funnelStrip()));
   root.appendChild(h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("h2", null, `Designer scorecard, ${p.label}`)),
     h("div", { class: "tbl-wrap" }, h("table", null,
       h("thead", null, h("tr", null, h("th", null, "Designer"), h("th", { class: "n" }, "Done"), h("th", { class: "n" }, "Avg TAT"), h("th", { class: "n" }, "On-time"), h("th", null, "Speed"), h("th", null, "Quality"), h("th", null, "Commitment"), h("th", { class: "n" }, "Overall"), h("th", null, "Rating"), h("th", null, "Focus area"))),
@@ -813,8 +962,15 @@ function reviewCard(r) {
     const e = rv.subErr[s.key] || {};
     const id = (k) => `rv-${k}-${r.id}-${i}`;
     return h("tr", null, h("td", { class: "mono" }, String(i + 1)),
-      h("td", { style: "min-width:220px" }, h("b", null, s.sub), h("div", { class: "small muted", style: "max-width:48ch;white-space:pre-line" }, s.detail)),
-      h("td", null, select(id("d"), s.designer, c.designers, (v) => { s.designer = v; delete e.designer; render(); }, "Choose"), e.designer ? h("div", { class: "err" }, e.designer) : null),
+      h("td", { style: "min-width:220px" }, h("b", null, s.sub), s.parentKey ? h("span", { class: "tag sub", style: "margin-left:6px" }, "Split share") : null,
+        h("div", { class: "small muted", style: "max-width:48ch;white-space:pre-line" }, s.detail),
+        (s.items || []).length ? h("div", { class: "hint" }, `Named: ${(s.items || []).map((x) => x.title).join(", ")}`) : null),
+      h("td", null, qtyOf(s) > 1 || s.parentKey ? h("div", { class: "stack", style: "gap:6px;min-width:120px" },
+        h("div", { class: "row", style: "gap:6px;flex-wrap:nowrap" }, h("input", { id: id("q"), type: "number", min: "1", step: "1", value: s.qty, "aria-label": "Quantity", style: "width:72px", oninput: (ev) => { s.qty = Math.max(1, Math.floor(Number(ev.target.value) || 1)); softRender(); } }), h("span", { class: "small muted" }, s.unit || "items")),
+        h("div", { class: "row", style: "gap:4px" }, qtyOf(s) > 1 ? h("button", { class: "btn sm ghost", onclick: () => { splitRow(rv, i); render(); } }, "Split") : null,
+          s.parentKey && rv.subtasks.filter((x) => x.parentKey === s.parentKey).length > 1 ? h("button", { class: "btn sm ghost danger", onclick: () => { foldRow(rv, i); render(); } }, "Merge back") : null))
+        : h("span", { class: "muted small" }, "1")),
+      h("td", { style: "min-width:150px" }, select(id("d"), s.designer, c.designers, (v) => { s.designer = v; delete e.designer; render(); }, "Choose"), e.designer ? h("div", { class: "err" }, e.designer) : null),
       h("td", null, h("input", { id: id("s"), type: "date", value: s.start, "aria-label": "Start", onchange: (ev) => { s.start = ev.target.value; render(); } })),
       h("td", null, h("input", { id: id("e"), type: "date", value: s.end, min: s.start || null, "aria-label": "End", onchange: (ev) => { s.end = ev.target.value; render(); } }), e.end ? h("div", { class: "err" }, e.end) : null),
       h("td", null, h("input", { id: id("h"), type: "number", min: "0.5", step: "0.5", value: s.effort, "aria-label": "Hours", style: "width:84px", oninput: (ev) => { s.effort = ev.target.value; softRender(); } })));
@@ -825,7 +981,7 @@ function reviewCard(r) {
     projectNames().includes(rv.project.trim()) && rv.project.trim() === r.project ? null : h("div", { class: "field", style: "max-width:520px" }, h("label", { for: "rv-prj-" + r.id }, "Project"),
       h("input", { id: "rv-prj-" + r.id, type: "text", list: "dl-projects", maxlength: "80", autocomplete: "off", value: rv.project, oninput: (ev) => { rv.project = ev.target.value; rv.projectKeep = false; rv.err = ""; softRender(); }, onchange: (ev) => { rv.project = ev.target.value; render(); } }),
       projectHint(rv, (v) => { rv.project = v; render(); }, () => { rv.projectKeep = true; render(); }, false)),
-    h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["#", "Subtask", "Designer", "Start", "End", "Hours"].map((x) => h("th", null, x)))), h("tbody", null, rows))),
+    h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["#", "Subtask", "Qty", "Designer", "Start", "End", "Hours"].map((x) => h("th", null, x)))), h("tbody", null, rows))),
     requestTimeline(rv.subtasks),
     impact.length ? h("div", { class: "stack", style: "gap:6px" }, h("div", { class: "label" }, "Capacity after approval"),
       impact.map((x) => h("div", { class: "cap" }, h("b", null, x.designer), pill(x.after.status, WL[x.after.status]),
@@ -836,6 +992,31 @@ function reviewCard(r) {
       h("button", { class: "btn", disabled: S.busy.decide, onclick: () => decide(r, rv, "changes") }, "Request changes"),
       h("button", { class: "btn ghost danger", disabled: S.busy.decide, onclick: () => decide(r, rv, "rejected") }, "Reject"),
       h("span", { class: "hint" }, `${fmt1(hours)} hrs total`)));
+}
+// Split one batch row into two shares (for two designers); items and hours follow the quantity
+function splitRow(rv, i) {
+  const s = rv.subtasks[i], q = qtyOf(s);
+  if (q < 2) return;
+  const qa = Math.ceil(q / 2), qb = q - qa;
+  const items = s.items || [];
+  const effort = Number(s.effort) || 0, ea = Math.round((effort * qa / q) * 2) / 2;
+  const parent = s.parentKey || s.key;
+  const b = { ...clone(s), key: Math.random().toString(36).slice(2, 9), parentKey: parent, qty: qb, designer: "", effort: Math.max(0.5, effort - ea),
+    items: items.slice(qa).map((it, j) => ({ ...it, id: "i" + (j + 1) })) };
+  Object.assign(s, { parentKey: parent, qty: qa, effort: ea || 0.5, items: items.slice(0, qa) });
+  rv.subtasks.splice(i + 1, 0, b);
+}
+function foldRow(rv, i) {
+  const s = rv.subtasks[i];
+  const j = rv.subtasks.findIndex((x, k) => k !== i && x.parentKey === s.parentKey);
+  if (j < 0) return;
+  const t = rv.subtasks[j];
+  const offset = qtyOf(t);
+  t.qty = qtyOf(t) + qtyOf(s);
+  t.effort = (Number(t.effort) || 0) + (Number(s.effort) || 0);
+  t.items = (t.items || []).concat((s.items || []).map((it, k) => ({ ...it, id: "i" + (offset + k + 1) })));
+  rv.subtasks.splice(i, 1);
+  if (rv.subtasks.filter((x) => x.parentKey === t.parentKey).length === 1) delete t.parentKey;
 }
 function capacityImpact(subtasks) {
   const ctx = M.context(cfg()), all = tasks(), leave = allLeave();
@@ -877,11 +1058,11 @@ function approveRequest(r, rv) {
     const out = [];
     for (let i = 0; i < rv.subtasks.length; i++) {
       const s = rv.subtasks[i];
-      const ref = db.collection("tasks").doc();
+      const ref = db.doc(`tasks/${r.id}-${s.key}`); // stable id: a retried approval overwrites instead of duplicating
       await ref.set({ requestId: r.id, requestUid: r.uid, fourE: r.fourE, master: r.product, masterTitle: r.masterTitle, sub: s.sub, title: s.detail.split("\n")[0].slice(0, 140),
-        detail: s.detail, brief: r.brief || "", project, designer: s.designer, priority: r.priority, start: s.start, target: s.end, effort: Number(s.effort) || 0,
+        detail: s.detail, brief: r.brief || "", project, designer: s.designer, qty: qtyOf(s), unit: qtyOf(s) > 1 ? s.unit || "items" : "", items: qtyOf(s) > 1 ? (s.items || []).slice(0, qtyOf(s)) : [], priority: r.priority, start: s.start, target: s.end, effort: Number(s.effort) || 0,
         assignedBy: r.pmName, requestedAt: r.submittedAt, approvedAt: at, createdAt: new Date(base + i).toISOString(), createdBy: S.me.id });
-      out.push({ ...s, effort: Number(s.effort) || 0, taskId: ref.id });
+      out.push({ ...s, qty: qtyOf(s), effort: Number(s.effort) || 0, taskId: ref.id });
     }
     await db.doc(`requests/${r.uid}/items/${r.id}`).update({ status: "approved", subtasks: out, project, decidedAt: at, ownerNote: rv.note.trim(), updatedAt: at,
       history: (r.history || []).concat([{ at, status: "approved", by: "owner", note: rv.note.trim() }]) });
@@ -905,7 +1086,7 @@ function decidedCard(r) {
     r.ownerNote ? h("div", { class: "note-box" }, h("b", null, "Your note: "), r.ownerNote) : null,
     h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Task", "Subtask", "Designer", "Timeline", "Hours", "Status"].map((x) => h("th", null, x)))),
       h("tbody", null, (r.subtasks || []).map((s, i) => { const t = s.taskId && byId.get(s.taskId);
-        return h("tr", null, h("td", { class: "mono" }, t ? t.taskId : String(i + 1)), h("td", null, h("b", null, s.sub), h("div", { class: "small muted", style: "max-width:48ch" }, s.detail)), h("td", null, s.designer || "-"),
+        return h("tr", null, h("td", { class: "mono" }, t ? t.taskId : String(i + 1)), h("td", null, h("b", null, s.sub), qtyOf(s) > 1 ? h("span", { class: "tag sub", style: "margin-left:6px" }, unitLabel(s)) : null, h("div", { class: "small muted", style: "max-width:48ch" }, s.detail)), h("td", null, s.designer || "-"),
           h("td", { class: "small" }, `${fmtDate(s.start)} to ${fmtDate(s.end)}`), h("td", { class: "n" }, fmt1(s.effort)), h("td", null, t ? deliveryPill(t) : r.status === "approved" ? pill("Removed", "neutral") : "-")); })))));
 }
 
@@ -929,9 +1110,9 @@ function viewAllTasks(root) {
     h("thead", null, h("tr", null, ["ID", "Task", "Designer", "Status", "Dates", "Delivery", "Last update", ""].map((x) => h("th", null, x)))),
     h("tbody", null, list.slice().reverse().map((t) => h("tr", null, h("td", { class: "mono" }, t.taskId),
       h("td", { style: "min-width:240px" }, h("div", { class: "row", style: "gap:6px" }, t.fourE ? h("span", { class: "tag sub" }, t.fourE) : null, h("span", { class: "tag" }, t.master), h("span", { class: "tag sub" }, t.sub)),
-        h("div", { style: "font-weight:600;margin-top:4px" }, t.title), h("div", { class: "small muted" }, `${t.masterTitle ? t.masterTitle + " · " : ""}${t.project} · by ${t.assignedBy || "-"}`)),
+        h("div", { style: "font-weight:600;margin-top:4px" }, t.title, qtyOf(t) > 1 ? h("span", { class: "tag sub", style: "margin-left:6px" }, `${t.itemsDone || 0}/${qtyOf(t)} ${t.unit || "items"}`) : null), h("div", { class: "small muted" }, `${t.masterTitle ? t.masterTitle + " · " : ""}${t.project} · by ${t.assignedBy || "-"}`)),
       h("td", null, t.designer),
-      h("td", null, h("div", null, t.status), h("div", { class: "bar-cell", style: "margin-top:6px" }, h("span", { class: "track" }, h("i", { style: `width:${t.progress || 0}%;background:var(--des)` })), h("span", { class: "num small" }, (t.progress || 0) + "%"))),
+      h("td", null, h("div", null, t.status), h("div", { class: "bar-cell", style: "margin-top:6px" }, h("span", { class: "track" }, h("i", { style: `width:${t.progress || 0}%;background:var(--ks-orange)` })), h("span", { class: "num small" }, (t.progress || 0) + "%"))),
       h("td", { class: "small" }, h("div", null, `${fmtDate(t.start)} to ${fmtDate(t.target)}`), h("div", { class: "muted" }, t.actualEnd ? "Done " + fmtDate(t.actualEnd) : workdaysLeft(t))),
       h("td", null, deliveryPill(t), t.blockers ? h("div", { class: "small", style: "margin-top:4px;color:var(--warn-ink)" }, t.blockers) : null),
       h("td", { class: "small muted" }, t.lastUpdate ? fmtDate(t.lastUpdate) : "No updates", t.hoursLogged ? h("div", null, fmt1(t.hoursLogged) + " hrs") : null),
@@ -973,34 +1154,79 @@ function viewLeaveAdmin(root) {
 function viewPeople(root) {
   const ids = Object.keys(S.claims).concat(Object.keys(S.people));
   if (userApi && ids.some((id) => !S.profiles[id])) userApi.profiles(ids).then((ps) => { let ch = false; for (const id of ids) if (!S.profiles[id] || S.profiles[id].name !== ps[id].name) { S.profiles[id] = ps[id]; ch = true; } if (ch) render(); });
-  const prof = (id) => S.profiles[id] || { name: "", avatarUrl: "" };
-  root.appendChild(head("Access", "People & links", "Send each group only its own link. Everyone needs Contributor access to this page (Share menu). First-time visitors ask to join and you approve them here."));
-  const link = (app, note) => h("div", { class: "link-row" }, h("div", null, h("b", null, APPS[app].name), h("div", { class: "small muted" }, note), h("code", null, `${ARTIFACT_URL}#${app}`)),
-    h("button", { class: "btn sm", onclick: () => copyText(`${ARTIFACT_URL}#${app}`) }, "Copy link"));
-  root.appendChild(h("div", { class: "card pad stack" }, h("h2", null, "Links"), h("div", { class: "links" },
-    link("pm", "For product managers. Create requests and follow their approval."),
-    link("designer", "For product designers. Daily progress and weekly leave."),
-    link("owner", "For you only. Anyone else who opens it is turned away."))));
+  const prof = (id) => S.profiles[id] || { name: "", avatarUrl: "", email: null };
+  const idPill = (email) => !email ? pill("ID hidden by your organisation", "neutral") : isOfficial(email) ? pill("Official ID", "good") : pill("Not an official ID", "critical");
+  const c = cfg();
+  root.appendChild(head("Role based access", "People & access", "Everyone signs in with their official ID. Give each person one role: product managers only see Task Creation, designers only see the Designer Tracker, and only you see this dashboard."));
+
+  // add a person by official ID
+  const f = S.addForm || (S.addForm = { q: "", results: [], picked: null, role: "designer", name: "", err: "" });
+  const names = f.role === "pm" ? c.pms : c.designers;
+  const add = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Give someone access"), h("span", { class: "muted" }, "Search your organisation by official email or name")),
+    h("div", { class: "fields" },
+      field("Official email or name", "add-q", h("input", { id: "add-q", type: "search", autocomplete: "off", placeholder: `name@${S.domain || "company.com"}`, value: f.q,
+        onfocus: () => { if (!f.q && userApi && userApi.search) userApi.search("").then((r) => { if (!f.q) { f.results = r; render(); } }); },
+        oninput: (e) => { const v = e.target.value; f.q = v; f.picked = null; f.err = ""; if (userApi && userApi.search) userApi.search(v).then((r) => { if (f.q === v) { f.results = r; render(); } }); softRender(); } })),
+      h("div", { class: "field" }, h("span", { class: "label" }, "Role"), h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
+        h("button", { "aria-pressed": String(f.role === k), onclick: () => { f.role = k; f.name = ""; render(); } }, l)))),
+      field("Name on the tracker", "add-name", select("add-name", f.name, names, (v) => { f.name = v; f.err = ""; }, names.length ? "Choose" : "Add names under Lists & 4E"))),
+    f.results.length && !f.picked ? h("div", { class: "results" }, f.results.filter((p) => !S.people[p.id]).slice(0, 6).map((p) => h("button", { type: "button", onclick: () => { f.picked = p; f.q = p.email || p.name; S.profiles[p.id] = p;
+      const guess = names.find((n) => (p.name || "").toLowerCase().startsWith(n.toLowerCase())); if (guess && !f.name) f.name = guess; render(); } },
+      avatar(p.avatarUrl, p.name), h("span", { style: "flex:1;min-width:0" }, h("b", { style: "display:block;color:var(--ink)" }, p.name), h("span", { class: "small muted" }, p.email || "Email hidden")), idPill(p.email)))) : null,
+    f.picked ? h("div", { class: "row" }, avatar(f.picked.avatarUrl, f.picked.name), h("b", null, f.picked.name), h("span", { class: "muted small" }, f.picked.email || ""), idPill(f.picked.email),
+      h("button", { class: "btn sm ghost", onclick: () => { f.picked = null; render(); } }, "Change")) : f.q.length > 2 && !f.results.length ? h("div", { class: "hint" }, "No one in your organisation matches. Check the spelling of the official email.") : null,
+    f.err ? h("div", { class: "err" }, f.err) : null,
+    h("div", { class: "row" }, h("button", { class: "btn accent", disabled: S.busy.people, onclick: () => {
+      if (!f.picked) { f.err = "Pick the person from the search results."; return render(); }
+      if (f.picked.email && !isOfficial(f.picked.email)) { f.err = `Only official @${S.domain} accounts can be given access.`; return render(); }
+      if (!f.name) { f.err = "Choose their name on the tracker."; return render(); }
+      const pick = f.picked, role = f.role, nm = f.name;
+      guard("people", async () => { await savePeople({ ...S.people, [pick.id]: { role, name: nm } }); if (S.claims[pick.id]) await db.doc("claims/" + pick.id).delete(); S.addForm = null; toast(`${pick.name || nm} can now use ${APPS[role].name}`); });
+    } }, "Give access"),
+      h("span", { class: "hint" }, "They open their link and land straight in their interface. Nothing else is visible to them.")));
+
   const claims = Object.entries(S.claims);
-  root.appendChild(h("div", { class: "card pad stack" }, h("h2", null, `Join requests (${claims.length})`),
-    claims.length ? claims.map(([id, cl]) => h("div", { class: "row", style: "gap:12px" }, h("img", { class: "avatar", src: prof(id).avatarUrl || "", alt: "" }),
-      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600" }, prof(id).name || "Someone in your organisation"), h("div", { class: "small muted" }, `Asks to join as ${cl.role === "pm" ? "product manager" : "designer"} "${cl.name}"`)),
-      h("button", { class: "btn sm accent", disabled: S.busy.people, onclick: () => approveMember(id, cl) }, "Approve"),
-      h("button", { class: "btn sm ghost danger", onclick: () => guard("people", () => db.doc("claims/" + id).delete()) }, "Decline"))) : h("div", { class: "hint" }, "No pending requests.")));
+  const requests = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Access requests"), h("span", { class: "muted" }, String(claims.length))),
+    claims.length ? claims.map(([id, cl]) => h("div", { class: "row", style: "gap:12px" }, avatar(prof(id).avatarUrl, prof(id).name),
+      h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600;color:var(--ink)" }, prof(id).name || "Someone in your organisation"),
+        h("div", { class: "small muted" }, `${prof(id).email || ""} asks to join as ${cl.role === "pm" ? "product manager" : "designer"} "${cl.name}"`)), idPill(prof(id).email),
+      h("button", { class: "btn sm accent", disabled: S.busy.people || !isOfficial(prof(id).email), onclick: () => approveMember(id, cl) }, "Approve"),
+      h("button", { class: "btn sm ghost danger", onclick: () => guard("people", () => db.doc("claims/" + id).delete()) }, "Decline"))) : h("div", { class: "hint" }, "No pending requests."));
+
+  const link = (app, note) => h("div", { class: "link-row" }, h("div", null, h("b", { style: "color:var(--ink)" }, APPS[app].name), h("div", { class: "small muted" }, note), h("code", null, `${ARTIFACT_URL}#${app}`)),
+    h("button", { class: "btn sm", onclick: () => copyText(`${ARTIFACT_URL}#${app}`) }, "Copy link"));
+  const links = h("div", { class: "card pad stack" }, h("h2", null, "Links"), h("div", { class: "links" },
+    link("pm", "For product managers. Create requests and follow approval."), link("designer", "For product designers. Daily progress, deliverables and weekly leave."), link("owner", "For you only. Anyone else is turned away.")),
+    h("div", { class: "field", style: "max-width:320px" }, h("label", { for: "dom" }, "Official email domain"),
+      h("input", { id: "dom", type: "text", value: S.domainDraft !== undefined ? S.domainDraft : S.domain || "", placeholder: "knolskape.com", oninput: (e) => { S.domainDraft = e.target.value.trim().toLowerCase().replace(/^@/, ""); } }),
+      h("div", { class: "row" }, h("button", { class: "btn sm", disabled: S.busy.people, onclick: () => { const d = S.domainDraft !== undefined ? S.domainDraft : S.domain; guard("people", async () => { await savePeople(S.people, d); S.domainDraft = undefined; toast(d ? `Only @${d} accounts can get access` : "Any account in your organisation can get access"); }); } }, "Save domain"),
+        h("span", { class: "hint" }, "People signed in with another domain are turned away."))));
+
   const members = Object.entries(S.people);
-  root.appendChild(h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("h2", null, `Members (${members.length})`)),
-    members.length ? h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Person", "Role", "Name on tracker", ""].map((x) => h("th", null, x)))),
-      h("tbody", null, members.map(([id, p]) => h("tr", null, h("td", null, h("span", { class: "row", style: "gap:8px" }, h("img", { class: "avatar", style: "width:24px;height:24px", src: prof(id).avatarUrl || "", alt: "" }), prof(id).name || "Member")),
-        h("td", null, pill(p.role === "pm" ? "Product manager" : "Designer", p.role === "pm" ? "info" : "good")), h("td", null, p.name),
+  const table = h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("div", { class: "section-title" }, h("h2", null, "Members"), h("span", { class: "muted" }, String(members.length)))),
+    members.length ? h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Person", "Official ID", "Role", "Name on tracker", ""].map((x) => h("th", null, x)))),
+      h("tbody", null, members.map(([id, p]) => h("tr", null,
+        h("td", null, h("span", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, avatar(prof(id).avatarUrl, prof(id).name, "avatar", "width:28px;height:28px"), prof(id).name || "Member")),
+        h("td", { class: "small" }, h("div", null, prof(id).email || "-"), idPill(prof(id).email)),
+        h("td", null, select("role-" + id, p.role, [{ value: "pm", label: "Product manager" }, { value: "designer", label: "Product designer" }], (v) => changeRole(id, { role: v, name: "" }))),
+        h("td", null, select("rname-" + id, p.name, p.role === "pm" ? c.pms : c.designers, (v) => changeRole(id, { name: v }), "Choose")),
         h("td", { style: "text-align:right" }, S.confirm === id ? h("span", null, h("button", { class: "btn sm danger", onclick: () => removeMember(id) }, "Remove"), h("button", { class: "btn sm ghost", onclick: () => { S.confirm = null; render(); } }, "Keep"))
-          : h("button", { class: "btn sm ghost danger", onclick: () => { S.confirm = id; render(); } }, "Remove access"))))))) : h("div", { class: "pad hint" }, "Nobody approved yet.")));
+          : h("button", { class: "btn sm ghost danger", onclick: () => { S.confirm = id; render(); } }, "Remove access"))))))) : h("div", { class: "pad hint" }, "Nobody has access yet."));
+  root.appendChild(h("div", { class: "grid2" }, h("div", { class: "stack", style: "gap:20px" }, add, table), h("div", { class: "stack", style: "gap:20px" }, requests, links)));
 }
+function savePeople(map, domain) {
+  return db.doc("config/people").set({ map, ownerId: S.me.id, domain: domain !== undefined ? domain : S.domain || "" });
+}
+function isOfficial(email) { return !S.domain || !email || String(email).toLowerCase().endsWith("@" + S.domain); }
 function approveMember(id, cl) {
-  guard("people", async () => { await db.doc("config/people").set({ map: { ...S.people, [id]: { role: cl.role, name: cl.name } }, ownerId: S.me.id }); await db.doc("claims/" + id).delete(); toast(`${cl.name} can now use ${APPS[cl.role === "pm" ? "pm" : "designer"].name}`); });
+  guard("people", async () => { await savePeople({ ...S.people, [id]: { role: cl.role, name: cl.name } }); await db.doc("claims/" + id).delete(); toast(`${cl.name} can now use ${APPS[cl.role === "pm" ? "pm" : "designer"].name}`); });
 }
 function removeMember(id) {
   const map = { ...S.people }; delete map[id];
-  guard("people", async () => { await db.doc("config/people").set({ map, ownerId: S.me.id }); S.confirm = null; toast("Access removed"); });
+  guard("people", async () => { await savePeople(map); S.confirm = null; toast("Access removed"); });
+}
+function changeRole(id, patch) {
+  guard("people", async () => { await savePeople({ ...S.people, [id]: { ...S.people[id], ...patch } }); toast("Access updated"); });
 }
 
 // ---- lists & 4E
@@ -1075,7 +1301,7 @@ function viewExport(root) {
         field("Scorecard period from", "x-from", h("input", { id: "x-from", type: "date", value: o.from, onchange: (e) => { o.from = e.target.value; } })),
         field("Scorecard period to", "x-to", h("input", { id: "x-to", type: "date", value: o.to, onchange: (e) => { o.to = e.target.value; } }))),
       h("label", { class: "row", style: "gap:8px;cursor:pointer" }, h("input", { id: "x-dc", type: "checkbox", checked: o.designerCopy, onchange: (e) => { o.designerCopy = e.target.checked; render(); } }),
-        h("span", null, h("b", null, "Designer copy. "), "Hides Scorecard, Settings, Dashboard, Task Details, Daily Log and Task Funnel, and locks the sheet list.")),
+        h("span", null, h("b", null, "Designer copy. "), "Hides Scorecard, Settings, Dashboard, Task Details, Daily Log, Task Funnel and Deliverables, and locks the sheet list.")),
       h("div", { class: "field" }, h("span", { class: "label" }, "Workbook template"),
         h("div", { class: "small" }, S.template ? `Using your file "${S.template.name}".` : "Using the built-in copy of your Task Manager workbook."),
         h("div", { class: "row" }, h("label", { class: "btn sm", for: "x-file" }, "Use my current workbook instead"),
@@ -1086,12 +1312,13 @@ function viewExport(root) {
         h("span", { class: "hint" }, `${all.length} tasks, ${reqs.length} requests, ${allLeave().length} leave entries, ${all.reduce((a, t) => a + (t.updates || []).length, 0)} daily updates`)),
       S.exportMsg ? h("div", { class: "banner " + S.exportMsg.kind }, h("div", null, S.exportMsg.text, S.exportMsg.list && S.exportMsg.list.length ? h("ul", { style: "margin:6px 0 0;padding-left:18px" }, S.exportMsg.list.map((w) => h("li", null, w))) : null)) : null),
     h("aside", { class: "card pad stack small" }, h("h3", null, "What lands where"),
-      h("div", null, h("b", null, "Tracker. "), "One row per approved subtask. Task Assigned reads Product / Subtask: Detail."),
+      h("div", null, h("b", null, "Tracker. "), "One row per approved subtask. Task Assigned reads Product / Subtask: Detail, with the count for batches, for example (12 videos)."),
       h("div", null, h("b", null, "Task Funnel. "), "Every submitted request, one row per subtask, with your decision and note."),
       h("div", null, h("b", null, "Task Details. "), "4E line, product, master task title, request ID, progress and hours."),
       h("div", null, h("b", null, "Daily Log. "), "Every designer update."),
       h("div", null, h("b", null, "Leave & Holidays, Settings, Scorecard. "), "Leave entries, holidays, lists, scoring and the period above."),
-      h("div", null, h("b", null, "Dashboard. "), "KPIs, six charts, funnel and 4E tables. Recalculates on open."))));
+      h("div", null, h("b", null, "Deliverables. "), "One row per video, demo or other item inside a batch task, with status, done date, revisions and link."),
+      h("div", null, h("b", null, "Dashboard. "), "KPIs, seven charts including deliverables per week, plus funnel, 4E and hours-per-deliverable tables. Recalculates on open."))));
 }
 async function pickTemplate(e) {
   const file = e.target.files && e.target.files[0];
@@ -1184,7 +1411,7 @@ async function boot() {
   const claude = window.claude;
   const [u, d, dl] = claude && claude.use ? await Promise.all([claude.use("user"), claude.use("db"), claude.use("downloads")]) : [null, null, null];
   userApi = u; db = d; downloads = dl;
-  if (u) { const me = await u.me(); S.me = { id: me.id, name: me.name, avatarUrl: me.avatarUrl, isOwner: me.isOwner }; }
+  if (u) { const me = await u.me(); S.me = { id: me.id, name: me.name, avatarUrl: me.avatarUrl, isOwner: me.isOwner, email: me.email || null }; }
   if (!db) { S.noDb = true; S.ready = true; return render(); }
   let pending = 3;
   const done = () => { if (--pending <= 0) S.ready = true; render(); };
@@ -1192,6 +1419,7 @@ async function boot() {
   db.doc("config/people").onSnapshot((s) => {
     const data = s.exists ? s.data() : {};
     S.people = data.map || {}; S.ownerId = data.ownerId || null; S.peopleLoaded = true;
+    S.domain = data.domain || (S.me.isOwner && S.me.email && S.me.email.includes("@") ? S.me.email.split("@")[1].toLowerCase() : S.domain || "");
     syncSubs(); done();
     if (S.me.isOwner && S.ownerId !== S.me.id) ensureOwnerId().catch(onErr);
   }, (e) => { onErr(e); done(); });

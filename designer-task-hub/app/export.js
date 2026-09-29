@@ -23,6 +23,7 @@
     details: "xl/worksheets/sheet6.xml",
     log: "xl/worksheets/sheet7.xml",
     funnel: "xl/worksheets/sheet8.xml",
+    deliverables: "xl/worksheets/sheet9.xml",
   };
 
   const FUNNEL_LABEL = { pending: "Awaiting approval", changes: "Changes requested", approved: "Approved", rejected: "Rejected" };
@@ -152,7 +153,9 @@
 
   function taskAssigned(t) {
     const tag = [t.master, t.sub].filter(Boolean).join(" / ");
-    return t.title ? (tag ? tag + ": " + t.title : t.title) : tag;
+    const base = t.title ? (tag ? tag + ": " + t.title : t.title) : tag;
+    const qty = Math.floor(Number(t.qty) || 1);
+    return qty > 1 ? `${base} (${qty} ${t.unit || "items"})` : base;
   }
 
   function taskIdFor(i) { return "T-" + String(i + 1).padStart(3, "0"); }
@@ -273,10 +276,14 @@
       td.str("R" + r, t.masterTitle, S.wrap);
       td.str("S" + r, t.requestRef, S.center);
       td.date("T" + r, t.approvedAt || t.createdAt, S.date);
+      const qty = Math.max(1, Math.floor(Number(t.qty) || 1));
+      td.num("U" + r, qty, S.int);
+      td.str("V" + r, qty > 1 ? t.unit || "items" : "", S.center);
+      td.num("W" + r, qty > 1 ? t.itemsDone || 0 : "", S.int);
     });
     const lastTd = 4 + Math.max(1, tasks.length);
-    td.setAutoFilter("A4:T" + lastTd);
-    td.setDimension("A1:T" + lastTd);
+    td.setAutoFilter("A4:W" + lastTd);
+    td.setDimension("A1:W" + lastTd);
     zip.file(SHEETS.details, td.toString());
 
     // ---- Daily Log
@@ -326,12 +333,38 @@
         fn.date("P" + fr, q.decidedAt, S.date);
         fn.str("Q" + fr, q.ownerNote, S.wrap);
         fn.str("R" + fr, st.taskId ? idOf.get(st.taskId) || "" : "", S.center);
+        const stQty = Math.max(1, Math.floor(Number(st.qty) || 1));
+        fn.num("S" + fr, stQty, S.int);
+        fn.str("T" + fr, stQty > 1 ? st.unit || "items" : "", S.center);
         fr++;
       }
     }
-    fn.setAutoFilter("A4:R" + Math.max(5, fr - 1));
-    fn.setDimension("A1:R" + Math.max(5, fr - 1));
+    fn.setAutoFilter("A4:T" + Math.max(5, fr - 1));
+    fn.setDimension("A1:T" + Math.max(5, fr - 1));
     zip.file(SHEETS.funnel, fn.toString());
+
+    // ---- Deliverables: one row per item of each batch task
+    const dv = new SheetDoc(await read(SHEETS.deliverables), P);
+    let dr = 5;
+    for (const t of tasks) {
+      for (const it of t.deliverables || []) {
+        dv.str("A" + dr, idOf.get(t.id), S.center);
+        dv.str("B" + dr, t.designer, S.center);
+        dv.str("C" + dr, t.master, S.text);
+        dv.str("D" + dr, t.sub, S.text);
+        dv.str("E" + dr, t.title, S.wrap);
+        dv.num("F" + dr, it.n, S.int);
+        dv.str("G" + dr, it.title || `${(t.unit || "item").replace(/s$/, "")} ${it.n}`, S.wrap);
+        dv.str("H" + dr, it.status, S.center);
+        dv.date("I" + dr, it.doneAt, S.date);
+        dv.num("J" + dr, it.revisions || 0, S.int);
+        dv.str("K" + dr, it.link, S.wrap);
+        dr++;
+      }
+    }
+    dv.setAutoFilter("A4:K" + Math.max(5, dr - 1));
+    dv.setDimension("A1:K" + Math.max(5, dr - 1));
+    zip.file(SHEETS.deliverables, dv.toString());
 
     // ---- Dashboard: product tag list, then trim chart ranges to real counts
     const ds = new SheetDoc(await read(SHEETS.dashboard), P);
@@ -354,14 +387,16 @@
     };
     await chart(1, (x) => trim(x, 72, 67 + nDes));
     await chart(2, (x) => trim(x, 72, 67 + nDes));
-    await chart(4, (x) => x.replace(/<c:ser><c:idx val="(\d+)"\/>[\s\S]*?<\/c:ser>/g, (m, idx) => (Number(idx) < nDes ? m : "")));
+    const keepSeries = (x) => x.replace(/<c:ser><c:idx val="(\d+)"\/>[\s\S]*?<\/c:ser>/g, (m, idx) => (Number(idx) < nDes ? m : ""));
+    await chart(4, keepSeries);
+    await chart(7, keepSeries);
     await chart(5, (x) => trim(x, 112, 97 + nTag));
     await chart(6, (x) => trim(x, 145, 115 + nPrj));
 
     // ---- Designer copy: hide owner-only sheets and lock the sheet list
     if (data.designerCopy) {
       let wb = await read("xl/workbook.xml");
-      for (const name of ["Scorecard", "Settings", "Dashboard", "Task Details", "Daily Log", "Task Funnel"]) {
+      for (const name of ["Scorecard", "Settings", "Dashboard", "Task Details", "Daily Log", "Task Funnel", "Deliverables"]) {
         wb = wb.replace(`<sheet name="${name}" `, `<sheet name="${name}" state="hidden" `);
       }
       wb = wb.replace(/<bookViews>/, '<workbookProtection lockStructure="1"/><bookViews>');

@@ -18,8 +18,17 @@ and each interface has its own header, colour and navigation:
 | `#owner` | **Owner Dashboard** (graphite) | The owner only | Task funnel (approve, send back with a note, or reject; adjust designers and dates first, with a capacity check), overview dashboard, all tasks, leave, people and links, lists and 4E setup, Excel export. |
 
 Opening another group's link shows a short "this page is for ..." notice.
-First-time visitors ask to join from their link; the owner approves them under
-**People & links**, which also has copy buttons for the three links.
+
+## Role based access by official ID
+
+Everyone signs in with their claude.ai work account. Under **People & access**
+the owner searches the organisation by official email, picks the person, and
+gives them one role (product manager or product designer) plus their name on
+the tracker. Accounts outside the official email domain (set on the same page,
+defaulting to the owner's domain) are turned away. People who are not set up
+yet can send an access request from their link, which the owner approves or
+declines. The page stores only each person's opaque account id with their
+role; names, photos and emails are looked up live and never saved.
 
 ## The task funnel
 
@@ -27,6 +36,28 @@ Draft -> Awaiting approval -> Approved (tasks created) or Changes requested
 (PM edits and resubmits) or Rejected. Nothing reaches a designer until the
 owner approves. Each approved subtask becomes one Tracker row, and on the
 Tracker Task Assigned reads `Nano AI / Feature design: Question editor ...`.
+
+## Batches: videos, demos and other repeated deliverables
+
+A subtask can carry a **Quantity** and **Unit** (for example 12 videos), with
+optional titles one per line. It stays one Tracker row, so on-time and quality
+scores are not skewed by 12 near-identical rows. In the funnel the owner can
+**Split** a batch between designers (each share becomes its own Tracker row)
+or merge it back. The designer gets a checklist on the task card: each item
+has a title, status, revision rounds and a file link. Progress is the share
+of items done, the task closes when every item is done, and Tracker Revision
+Rounds is the average per item (rounded). The **Deliverables** sheet lists
+every item, and the Dashboard charts deliverables completed per week and
+hours per deliverable.
+
+## Design
+
+A frosted-glass app window on a soft gradient in KNOLSKAPE colours (Science
+Blue, Ebony, Gold, Orange, the rainbow top line, Cambria titles). Wide screens
+get a sidebar and top bar with search and alerts, tablets an icon rail, phones
+a bottom dock. Each interface tints its hero banner and navigation: Task
+Creation blue, Designer Tracker orange, Owner Dashboard gold on ebony. Chart
+colours are brand steps checked for colour-blind separation in light and dark.
 
 ## Project names
 
@@ -42,16 +73,18 @@ Lead) column maps it. Matching lives in `matchNames` in `app/metrics.js`.
 ## The workbook
 
 `workbook/Product Designer Task Manager (original).xlsx` is the source workbook.
-`tools/build_template.py` adds four sheets to it and writes `workbook/template.xlsx`:
+`tools/build_template.py` adds five sheets to it and writes `workbook/template.xlsx`:
 
-- **Dashboard**: KPI tiles and six native Excel charts (designer scores,
+- **Dashboard**: KPI tiles and seven native Excel charts (designer scores,
   utilisation this week, delivery status, hours logged per week, effort by
-  product, tasks by project), driven by formulas on the existing sheets.
+  product, tasks by project, deliverables per week), driven by formulas on the
+  existing sheets.
 - **Task Details**: master task, subtask, progress, hours logged and latest
   note, 4E line, master task title and request ID, row-aligned with the Tracker.
 - **Daily Log**: one row per designer update per task per day.
 - **Task Funnel**: every submitted request, one row per subtask, with the
   owner's decision, note and resulting Task ID.
+- **Deliverables**: one row per item inside a batch task.
 
 The script edits the file at the XML level, so the original Tracker, Scorecard,
 Settings and Leave & Holidays sheets keep every formula, table, dropdown and
@@ -90,7 +123,8 @@ each group can only write its own part:
 |---|---|---|
 | `config/main` | Owner | Designers, PMs, projects with lead PM, 4E lines with products, subtask types, holidays, scoring |
 | `config/people` | Owner | Approved members (role, name on the tracker) |
-| `claims/<person>` | That person | Join request |
+| `config/people` also holds | Owner | The official email domain |
+| `claims/<person>` | That person | Access request |
 | `requests/<pm>/items/*` | That PM (the owner reads and decides) | Requests with their subtasks and decision history |
 | `tasks/*` | Owner (on approval) | Approved tasks, one per subtask |
 | `progress/<designer>/tasks/*` | That designer | Status, progress, revisions, blockers and daily updates |

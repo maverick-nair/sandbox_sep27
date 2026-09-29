@@ -74,7 +74,12 @@ function fixtureTasks(n) {
   return out;
 }
 
-const tasks = fixtureTasks(60); // more than the template's 50 table rows
+// Task 2 is a batch of 4 videos; two are done today (one with 2 revision rounds)
+const raw = fixtureTasks(60); // more than the template's 50 table rows
+Object.assign(raw[1], { qty: 4, unit: "videos", items: [{ id: "x1", title: "Intro" }, { id: "x2", title: "Setup" }] });
+const progressDocs = [{ taskId: raw[1].id, updatedAt: "2026-01-01T00:00:00Z",
+  items: { x1: { status: "Done", doneAt: d(0), revisions: 2, at: "1" }, i3: { status: "Done", doneAt: d(0), revisions: 0, at: "1" } } }];
+const tasks = M.mergeProgress(raw, progressDocs);
 const requests = [
   { id: "req0", ref: "R-001", submittedAt: d(-40), pmName: "Raghav", fourE: "Platform", product: "GenieTracker", project: "GenieTracker Revamp",
     masterTitle: "Master 0", priority: "High", status: "approved", decidedAt: d(-39), ownerNote: "",
@@ -135,7 +140,10 @@ wk = [[s.cell(r, c).value for c in range(3, 11)] for r in (39, 40, 45, 46)]
 kpi = [d.cell(5, c).value for c in range(1, 17, 2)]
 det = [[td.cell(r, c).value for c in range(1, 21)] for r in (5, 64)]
 fun = [[d.cell(r, 2).value for r in range(149, 153)], [d.cell(r, 2).value for r in range(155, 161)]]
-print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det, "fun": fun}, default=str))
+dv = wb["Deliverables"]
+dlv = {"rows": [[dv.cell(r, c).value for c in range(1, 11)] for r in range(5, 10)], "week": [d.cell(171, c).value for c in range(1, 8)],
+       "td": [td.cell(6, c).value for c in (21, 22, 23)], "rev": t.cell(6, 12).value, "b": t.cell(6, 2).value}
+print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det, "fun": fun, "dlv": dlv}, default=str))
 `, file], { encoding: "utf8" });
   const x = JSON.parse(dump);
   const derived = M.deriveAll(tasks, config, today);
@@ -178,5 +186,12 @@ print(json.dumps({"rows": rows, "sc": sc, "wk": wk, "kpi": kpi, "det": det, "fun
   assert.equal(x.det[0][16], "Platform", "4E line column");
   assert.deepEqual(x.fun[0], [2, 0, 1, 0], "funnel counts on the Dashboard");
   assert.equal(x.fun[1][0], 20, "Evaluate row counts its tasks");
+  assert.equal(x.dlv.rows.filter((r) => r[0]).length, 4, "4 deliverable rows for the batch");
+  assert.deepEqual(x.dlv.rows.slice(0, 4).map((r) => [r[0], r[6], r[7]]), [["T-002", "Intro", "Done"], ["T-002", "Setup", "Not Started"], ["T-002", "video 3", "Done"], ["T-002", "video 4", "Not Started"]]);
+  assert.deepEqual(x.dlv.td, [4, "videos", 2], "Task Details qty, unit, items done");
+  assert.equal(x.dlv.rev, 1, "revision rounds = average per item, rounded");
+  assert.match(x.dlv.b, /\(4 videos\)$/);
+  assert.equal(x.dlv.week[2], 2, "Swathi's deliverables this week");
+  assert.equal(x.dlv.week[6], 2, "team deliverables this week");
   console.log("excel file:", file);
 });
