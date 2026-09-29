@@ -24,8 +24,9 @@ Opening another group's link shows a short "this page is for ..." notice.
 Everyone signs in with their claude.ai work account. Under **People & access**
 the owner searches the organisation by official email, picks the person, and
 gives them one role (product manager or product designer) plus their name on
-the tracker. Accounts outside the official email domain (set on the same page,
-defaulting to the owner's domain) are turned away. People who are not set up
+the tracker. An official ID means a member of the KNOLSKAPE claude.ai
+organisation; guest accounts invited from outside are turned away (the page
+cannot read email addresses, so membership is the check). People who are not set up
 yet can send an access request from their link, which the owner approves or
 declines. The page stores only each person's opaque account id with their
 role; names, photos and emails are looked up live and never saved.
@@ -123,7 +124,6 @@ each group can only write its own part:
 |---|---|---|
 | `config/main` | Owner | Designers, PMs, projects with lead PM, 4E lines with products, subtask types, holidays, scoring |
 | `config/people` | Owner | Approved members (role, name on the tracker) |
-| `config/people` also holds | Owner | The official email domain |
 | `claims/<person>` | That person | Access request |
 | `requests/<pm>/items/*` | That PM (the owner reads and decides) | Requests with their subtasks and decision history |
 | `tasks/*` | Owner (on approval) | Approved tasks, one per subtask |

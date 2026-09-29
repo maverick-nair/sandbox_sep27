@@ -43,7 +43,8 @@ const MOCK = () => {
   });
   const people = { owner: ["Manu Nair", "manu.nair@knolskape.com"], u_pm1: ["Raghav K", "raghav@knolskape.com"], u_des1: ["Pragati S", "pragati@knolskape.com"],
     u_des2: ["Swathi R", "swathi@knolskape.com"], u_ext: ["Outside Person", "outsider@gmail.com"] };
-  const prof = (i) => ({ id: i, name: (people[i] || [""])[0], avatarUrl: "", color: "#888", email: (people[i] || [])[1] || null, isMe: i === as, guest: false });
+  // like the real runtime without the email scope: emails are searchable but never returned
+  const prof = (i) => ({ id: i, name: (people[i] || [""])[0], avatarUrl: "", color: "#888", email: null, isMe: i === as, guest: i === "u_ext" });
   const user = {
     me: async () => ({ ...prof(as), isOwner: as === "owner", canEdit: as === "owner" }),
     isOwner: async () => as === "owner", id: async () => as,

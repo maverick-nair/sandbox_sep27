@@ -385,12 +385,12 @@ function viewJoin(root, app) {
   }
   const fixed = app === "pm" ? "pm" : app === "designer" ? "designer" : null;
   if (app === "owner") return root.appendChild(gate("This dashboard is private", "Only the owner can open the Owner Dashboard. Use the link you were given for Task Creation or the Designer Tracker."));
-  if (!isOfficial(S.me.email)) return root.appendChild(gate("Use your official ID", `You're signed in as ${S.me.email}. Access is given to official @${S.domain} accounts only. Sign in to claude.ai with your work account and open this link again.`));
+  if (S.me.guest) return root.appendChild(gate("Use your official ID", "You're signed in with an account from outside the organisation. Access is given to official KNOLSKAPE accounts only. Sign in to claude.ai with your work account and open this link again."));
   const f = S.joinForm || (S.joinForm = { role: fixed || "designer", name: "", err: "" });
   if (fixed) f.role = fixed;
   const names = f.role === "pm" ? cfg().pms : cfg().designers;
   root.appendChild(head("Access", `You don't have access to ${fixed ? APPS[app].name : "Design Task Hub"} yet`,
-    `Access is role based and tied to your official ID${S.me.email ? ` (${S.me.email})` : ""}. The owner adds people directly, or you can send a request below.`));
+    "Access is role based and tied to your official KNOLSKAPE ID. The owner adds people directly, or you can send a request below."));
   root.appendChild(h("div", { class: "card pad stack", style: "max-width:560px" },
     fixed ? null : h("div", { class: "field" }, h("span", { class: "label" }, "I am a"),
       h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
@@ -1155,7 +1155,7 @@ function viewPeople(root) {
   const ids = Object.keys(S.claims).concat(Object.keys(S.people));
   if (userApi && ids.some((id) => !S.profiles[id])) userApi.profiles(ids).then((ps) => { let ch = false; for (const id of ids) if (!S.profiles[id] || S.profiles[id].name !== ps[id].name) { S.profiles[id] = ps[id]; ch = true; } if (ch) render(); });
   const prof = (id) => S.profiles[id] || { name: "", avatarUrl: "", email: null };
-  const idPill = (email) => !email ? pill("ID hidden by your organisation", "neutral") : isOfficial(email) ? pill("Official ID", "good") : pill("Not an official ID", "critical");
+  const idPill = (p) => isOfficial(p) ? pill("Official ID", "good") : pill("Guest, not an official ID", "critical");
   const c = cfg();
   root.appendChild(head("Role based access", "People & access", "Everyone signs in with their official ID. Give each person one role: product managers only see Task Creation, designers only see the Designer Tracker, and only you see this dashboard."));
 
@@ -1164,7 +1164,7 @@ function viewPeople(root) {
   const names = f.role === "pm" ? c.pms : c.designers;
   const add = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Give someone access"), h("span", { class: "muted" }, "Search your organisation by official email or name")),
     h("div", { class: "fields" },
-      field("Official email or name", "add-q", h("input", { id: "add-q", type: "search", autocomplete: "off", placeholder: `name@${S.domain || "company.com"}`, value: f.q,
+      field("Official email or name", "add-q", h("input", { id: "add-q", type: "search", autocomplete: "off", placeholder: "name@knolskape.com", value: f.q,
         onfocus: () => { if (!f.q && userApi && userApi.search) userApi.search("").then((r) => { if (!f.q) { f.results = r; render(); } }); },
         oninput: (e) => { const v = e.target.value; f.q = v; f.picked = null; f.err = ""; if (userApi && userApi.search) userApi.search(v).then((r) => { if (f.q === v) { f.results = r; render(); } }); softRender(); } })),
       h("div", { class: "field" }, h("span", { class: "label" }, "Role"), h("div", { class: "seg" }, [["designer", "Product designer"], ["pm", "Product manager"]].map(([k, l]) =>
@@ -1172,13 +1172,13 @@ function viewPeople(root) {
       field("Name on the tracker", "add-name", select("add-name", f.name, names, (v) => { f.name = v; f.err = ""; }, names.length ? "Choose" : "Add names under Lists & 4E"))),
     f.results.length && !f.picked ? h("div", { class: "results" }, f.results.filter((p) => !S.people[p.id]).slice(0, 6).map((p) => h("button", { type: "button", onclick: () => { f.picked = p; f.q = p.email || p.name; S.profiles[p.id] = p;
       const guess = names.find((n) => (p.name || "").toLowerCase().startsWith(n.toLowerCase())); if (guess && !f.name) f.name = guess; render(); } },
-      avatar(p.avatarUrl, p.name), h("span", { style: "flex:1;min-width:0" }, h("b", { style: "display:block;color:var(--ink)" }, p.name), h("span", { class: "small muted" }, p.email || "Email hidden")), idPill(p.email)))) : null,
-    f.picked ? h("div", { class: "row" }, avatar(f.picked.avatarUrl, f.picked.name), h("b", null, f.picked.name), h("span", { class: "muted small" }, f.picked.email || ""), idPill(f.picked.email),
+      avatar(p.avatarUrl, p.name), h("span", { style: "flex:1;min-width:0" }, h("b", { style: "display:block;color:var(--ink)" }, p.name), p.email ? h("span", { class: "small muted" }, p.email) : null), idPill(p)))) : null,
+    f.picked ? h("div", { class: "row" }, avatar(f.picked.avatarUrl, f.picked.name), h("b", null, f.picked.name), f.picked.email ? h("span", { class: "muted small" }, f.picked.email) : null, idPill(f.picked),
       h("button", { class: "btn sm ghost", onclick: () => { f.picked = null; render(); } }, "Change")) : f.q.length > 2 && !f.results.length ? h("div", { class: "hint" }, "No one in your organisation matches. Check the spelling of the official email.") : null,
     f.err ? h("div", { class: "err" }, f.err) : null,
     h("div", { class: "row" }, h("button", { class: "btn accent", disabled: S.busy.people, onclick: () => {
       if (!f.picked) { f.err = "Pick the person from the search results."; return render(); }
-      if (f.picked.email && !isOfficial(f.picked.email)) { f.err = `Only official @${S.domain} accounts can be given access.`; return render(); }
+      if (!isOfficial(f.picked)) { f.err = "Guests from outside the organisation can't be given access. Use their official KNOLSKAPE account."; return render(); }
       if (!f.name) { f.err = "Choose their name on the tracker."; return render(); }
       const pick = f.picked, role = f.role, nm = f.name;
       guard("people", async () => { await savePeople({ ...S.people, [pick.id]: { role, name: nm } }); if (S.claims[pick.id]) await db.doc("claims/" + pick.id).delete(); S.addForm = null; toast(`${pick.name || nm} can now use ${APPS[role].name}`); });
@@ -1189,35 +1189,33 @@ function viewPeople(root) {
   const requests = h("div", { class: "card pad stack" }, h("div", { class: "section-title" }, h("h2", null, "Access requests"), h("span", { class: "muted" }, String(claims.length))),
     claims.length ? claims.map(([id, cl]) => h("div", { class: "row", style: "gap:12px" }, avatar(prof(id).avatarUrl, prof(id).name),
       h("div", { style: "flex:1;min-width:0" }, h("div", { style: "font-weight:600;color:var(--ink)" }, prof(id).name || "Someone in your organisation"),
-        h("div", { class: "small muted" }, `${prof(id).email || ""} asks to join as ${cl.role === "pm" ? "product manager" : "designer"} "${cl.name}"`)), idPill(prof(id).email),
-      h("button", { class: "btn sm accent", disabled: S.busy.people || !isOfficial(prof(id).email), onclick: () => approveMember(id, cl) }, "Approve"),
+        h("div", { class: "small muted" }, `Asks to join as ${cl.role === "pm" ? "product manager" : "designer"} "${cl.name}"`)), idPill(prof(id)),
+      h("button", { class: "btn sm accent", disabled: S.busy.people || !isOfficial(prof(id)), onclick: () => approveMember(id, cl) }, "Approve"),
       h("button", { class: "btn sm ghost danger", onclick: () => guard("people", () => db.doc("claims/" + id).delete()) }, "Decline"))) : h("div", { class: "hint" }, "No pending requests."));
 
   const link = (app, note) => h("div", { class: "link-row" }, h("div", null, h("b", { style: "color:var(--ink)" }, APPS[app].name), h("div", { class: "small muted" }, note), h("code", null, `${ARTIFACT_URL}#${app}`)),
     h("button", { class: "btn sm", onclick: () => copyText(`${ARTIFACT_URL}#${app}`) }, "Copy link"));
   const links = h("div", { class: "card pad stack" }, h("h2", null, "Links"), h("div", { class: "links" },
     link("pm", "For product managers. Create requests and follow approval."), link("designer", "For product designers. Daily progress, deliverables and weekly leave."), link("owner", "For you only. Anyone else is turned away.")),
-    h("div", { class: "field", style: "max-width:320px" }, h("label", { for: "dom" }, "Official email domain"),
-      h("input", { id: "dom", type: "text", value: S.domainDraft !== undefined ? S.domainDraft : S.domain || "", placeholder: "knolskape.com", oninput: (e) => { S.domainDraft = e.target.value.trim().toLowerCase().replace(/^@/, ""); } }),
-      h("div", { class: "row" }, h("button", { class: "btn sm", disabled: S.busy.people, onclick: () => { const d = S.domainDraft !== undefined ? S.domainDraft : S.domain; guard("people", async () => { await savePeople(S.people, d); S.domainDraft = undefined; toast(d ? `Only @${d} accounts can get access` : "Any account in your organisation can get access"); }); } }, "Save domain"),
-        h("span", { class: "hint" }, "People signed in with another domain are turned away."))));
+    h("div", { class: "hint" }, "Only members of your KNOLSKAPE claude.ai organisation can be given access. Guests invited from outside are turned away."));
 
   const members = Object.entries(S.people);
   const table = h("div", { class: "card" }, h("div", { class: "pad", style: "padding-bottom:4px" }, h("div", { class: "section-title" }, h("h2", null, "Members"), h("span", { class: "muted" }, String(members.length)))),
     members.length ? h("div", { class: "tbl-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Person", "Official ID", "Role", "Name on tracker", ""].map((x) => h("th", null, x)))),
       h("tbody", null, members.map(([id, p]) => h("tr", null,
         h("td", null, h("span", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, avatar(prof(id).avatarUrl, prof(id).name, "avatar", "width:28px;height:28px"), prof(id).name || "Member")),
-        h("td", { class: "small" }, h("div", null, prof(id).email || "-"), idPill(prof(id).email)),
+        h("td", { class: "small" }, idPill(prof(id))),
         h("td", null, select("role-" + id, p.role, [{ value: "pm", label: "Product manager" }, { value: "designer", label: "Product designer" }], (v) => changeRole(id, { role: v, name: "" }))),
         h("td", null, select("rname-" + id, p.name, p.role === "pm" ? c.pms : c.designers, (v) => changeRole(id, { name: v }), "Choose")),
         h("td", { style: "text-align:right" }, S.confirm === id ? h("span", null, h("button", { class: "btn sm danger", onclick: () => removeMember(id) }, "Remove"), h("button", { class: "btn sm ghost", onclick: () => { S.confirm = null; render(); } }, "Keep"))
           : h("button", { class: "btn sm ghost danger", onclick: () => { S.confirm = id; render(); } }, "Remove access"))))))) : h("div", { class: "pad hint" }, "Nobody has access yet."));
   root.appendChild(h("div", { class: "grid2" }, h("div", { class: "stack", style: "gap:20px" }, add, table), h("div", { class: "stack", style: "gap:20px" }, requests, links)));
 }
-function savePeople(map, domain) {
-  return db.doc("config/people").set({ map, ownerId: S.me.id, domain: domain !== undefined ? domain : S.domain || "" });
+function savePeople(map) {
+  return db.doc("config/people").set({ map, ownerId: S.me.id });
 }
-function isOfficial(email) { return !S.domain || !email || String(email).toLowerCase().endsWith("@" + S.domain); }
+// Official ID = a member of the organisation that owns this page (not an invited guest)
+function isOfficial(profile) { return !(profile && profile.guest); }
 function approveMember(id, cl) {
   guard("people", async () => { await savePeople({ ...S.people, [id]: { role: cl.role, name: cl.name } }); await db.doc("claims/" + id).delete(); toast(`${cl.name} can now use ${APPS[cl.role === "pm" ? "pm" : "designer"].name}`); });
 }
@@ -1411,7 +1409,11 @@ async function boot() {
   const claude = window.claude;
   const [u, d, dl] = claude && claude.use ? await Promise.all([claude.use("user"), claude.use("db"), claude.use("downloads")]) : [null, null, null];
   userApi = u; db = d; downloads = dl;
-  if (u) { const me = await u.me(); S.me = { id: me.id, name: me.name, avatarUrl: me.avatarUrl, isOwner: me.isOwner, email: me.email || null }; }
+  if (u) {
+    const me = await u.me();
+    S.me = { id: me.id, name: me.name, avatarUrl: me.avatarUrl, isOwner: me.isOwner, email: me.email || null, guest: false };
+    if (me.id && u.profiles) { try { const ps = await u.profiles([me.id]); S.me.guest = !!(ps[me.id] && ps[me.id].guest); } catch (e) {} }
+  }
   if (!db) { S.noDb = true; S.ready = true; return render(); }
   let pending = 3;
   const done = () => { if (--pending <= 0) S.ready = true; render(); };
@@ -1419,7 +1421,6 @@ async function boot() {
   db.doc("config/people").onSnapshot((s) => {
     const data = s.exists ? s.data() : {};
     S.people = data.map || {}; S.ownerId = data.ownerId || null; S.peopleLoaded = true;
-    S.domain = data.domain || (S.me.isOwner && S.me.email && S.me.email.includes("@") ? S.me.email.split("@")[1].toLowerCase() : S.domain || "");
     syncSubs(); done();
     if (S.me.isOwner && S.ownerId !== S.me.id) ensureOwnerId().catch(onErr);
   }, (e) => { onErr(e); done(); });
