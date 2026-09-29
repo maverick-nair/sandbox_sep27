@@ -4,7 +4,7 @@
 // the debrief so the whole simulation reads as one product.
 import { useState } from 'react';
 import { renderText } from '../engine/text.js';
-import { Icon, Logo } from './art.jsx';
+import { Icon, Logo, sceneBackground } from './art.jsx';
 import { Face } from './look.jsx';
 
 const T = (def, s, v) => renderText(def, s || '', v);
@@ -14,7 +14,7 @@ export function Shell({ def, nav, active, onNav, top, sideCard, children, classN
   const [expanded, setExpanded] = useState({});
   const brand = def.look?.brand;
   return (
-    <div className={`nx ${className}`} style={brand ? { '--nx-accent': brand } : undefined}>
+    <div className={`nx ${className}`} style={{ ...(brand ? { '--nx-accent': brand } : {}), background: shellBackground(def.look) }}>
       <aside className={`nx-side ${open ? 'open' : ''}`} aria-label={label}>
         <div className="nx-brand">
           <Logo def={def} look={def.look} size={36} />
@@ -55,6 +55,16 @@ export function Shell({ def, nav, active, onNav, top, sideCard, children, classN
       </div>
     </div>
   );
+}
+
+// The background behind every screen: the author's image or a scene, darkened so text reads.
+export function shellBackground(look = {}) {
+  const dim = Math.max(0.4, Math.min(0.96, look.bgDim ?? 0.84));
+  const glow = 'radial-gradient(900px 500px at 70% -10%, color-mix(in srgb, var(--nx-accent) 16%, transparent), transparent 70%)';
+  const shade = `linear-gradient(180deg, rgba(10,11,16,${dim - 0.06}), rgba(10,11,16,${dim}))`;
+  if (look.bgMode === 'plain') return `${glow}, var(--bg)`;
+  const img = look.sceneImage ? `url("${look.sceneImage}") center / cover no-repeat` : sceneBackground(look.scene || 'boardroom');
+  return `${glow}, ${shade}, ${img}, var(--bg)`;
 }
 
 export function TopChip({ icon, children, className = '', onClick, title, tone }) {

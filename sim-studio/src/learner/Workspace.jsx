@@ -132,7 +132,6 @@ export default function Workspace({ def, state, identity, preview, xray, setXray
           {children || (
             <>
               <section className="nx-hero play">
-                <div className="nx-hero-bg" aria-hidden="true" style={{ background: sceneBackground(def.look?.scene, def.look?.sceneImage) }} />
                 <div className="nx-hero-text">
                   <span className="nx-kicker">{dayName(def, state.day)} · week {week}</span>
                   <h1>{pending.length ? <>{pending.length} thing{pending.length === 1 ? '' : 's'} need{pending.length === 1 ? 's' : ''}<br />you today.</> : <>A quieter moment.<br />Use it well.</>}</h1>

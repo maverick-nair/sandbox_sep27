@@ -56,3 +56,27 @@ test('product art follows what the organization sells', () => {
   assert.equal(typeof artKindFor('cloud accounting software'), 'string');
   assert.notEqual(artKindFor('solar panels for homes'), artKindFor('savings accounts and loans'));
 });
+
+test('bulk photos match people by file name', async () => {
+  const { matchPerson } = await import('../src/studio/images.js');
+  const people = [{ name: 'Kent Goldberg' }, { name: 'Beth Killiney' }, { name: 'Kent Mills' }, { name: 'Zoë Adébayo' }];
+  assert.equal(matchPerson('kent-goldberg.jpg', people)?.name, 'Kent Goldberg');
+  assert.equal(matchPerson('Beth Killiney.PNG', people)?.name, 'Beth Killiney');
+  assert.equal(matchPerson('beth.jpg', people)?.name, 'Beth Killiney');
+  assert.equal(matchPerson('kent.jpg', people), null, 'two people are called Kent');
+  assert.equal(matchPerson('zoe_adebayo.webp', people)?.name, 'Zoë Adébayo');
+  assert.equal(matchPerson('IMG_2041.jpg', people), null);
+});
+
+test('every character who messages the learner can have a photo', async () => {
+  const { npcsOf } = await import('../src/engine/npcs.js');
+  const def = createIleadDefinition();
+  def.decisions.points.push({ id: 'x1', from: { entity: 'board_member', role: 'Board' } }, { id: 'x2', from: { name: 'A key client', role: 'Customer' } }, { id: 'x3', from: { name: 'Sales dashboard' } });
+  def.look.photos = { ceo: 'data:ceo', 'entity:board_member': 'data:board' };
+  const n = npcsOf(def);
+  assert.equal(n[0].id, 'ceo');
+  assert.equal(n[0].photo, 'data:ceo');
+  assert.equal(n.find((x) => x.id === 'entity:board_member')?.photo, 'data:board');
+  assert.ok(n.some((x) => x.name === 'A key client'));
+  assert.ok(!n.some((x) => x.name === 'Sales dashboard'), 'system senders get an icon, not a portrait');
+});

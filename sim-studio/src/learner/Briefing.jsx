@@ -120,7 +120,6 @@ export default function Briefing({ def, preview, saved, savedWeek, langs = ['en'
 function Hero({ kicker, title, lead, children, stage, stats, def }) {
   return (
     <section className="nx-hero">
-      {def && <div className="nx-hero-bg" aria-hidden="true" style={{ background: sceneBackground(def.look?.scene, def.look?.sceneImage) }} />}
       <div className="nx-hero-text">
         <span className="nx-kicker">{kicker}</span>
         <h1>{title}</h1>

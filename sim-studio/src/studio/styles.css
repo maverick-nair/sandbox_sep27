@@ -515,3 +515,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* A report shown inside the Studio, framed like the page learners and facilitators see. */
 .report-frame { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: clamp(10px, 2vw, 20px); min-width: 0; }
+
+/* Look and feel: a small picture of the learner shell with this background and brand */
+.look-shell-preview { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; padding: 12px; border-radius: 16px; min-height: 230px; border: 1px solid var(--line); overflow: hidden; }
+.lsp-side { background: rgba(22, 25, 35, 0.88); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.lsp-side span { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); }
+.lsp-side span:nth-child(2) { background: var(--nx-accent, #7c5cff); }
+.lsp-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lsp-top { height: 26px; border-radius: 10px; background: rgba(20, 22, 30, 0.86); }
+.lsp-hero { flex: 1; display: grid; grid-template-columns: 1.1fr 1fr 110px; gap: 10px; align-items: end; background: rgba(22, 25, 35, 0.72); border-radius: 12px; padding: 14px; color: #fff; }
+.lsp-text { display: flex; flex-direction: column; gap: 6px; align-self: start; }
+.lsp-kicker { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #b9a8ff; font-weight: 800; }
+.lsp-text strong { font-family: var(--font-display); font-size: 20px; line-height: 1.1; }
+.lsp-btn { align-self: flex-start; color: #fff; font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 8px; margin-top: 6px; }
+.lsp-figure { display: flex; justify-content: center; }
+.lsp-cards { display: flex; flex-direction: column; gap: 6px; align-self: stretch; justify-content: center; }
+.lsp-cards span { height: 34px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); }
+.scene-tile.plain { background: #0a0b10; border: 2px dashed var(--line-strong); }
+.scene-tile.plain.on { border-style: solid; border-color: var(--accent); }
+.portrait-cell.big { padding: 14px 10px; }
+.portrait-cell .select { width: auto; padding: 2px 6px; font-size: 12px; }
+.look-group { margin: 6px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+@media (max-width: 700px) { .look-shell-preview { grid-template-columns: minmax(0, 1fr); } .lsp-side { display: none; } .lsp-hero { grid-template-columns: 1fr 1fr; } .lsp-cards { display: none; } }

@@ -82,3 +82,18 @@ export async function inlineImages(def) {
   for (const id of Object.keys(L.photos || {})) L.photos[id] = await toData(L.photos[id]);
   return d;
 }
+
+// Matches a file name to a person: "kent-goldberg.jpg", "Kent Goldberg.png" or "kent.jpg" when
+// only one person has that first name.
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '');
+export function matchPerson(fileName, people) {
+  const base = norm(String(fileName).replace(/\.[a-z0-9]+$/i, ''));
+  if (!base) return null;
+  const full = people.find((p) => norm(p.name) === base);
+  if (full) return full;
+  const first = people.filter((p) => norm(p.name.split(/\s+/)[0]) === base);
+  if (first.length === 1) return first[0];
+  const within = people.filter((p) => base.includes(norm(p.name)));
+  return within.length === 1 ? within[0] : null;
+}
+

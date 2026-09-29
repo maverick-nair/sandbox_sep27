@@ -6,13 +6,15 @@ import { Portrait, Icon } from './art.jsx';
 
 const LookCtx = createContext(null);
 
+import { npcsOf, SYSTEM_SENDERS } from '../engine/npcs.js';
+export { npcsOf, SYSTEM_SENDERS };
+
 export function LookProvider({ def, children }) {
   const value = useMemo(() => {
     const look = def.look || {};
     const people = new Map();
     for (const a of def.actors) people.set(a.name, { id: a.id, pronoun: a.pronoun, photo: look.photos?.[a.id], variant: look.portraitVariant?.[a.id] || 0 });
-    const ceo = renderText(def, '{{ceo}}');
-    if (ceo && !people.has(ceo)) people.set(ceo, { id: 'ceo', pronoun: look.ceoPronoun || 'he', photo: look.ceoPhoto, variant: look.portraitVariant?.ceo || 0 });
+    for (const n of npcsOf(def)) if (!people.has(n.name)) people.set(n.name, { id: n.id, pronoun: n.pronoun, photo: n.photo, variant: look.portraitVariant?.[n.id] || 0 });
     return { def, look, people };
   }, [def]);
   return <LookCtx.Provider value={value}>{children}</LookCtx.Provider>;
