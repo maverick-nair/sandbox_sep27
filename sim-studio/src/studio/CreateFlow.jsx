@@ -31,7 +31,7 @@ const OLD_STEP = [0, 1, 2, 2, 2, 2];
 const LENGTH_OF = Object.fromEntries(SESSION_LENGTHS.map((l) => [l.id, l]));
 const GENIE_TIMEOUT_MS = 20000;
 const EMPTY_BRIEF = { instructions: '', outcomes: [], outcomeText: '', constraints: '', chips: [] };
-const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null, openMix: 30, dpTypes: {} };
+const DEFAULT_SETTINGS = { name: '', audience: ['First-time managers'], length: 'long', difficulty: 'standard', outcomes: ['adapt'], noFiring: false, formal: false, localNames: false, letterVariant: 0, namesVariant: 0, target: null, targetFrom: null, weeks: null, dealValue: null, currency: null, openMix: 30, dpTypes: {}, obOff: [] };
 const DRIVERS = ['orgName', 'industry', 'customIndustry', 'offeringType', 'customerType', 'country', 'customCountry', 'city'];
 const briefText = (b) => [b.instructions, b.outcomeText, b.constraints, ...(b.outcomes || []), ...(b.chips || [])].join('|');
 
@@ -123,6 +123,7 @@ export default function CreateFlow({ templateId, resume, onCancel, onCreate }) {
     if (settings.dealValue > 0) def.funnel.valuePerConversion = settings.dealValue;
     if (settings.currency) def.funnel.currency = settings.currency;
     if (settings.target) def.funnel.target = settings.target;
+    for (const c of def.onboarding?.chapters || []) if ((settings.obOff || []).includes(c.id)) c.enabled = false;
     const dec = TEMPLATES[templateId]?.decisions;
     if (def.decisions && dec) {
       const mix = settings.openMix ?? 30;
@@ -706,6 +707,27 @@ function ReviewStep({ draft, profile, settings, setS, overrides, found, calibrat
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === 'story' && draft.onboarding && (
+        <div className="card stack">
+          <div>
+            <h3>What learners see first</h3>
+            <p className="small muted">Before any decision, learners go through a short briefing built from this draft. Switch off any part you do not need; you can edit every part in the Studio under Learner onboarding.</p>
+          </div>
+          <ol className="onboard-list">
+            {draft.onboarding.chapters.map((c) => {
+              const off = (settings.obOff || []).includes(c.id);
+              return (
+                <li key={c.id} className={off ? 'off' : ''}>
+                  <span className="grow"><strong className="small">{renderText(draft, c.title)}</strong><span className="small muted" style={{ display: 'block' }}>{renderText(draft, c.lead)}</span></span>
+                  <Switch checked={!off} onChange={(v) => setS({ obOff: v ? (settings.obOff || []).filter((x) => x !== c.id) : [...(settings.obOff || []), c.id] })} label={<span className="sr-only">Show {renderText(draft, c.title)}</span>} />
+                </li>
+              );
+            })}
+          </ol>
+          <p className="small muted">Then learners accept the role and start week 1 with "How will you read each person this week?"</p>
         </div>
       )}
 

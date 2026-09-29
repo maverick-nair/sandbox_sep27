@@ -49,14 +49,14 @@ Experience > Simulations
 ├── Create (Describe it → Check the basics, incl. interaction mix → Review the draft, incl. Decisions)
 ├── Studio (per simulation)
 │   ├── Plan:  Overview (readiness, key numbers, migration assumptions, legacy findings)
-│   ├── Build: Story and context · Funnel and target · Team · Leadership model · Actions · Events ·
+│   ├── Build: Story and context · Learner onboarding · Funnel and target · Team · Leadership model · Actions · Events ·
 │   │          Decision moments (moments, mix, scoring and KPIs, learning design) · Report
 │   ├── Ship:  Settings and delivery (length, difficulty, play modes, pass mark, leaderboard, LTI 1.3,
 │   │          SCORM 1.2, languages, definition file) · Learners and results (group report, cohorts,
 │   │          learners, leaderboard, LMS scores)
 │   └── Test:  Balance check (bots + synthetic learners) · Play as learner
 │   Always available: Health check (with suggested fixes) · Publish (go-live checklist, versions, restore)
-└── Learner experience (#/play/<simulation>): welcome → weekly plan → workspace → Friday wrap-up → debrief
+└── Learner experience (#/play/<simulation>): cover → briefing → accept the role → weekly plan → workspace → Friday wrap-up → debrief
 ```
 
 ## 5. Key workflows
@@ -172,15 +172,21 @@ Ten health checks cover moments (outside the calendar, no situation, no question
 
 ## 6e. The learner experience
 
-Publishing turns the definition into a workspace, not a quiz. The learner steps into the role on a welcome screen (name, leaderboard nickname, cohort code, group play, language), then runs the quarter week by week:
+Publishing turns the definition into a workspace, not a quiz. Nobody is asked to act before they know where they are:
 
-- **Monday plan**: choose an approach for each person, with their profile and recent signals.
+- **Cover**: the company, the role and the stakes, with the language picker and one action, "Begin the briefing" (or "Carry on" for a saved run).
+- **Briefing (prologue)**, authored in Learner onboarding: the organization (product brief and fact cards the learner turns over), the mission (the CEO's letter opened like an envelope, then the target, weeks, team and value per conversion as mission cards), how the work flows (the stages as a pipeline with work flowing through it; each stage shows what it does and who works there), meet your team (face-down profile cards; at least three must be read to continue), how to lead them (the skill and morale grid with a flip card per style and an unscored practice round), and how the simulation works (the weekly rhythm, how actions cost days, rethinks, and the score weights).
+- **Accept the role**: a summary, then name, leaderboard nickname, cohort code and group, and "Accept the role and start week 1".
+- **Monday plan**: a deck, one person at a time. The learner reads the card (stage, experience, performance, mood, what they have said, and in week 1 their background) and plays a style from a hand of four cards; the next person comes up. An avatar strip jumps between people and "See everyone" shows a grid for quick later weeks. Week 1 asks "How will you read each person this week?"
+- **A quick look around**: after the first plan, a seven-step spotlight tour of the numbers, the quarter timeline, the inbox, what needs you today, actions, the team and ending the day (skippable, author can switch it off).
 - **Workspace**: an inbox of emails, chats, meeting invites and business updates; the conversation or meeting in front of them; their team with performance, mood and trend. Moments arrive as they would at work: a typing indicator in chat, a meeting room with the people present, a dashboard snapshot for business updates. Actions (one-to-ones, training, role changes, hiring) take days from the week.
 - **In the moment**: the learner replies inside the thread. The sender reacts, the numbers move (effect chips), and a short coach's note explains why, collapsed when the answer landed well. Open answers show criterion bars and which key ideas were covered. "Rethink" lets the learner undo a decision that did not land (two per run by default) and try again; retries show in the debrief.
 - **Friday wrap-up**: what happened, who moved, progress against pace, a spaced recall question and, in chosen weeks, a private reflection.
 - **Continuity**: earlier decisions change later situations, which moments appear, the options on offer and the consequences that land weeks later.
 
-Author preview is the same player with x-ray (true skill and morale, best options, model answers) and no result saved.
+Author preview is the same player with x-ray (true skill and morale, best options, model answers), a "Skip to week 1" shortcut on the cover, and no result saved. Motion (deals, flips, the envelope, pipeline flow, the played card) stops for learners who ask for reduced motion. The review behind these choices is in [LEARNER_UX_REVIEW.md](LEARNER_UX_REVIEW.md).
+
+**Authoring the briefing.** Studio > Build > Learner onboarding lists the chapters in order: switch each on or off, reorder, retitle, edit the lead line, the company text and fact cards, and add chapters of your own (for example the client's values). Settings: team cards to turn over, the practice round and the workspace tour. Chapter text uses context fields, so it follows tailoring, and it is translatable. The creation flow's review shows "What learners see first" with a switch per chapter. Health checks: briefing off, a chapter without a title, an empty custom chapter, half-empty fact cards, more cards to turn over than people on the team, each with a suggested fix.
 
 ## 6f. Knowledge retention
 

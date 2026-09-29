@@ -105,7 +105,7 @@ export function createRun(def, { seed = Date.now() % 2147483647 } = {}) {
   };
   snapshotWeek(def, state);
   state.start = teamAverages(state);
-  feed(state, { kind: 'story', title: 'Welcome', text: renderText(def, def.story.welcome), tone: 'info' });
+  feed(state, { kind: 'story', title: 'Welcome letter', text: renderText(def, def.story.welcome), tone: 'info' });
   return state;
 }
 

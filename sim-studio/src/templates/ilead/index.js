@@ -7,6 +7,7 @@
 import legacy from './legacy-content.json' with { type: 'json' };
 import { fillMissingInsights, draftBio } from './insights.js';
 import { defaultDecisions, DEFAULT_LEARNING } from './decisions.js';
+import { defaultOnboarding } from './onboarding.js';
 import { DEFAULT_SCORING } from '../../engine/decisions.js';
 
 export const STYLES = [
@@ -400,6 +401,7 @@ function buildDefinition() {
     scoring: { ...DEFAULT_SCORING },
     gamification: { xp: true, achievements: true, benchmarks: true },
     translations: {},
+    onboarding: defaultOnboarding(),
   };
 }
 
@@ -467,5 +469,6 @@ export function migrateDefinition(def) {
   d.scoring ||= { ...DEFAULT_SCORING };
   d.gamification ||= { xp: true, achievements: true, benchmarks: true };
   d.translations ||= {};
+  d.onboarding ||= defaultOnboarding();
   return d;
 }

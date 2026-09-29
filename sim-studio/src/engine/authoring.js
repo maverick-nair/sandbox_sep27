@@ -89,7 +89,12 @@ export function newId(prefix) {
 export function setTextAt(def, ref, value) {
   if (ref.field === 'briefing') def.story.briefing[ref.index] = value;
   else if (ref.field === 'walkthrough') def.story.walkthrough[ref.index].text = value;
-  else if (ref.dpId) {
+  else if (ref.chapterId) {
+    const c = def.onboarding.chapters.find((x) => x.id === ref.chapterId);
+    if (ref.field === 'fact') c.facts[ref.index].value = value;
+    else if (ref.field === 'factLabel') c.facts[ref.index].label = value;
+    else c[ref.field] = value;
+  } else if (ref.dpId) {
     const p = def.decisions.points.find((x) => x.id === ref.dpId);
     if (ref.optionId) p.options.find((o) => o.id === ref.optionId)[ref.field] = value;
     else if (ref.band) { p.outcomes[ref.band] ||= {}; p.outcomes[ref.band][ref.field] = value; }

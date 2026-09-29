@@ -13,9 +13,10 @@ import Moment, { Avatar, EffectChips } from './Moment.jsx';
 import { WeekPlan, WrapUp } from './Week.jsx';
 import { ActionGrid, ActionComposer } from './ActionPanel.jsx';
 import Debrief from './Debrief.jsx';
+import Prologue, { Cover, chaptersOf, minutesFor, LANG_NAMES } from './Prologue.jsx';
+import Tour from './Tour.jsx';
 import { inboxOf, dayName, moodOf, trendOf, translateDef, buildDebrief, resultRecord, signalsFor, DAY_NAMES } from './model.js';
 
-const LANG_NAMES = { en: 'English', hi: 'Hindi', 'zh-Hans': 'Chinese (Simplified)', es: 'Spanish', fr: 'French', ja: 'Japanese', ar: 'Arabic', de: 'German', pt: 'Portuguese', id: 'Indonesian' };
 const GENIE_EVAL_MS = 15000;
 
 function readSave(key) {
@@ -52,22 +53,24 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
   const [notes, setNotes] = useState('');
   const [finished, setFinished] = useState(false);
   const [resultId, setResultId] = useState(null);
+  const [tour, setTour] = useState(null); // step index of the first-time workspace tour
+  const [toured, setToured] = useState(false);
   const inflight = useRef(false);
   const live = useRef(null); // the latest run, so async work never writes over newer state
   live.current = state;
 
   // Autosave: a learner can close the tab and pick up where they left off.
   useEffect(() => {
-    if (preview || stage === 'welcome' || !state) return undefined;
-    const t = setTimeout(() => writeSave(saveKey, { identity, stage, state, wrap, notes, finished }), 400);
+    if (preview || stage === 'welcome' || stage === 'prologue' || !state) return undefined;
+    const t = setTimeout(() => writeSave(saveKey, { identity, stage, state, wrap, notes, finished, toured }), 400);
     return () => clearTimeout(t);
-  }, [preview, saveKey, identity, stage, state, wrap, notes, finished]);
+  }, [preview, saveKey, identity, stage, state, wrap, notes, finished, toured]);
 
   const toast = useCallback((items) => {
     const list = items.filter(Boolean).map((t, i) => ({ id: `${Date.now()}-${i}-${Math.random()}`, ...t }));
     if (!list.length) return;
     setToasts((x) => [...x, ...list].slice(-4));
-    for (const t of list) setTimeout(() => setToasts((x) => x.filter((y) => y.id !== t.id)), 5200);
+    for (const t of list) setTimeout(() => setToasts((x) => x.filter((y) => y.id !== t.id)), 4200);
   }, []);
 
   const start = (who) => {
@@ -89,7 +92,8 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     setWrap(saved.wrap);
     setNotes(saved.notes || '');
     setFinished(!!saved.finished);
-    setStage(saved.stage === 'welcome' ? 'play' : saved.stage);
+    setToured(saved.toured ?? true);
+    setStage(saved.stage === 'welcome' || saved.stage === 'prologue' ? 'play' : saved.stage);
   };
 
   // Every change goes through here: time, consequences, recall, achievements, wrap-ups.
@@ -121,7 +125,12 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     return res;
   };
 
-  const startWeek = (styles) => act((s) => setWeeklyStyles(def, s, styles));
+  const startWeek = (styles) => {
+    const first = weekOf(def, live.current.day) === 1;
+    act((s) => setWeeklyStyles(def, s, styles));
+    if (first && !toured && def.onboarding?.tour !== false) { setSelected(null); setPane('now'); setTour(0); }
+  };
+  const endTour = () => { setTour(null); setToured(true); };
   const endDay = () => { setSelected(null); act((s) => proceed(def, s)); };
   const fastForward = () => {
     setSelected(null);
@@ -196,7 +205,16 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
     setState(s); setWrap(null); setSelected(null); setFinished(false); setResultId(null); setRewind(null); setStage('play');
   };
 
-  if (stage === 'welcome' || !state) return <Welcome def={def} authored={authored} identity={identity} setIdentity={setIdentity} delivery={delivery} preview={preview} saved={saved} onResume={resume} onStart={start} onExit={onExit} />;
+  if (stage === 'welcome' || stage === 'prologue' || !state) {
+    const langs = delivery.languages || ['en'];
+    const ready = <ReadyForm def={def} identity={identity} delivery={delivery} preview={preview} onStart={start} />;
+    if (stage === 'prologue') return <Prologue def={def} preview={preview} onExit={onExit} onBack={() => setStage('welcome')} ready={ready} />;
+    return (
+      <Cover def={def} saved={saved} savedWeek={saved ? Math.min(weekOf(authored, saved.state.day), authored.timeline.weeks) : 0} langs={langs} language={identity.language}
+        setLanguage={(l) => setIdentity((x) => ({ ...x, language: l }))} preview={preview} onExit={onExit} onResume={resume}
+        onBegin={() => setStage('prologue')} onSkip={() => start({ ...identity, name: identity.name || 'Author preview' })} />
+    );
+  }
 
   const rows = leaderboard.filter((r) => !identity.cohortId || r.cohortId === identity.cohortId);
   if (stage === 'debrief' && debrief) {
@@ -219,7 +237,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
 
   return (
     <div className="lx-root">
-      <LxHeader def={def} state={state} identity={identity} preview={preview} xray={xray} setXray={setXray} onExit={onExit} onNotebook={() => setPanel('notebook')} onGuide={() => setPanel('guide')} />
+      <LxHeader def={def} state={state} identity={identity} preview={preview} xray={xray} setXray={setXray} onExit={onExit} onNotebook={() => setPanel('notebook')} onGuide={() => setPanel('guide')} review={wrap?.week} />
       <div className={`lx-work pane-${pane}`}>
         <aside className="lx-inbox" aria-label="Inbox">
           <div className="lx-pane-head"><strong>Inbox</strong>{pending.length > 0 && <span className="lx-count-pill">{pending.length} need you</span>}</div>
@@ -292,6 +310,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
       </nav>
 
       {state.phase === 'weekStart' && !wrap && <WeekPlan def={def} state={state} onStart={startWeek} xray={xray} group={identity.group} />}
+      {tour !== null && state.phase === 'day' && !wrap && <Tour step={tour} onStep={setTour} onDone={endTour} />}
       {wrap && <WrapUp key={wrap.week} def={def} state={state} wrap={wrap} onContinue={continueWrap} onUpdate={updateRun} />}
       {person && <PersonPanel def={def} state={state} a={person} xray={xray} onClose={() => setPanel(null)} />}
       {panel === 'notebook' && <Notebook def={def} state={state} notes={notes} setNotes={setNotes} onClose={() => setPanel(null)} />}
@@ -300,6 +319,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
       <div className="lx-toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`lx-toast ${t.kind}`}>
+            <button type="button" className="lx-toast-x" aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}>×</button>
             <strong>{t.title}</strong>
             {t.text && <p>{t.text}</p>}
             {t.effects && <EffectChips effects={t.effects} />}
@@ -310,7 +330,7 @@ export default function Player({ def: authored, mode = 'live', saveKey, delivery
   );
 }
 
-function LxHeader({ def, state, identity, preview, xray, setXray, onExit, onNotebook, onGuide, ended }) {
+function LxHeader({ def, state, identity, preview, xray, setXray, onExit, onNotebook, onGuide, ended, review }) {
   const pr = progress(def, state);
   const avg = teamAverages(state);
   const week = Math.min(weekOf(def, state.day), def.timeline.weeks);
@@ -319,7 +339,7 @@ function LxHeader({ def, state, identity, preview, xray, setXray, onExit, onNote
     <header className="lx-header">
       <div className="lx-brand"><span className="lx-mark" aria-hidden="true">{renderText(def, '{{company}}').slice(0, 1)}</span><span className="lx-company">{renderText(def, '{{company}}')}</span></div>
       <div className="lx-when">
-        <strong>{ended ? 'Quarter complete' : `Week ${week} · ${state.phase === 'weekStart' ? 'Monday planning' : dayName(def, state.day)}`}</strong>
+        <strong>{ended ? 'Quarter complete' : review ? `Week ${review} · Friday review` : `Week ${week} · ${state.phase === 'weekStart' ? 'Monday planning' : dayName(def, state.day)}`}</strong>
         <div className="lx-timeline" aria-label={`Week ${week} of ${def.timeline.weeks}`}>
           {Array.from({ length: def.timeline.weeks }, (_, i) => {
             const w = i + 1;
@@ -439,7 +459,8 @@ function Guide({ def, onClose }) {
   );
 }
 
-function Welcome({ def, authored, identity, setIdentity, delivery, preview, saved, onResume, onStart, onExit }) {
+// The last step of the prologue: the learner accepts the role (name, cohort, group) and begins.
+function ReadyForm({ def, identity, delivery, preview, onStart }) {
   const [who, setWho] = useState(identity);
   const [code, setCode] = useState(identity.cohortId ? (delivery.cohorts || []).find((c) => c.id === identity.cohortId)?.code || '' : '');
   const [asGroup, setAsGroup] = useState(false);
@@ -449,73 +470,52 @@ function Welcome({ def, authored, identity, setIdentity, delivery, preview, save
   const cohorts = (delivery.cohorts || []).filter((c) => c.status !== 'closed' && (!c.closes || new Date(`${c.closes}T23:59:59`).getTime() >= now) && (!c.opens || new Date(`${c.opens}T00:00:00`).getTime() <= now));
   const cohort = cohorts.find((c) => c.code.toLowerCase() === code.trim().toLowerCase());
   const needsCode = cohorts.length > 0 && !preview && !identity.lti;
-  const langs = delivery.languages || ['en'];
   const memberList = members.split(/[,\n]/).map((m) => m.trim()).filter(Boolean);
   const gmin = delivery.groupSize?.min || 2;
   const gmax = delivery.groupSize?.max || 6;
   const groupOk = !asGroup || (groupName.trim() && memberList.length >= gmin && memberList.length <= gmax);
-  const ok = (preview || who.name.trim()) && (!needsCode || cohort || !code.trim()) && groupOk;
-  const letter = renderText(def, def.story.welcome);
+  const ok = (preview || who.name.trim() || (asGroup && groupName.trim())) && (!needsCode || cohort || !code.trim()) && groupOk;
+  const T = (x) => renderText(def, x);
   return (
-    <div className="lx-root lx-welcome-root">
-      <div className="lx-welcome">
-        <div className="lx-welcome-hero">
-          <span className="lx-mark big" aria-hidden="true">{renderText(def, '{{company}}').slice(0, 1)}</span>
-          <div className="lx-kicker">{renderText(def, '{{company}}')} · {renderText(def, '{{city}}')}</div>
-          <h1>Your first day as {renderText(def, '{{learner_role}}')}</h1>
-          <p className="lx-lede">You lead a team of {teamIdsCount(def)} people selling {renderText(def, '{{product}}')}. You have {def.timeline.weeks} weeks to reach {def.funnel.target} conversions, and every person on your team needs something different from you.</p>
-          <ul className="lx-promises">
-            <li>Your inbox fills with emails, chats, meetings and updates. Reply the way you would at work.</li>
-            <li>People react, numbers move, and some decisions come back to you weeks later.</li>
-            <li>Each Friday you see what happened. At the end, a debrief shows why.</li>
-          </ul>
-          <details className="lx-letter"><summary>Read the welcome letter from {renderText(def, '{{ceo}}')}</summary><p>{letter}</p></details>
-        </div>
-        <div className="lx-welcome-form">
-          {saved && (
-            <div className="lx-resume">
-              <strong>Welcome back{saved.identity?.name ? `, ${saved.identity.name}` : ''}</strong>
-              <span className="small muted">You were in week {Math.min(weekOf(authored, saved.state.day), authored.timeline.weeks)}.</span>
-              <button type="button" className="btn primary" onClick={onResume}>Carry on where I left off</button>
-            </div>
-          )}
-          {!preview && !identity.lti && (
-            <label className="field"><span className="label">Your name</span><input className="input" value={who.name} onChange={(e) => setWho({ ...who, name: e.target.value })} placeholder="First and last name" /></label>
-          )}
-          {identity.lti && <p className="small">Signed in from {identity.lti.platform || 'your learning platform'} as <strong>{who.name}</strong>.</p>}
-          {!preview && delivery.leaderboard && (
-            <label className="field"><span className="label">Name on the leaderboard <span className="muted">(optional)</span></span><input className="input" value={who.nickname} onChange={(e) => setWho({ ...who, nickname: e.target.value })} placeholder={who.name || 'A nickname'} /></label>
-          )}
-          {needsCode && (
-            <label className="field"><span className="label">Cohort code <span className="muted">(from your facilitator)</span></span><input className="input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. MUM-24" />
-              {code.trim() && (cohort ? <span className="hint" style={{ color: 'var(--good)' }}>You are joining {cohort.name}.</span> : <span className="hint" style={{ color: 'var(--bad)' }}>That code does not match an open cohort.</span>)}
-            </label>
-          )}
-          {delivery.group && !preview && (
-            <div className="field">
-              <label className="switch"><input type="checkbox" checked={asGroup} onChange={(e) => setAsGroup(e.target.checked)} /> <span>We are playing as a group</span></label>
-              {asGroup && (
-                <div className="stack" style={{ '--gap': '8px', marginTop: 8 }}>
-                  <input className="input" aria-label="Group name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Group name, e.g. Team Falcon" />
-                  <textarea className="textarea" rows={2} aria-label="Group members" value={members} onChange={(e) => setMembers(e.target.value)} placeholder={`Names of the ${gmin} to ${gmax} people playing, separated by commas`} />
-                  {members.trim() && !groupOk && <span className="hint" style={{ color: 'var(--bad)' }}>Groups have {gmin} to {gmax} people.</span>}
-                </div>
-              )}
-            </div>
-          )}
-          {langs.length > 1 && (
-            <label className="field"><span className="label">Language</span>
-              <select className="select" value={who.language} onChange={(e) => { setWho({ ...who, language: e.target.value }); setIdentity((x) => ({ ...x, language: e.target.value })); }}>
-                {langs.map((l) => <option key={l} value={l}>{LANG_NAMES[l] || l}</option>)}
-              </select>
-            </label>
-          )}
-          <button type="button" className="btn primary lg lx-start" disabled={!ok} onClick={() => onStart({ ...who, cohortId: cohort?.id || who.cohortId || '', group: asGroup ? { name: groupName.trim(), members: memberList } : null, name: who.name || (asGroup ? groupName.trim() : '') })}>
-            {saved ? 'Start a new run' : 'Start your first day'}
-          </button>
-          {onExit && <button type="button" className="btn ghost" onClick={onExit}>{preview ? 'Back to Studio' : 'Leave'}</button>}
-          <p className="small muted">About {def.timeline.weeks <= 6 ? 45 : def.timeline.weeks <= 8 ? 60 : 90} minutes. Your progress saves as you go.</p>
-        </div>
+    <div className="lx-ready">
+      <div className="lx-ready-summary">
+        <p>{T(`You are the new {{learner_role}} at {{company}}. You lead ${teamIdsCount(def)} people selling {{product}}, and you have ${def.timeline.weeks} weeks to reach ${def.funnel.target} conversions.`)}</p>
+        <ul>
+          <li>Each Monday you choose how to lead each person.</li>
+          <li>During the week you answer what lands in your inbox and decide where your time goes.</li>
+          <li>Each Friday you see what happened. At the end, a debrief shows why.</li>
+        </ul>
+        <p className="small muted">About {minutesFor(def)} minutes. Your progress saves as you go, so you can stop and come back.</p>
+      </div>
+      <div className="lx-ready-form">
+        {!preview && !identity.lti && (
+          <label className="field"><span className="label">Sign as</span><input className="input" value={who.name} onChange={(e) => setWho({ ...who, name: e.target.value })} placeholder="Your first and last name" autoFocus /></label>
+        )}
+        {identity.lti && <p className="small">Signed in from {identity.lti.platform || 'your learning platform'} as <strong>{who.name}</strong>.</p>}
+        {preview && <p className="small muted">Author preview: nothing you do here is saved as a result.</p>}
+        {!preview && delivery.leaderboard && (
+          <label className="field"><span className="label">Name on the leaderboard <span className="muted">(optional)</span></span><input className="input" value={who.nickname} onChange={(e) => setWho({ ...who, nickname: e.target.value })} placeholder={who.name || 'A nickname'} /></label>
+        )}
+        {needsCode && (
+          <label className="field"><span className="label">Cohort code <span className="muted">(from your facilitator)</span></span><input className="input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. MUM-24" />
+            {code.trim() && (cohort ? <span className="hint" style={{ color: 'var(--good)' }}>You are joining {cohort.name}.</span> : <span className="hint" style={{ color: 'var(--bad)' }}>That code does not match an open cohort.</span>)}
+          </label>
+        )}
+        {delivery.group && !preview && (
+          <div className="field">
+            <label className="switch"><input type="checkbox" checked={asGroup} onChange={(e) => setAsGroup(e.target.checked)} /> <span>We are playing as a group</span></label>
+            {asGroup && (
+              <div className="stack" style={{ '--gap': '8px', marginTop: 8 }}>
+                <input className="input" aria-label="Group name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Group name, e.g. Team Falcon" />
+                <textarea className="textarea" rows={2} aria-label="Group members" value={members} onChange={(e) => setMembers(e.target.value)} placeholder={`Names of the ${gmin} to ${gmax} people playing, separated by commas`} />
+                {members.trim() && !groupOk && <span className="hint" style={{ color: 'var(--bad)' }}>Groups have {gmin} to {gmax} people.</span>}
+              </div>
+            )}
+          </div>
+        )}
+        <button type="button" className="btn primary lg lx-start" disabled={!ok} onClick={() => onStart({ ...who, cohortId: cohort?.id || who.cohortId || '', group: asGroup ? { name: groupName.trim(), members: memberList } : null, name: who.name || (asGroup ? groupName.trim() : '') || (preview ? 'Author preview' : '') })}>
+          Accept the role and start week 1
+        </button>
       </div>
     </div>
   );

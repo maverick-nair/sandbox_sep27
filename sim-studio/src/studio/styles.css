@@ -484,3 +484,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .golive-checks li.bad { border-color: var(--bad); }
 .golive-checks li.bad .golive-icon { background: var(--bad-soft, var(--surface-2)); color: var(--bad); }
 .golive-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.chapter-card.off { opacity: 0.6; }
+.fact-row { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.fact-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 720px) { .fact-row { grid-template-columns: 1fr; } }
+.onboard-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.onboard-list li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.onboard-list li.off { opacity: 0.55; }

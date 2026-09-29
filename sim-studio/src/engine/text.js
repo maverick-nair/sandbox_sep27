@@ -103,6 +103,16 @@ export function collectTexts(def) {
   def.triggers.forEach((t) => add('events', `Trigger: ${t.name}`, t.text, { triggerId: t.id }));
   def.report.competencies.forEach((c) => c.bands.forEach((b) => add('report', `${c.name}: ${b.label}`, b.text, { competencyId: c.id, band: b.label })));
   Object.entries(def.report.objective).forEach(([k, v]) => add('report', `Objective insight: ${k}`, v, { objective: k }));
+  for (const c of def.onboarding?.chapters || []) {
+    const lbl = `Onboarding: ${c.title || c.id}`;
+    add('onboarding', `${lbl} (title)`, c.title, { chapterId: c.id, field: 'title' });
+    if (c.lead) add('onboarding', `${lbl} (lead)`, c.lead, { chapterId: c.id, field: 'lead' });
+    if (c.body) add('onboarding', `${lbl} (text)`, c.body, { chapterId: c.id, field: 'body' });
+    (c.facts || []).forEach((f, i) => {
+      add('onboarding', `${lbl} (fact label ${i + 1})`, f.label, { chapterId: c.id, field: 'factLabel', index: i });
+      add('onboarding', `${lbl} (fact ${i + 1})`, f.value, { chapterId: c.id, field: 'fact', index: i });
+    });
+  }
   for (const p of def.decisions?.points || []) {
     const lbl = p.title || p.id;
     add('decisions', `Moment: ${lbl} (title)`, p.title, { dpId: p.id, field: 'title' });

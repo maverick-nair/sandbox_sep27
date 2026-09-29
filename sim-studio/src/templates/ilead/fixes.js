@@ -15,6 +15,7 @@ import { OUTCOME_LABELS, outcomeLabel } from '../../engine/validate.js';
 import { setTextAt } from '../../engine/authoring.js';
 import { refKey } from './contextualize.js';
 import { applyMix, DEFAULT_POINTS } from './decisions.js';
+import { defaultOnboarding } from './onboarding.js';
 import { draftKeyIdeas } from '../../engine/nlp.js';
 import { DEFAULT_SCORING } from '../../engine/decisions.js';
 import { renderText } from '../../engine/text.js';
@@ -460,6 +461,50 @@ function suggest(def, issue, draft) {
         apply: (x, v) => { x.funnel.valuePerConversion = Math.max(1, Number(v.value)); },
       };
     }
+    case 'ob-off':
+      return {
+        summary: 'Switch the standard briefing on',
+        note: 'Six short chapters: the organization, the mission, how work flows, the team, how to lead them and how the simulation works. Chapters you wrote are kept.',
+        fields: [],
+        apply: (x) => {
+          x.onboarding ||= defaultOnboarding();
+          x.onboarding.enabled = true;
+          const have = new Set(x.onboarding.chapters.map((c) => c.kind));
+          for (const c of defaultOnboarding().chapters) if (!have.has(c.kind)) x.onboarding.chapters.push(c);
+          if (!x.onboarding.chapters.some((c) => c.enabled !== false)) x.onboarding.chapters.forEach((c) => { c.enabled = true; });
+        },
+      };
+    case 'ob-no-title': {
+      const c = def.onboarding.chapters.find((y) => y.id === d.chapterId);
+      const value = defaultOnboarding().chapters.find((y) => y.kind === c.kind)?.title || 'A word before you start';
+      return {
+        summary: `Call it "${value}"`,
+        fields: [{ key: 'title', label: 'Title', type: 'text', value }],
+        apply: (x, v) => { x.onboarding.chapters.find((y) => y.id === d.chapterId).title = String(v.title); },
+      };
+    }
+    case 'ob-custom-empty': {
+      const c = def.onboarding.chapters.find((y) => y.id === d.chapterId);
+      return {
+        summary: 'Write a short text, or switch the chapter off',
+        fields: [{ key: 'body', label: c.title || 'Text', type: 'textarea', value: 'At {{company}}, we care about how results are achieved as much as the results themselves. As you lead your team, think about what you would be proud to explain to them afterwards.', rows: 3 }, { key: 'off', label: 'Switch this chapter off instead', type: 'toggle', value: false }],
+        apply: (x, v) => { const y = x.onboarding.chapters.find((z) => z.id === d.chapterId); if (v.off) y.enabled = false; else y.body = String(v.body); },
+        genie: { field: 'body', prompt: (v) => `Rewrite this short briefing text for learners about to start a leadership simulation at ${renderText(def, '{{company}}')}. Two to four sentences, warm and direct, keep any {{tokens}}, no em dashes. Reply with the text only.\n\n${v.body}` },
+      };
+    }
+    case 'ob-fact-empty': {
+      return {
+        summary: 'Remove the half-empty fact cards',
+        fields: [],
+        apply: (x) => { const y = x.onboarding.chapters.find((z) => z.id === d.chapterId); y.facts = (y.facts || []).filter((f) => String(f.label || '').trim() && String(f.value || '').trim()); },
+      };
+    }
+    case 'ob-team-too-many':
+      return {
+        summary: `Ask learners to meet ${Math.min(3, d.size)} people`,
+        fields: [{ key: 'n', label: 'Cards to turn over', type: 'number', value: Math.min(3, d.size), min: 0, max: d.size }],
+        apply: (x, v) => { x.onboarding.teamToMeet = Math.max(0, Math.min(d.size, Math.round(Number(v.n)))); },
+      };
     case 'dp-outside': {
       const p = def.decisions.points.find((y) => y.id === d.dpId);
       const w = Math.max(1, Math.min(weeks, p.week));

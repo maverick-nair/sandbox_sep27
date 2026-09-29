@@ -3,6 +3,7 @@ import { validate, healthSummary } from '../engine/validate.js';
 import { Button, Drawer, Modal, Pill, Switch, TextInput, Callout, Tip, copyText } from './ui.jsx';
 import Overview from './sections/Overview.jsx';
 import Story from './sections/Story.jsx';
+import Onboarding from './sections/Onboarding.jsx';
 import Funnel from './sections/Funnel.jsx';
 import Team from './sections/Team.jsx';
 import Leadership from './sections/Leadership.jsx';
@@ -35,6 +36,7 @@ const SAVE_LABEL = { saved: 'Saved in this browser', saving: 'Saving…', error:
 export const SECTIONS = [
   { id: 'overview', label: 'Overview', group: 'Plan', component: Overview },
   { id: 'story', label: 'Story and context', group: 'Build', component: Story },
+  { id: 'onboarding', label: 'Learner onboarding', group: 'Build', component: Onboarding },
   { id: 'funnel', label: 'Funnel and target', group: 'Build', component: Funnel },
   { id: 'team', label: 'Team', group: 'Build', component: Team },
   { id: 'leadership', label: 'Leadership model', group: 'Build', component: Leadership },

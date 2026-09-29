@@ -179,6 +179,22 @@ export function validate(def) {
     for (const r of def.learning?.reflections || []) if (def.learning.reflection !== false && (r.week < 1 || r.week > weeks)) add('warning', 'decisions', 'A reflection is set after the last week', `It is set for week ${r.week}; the simulation has ${weeks} weeks, so learners never see it.`, { ref: { tab: 'learning' }, code: 'reflection-outside', data: { id: r.id } });
   }
 
+  // Learner onboarding
+  const ob = def.onboarding;
+  if (ob) {
+    const onCh = (ob.chapters || []).filter((c) => c.enabled !== false);
+    if (ob.enabled === false || !onCh.length) add('warning', 'onboarding', 'Learners start without a briefing', 'They go straight to their first decisions without learning about the organization, the team or how the simulation works.', { ref: { field: 'onboarding' }, code: 'ob-off' });
+    else {
+      for (const c of onCh) {
+        if (blank(c.title)) add('error', 'onboarding', 'An onboarding chapter has no title', `The ${c.kind} chapter needs a title learners can see.`, { ref: { chapterId: c.id }, code: 'ob-no-title', data: { chapterId: c.id } });
+        if (c.kind === 'custom' && blank(c.body)) add('error', 'onboarding', `"${c.title || 'Your chapter'}" has no text`, 'Learners would see an empty page in their briefing.', { ref: { chapterId: c.id }, code: 'ob-custom-empty', data: { chapterId: c.id } });
+        if (c.kind === 'company' && (c.facts || []).some((f) => blank(f.label) || blank(f.value))) add('warning', 'onboarding', 'A fact card is half empty', 'Each fact card needs a label and something to reveal.', { ref: { chapterId: c.id }, code: 'ob-fact-empty', data: { chapterId: c.id } });
+      }
+      const size = team.length;
+      if (onCh.some((c) => c.kind === 'team') && (ob.teamToMeet ?? 3) > size) add('error', 'onboarding', 'Learners must meet more people than the team has', `They must turn over ${ob.teamToMeet} cards, but the team has ${size} people, so they could never continue.`, { ref: { field: 'onboarding' }, code: 'ob-team-too-many', data: { size } });
+    }
+  }
+
   // Numbers that are allowed but almost certainly a slip.
   if (def.funnel.target > 0 && def.meta.baseTarget > 0) {
     const ratio = def.funnel.target / def.meta.baseTarget;
